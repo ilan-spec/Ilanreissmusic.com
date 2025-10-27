@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1.0"
+  />
+  <title>ILAN RADIO</title>
+
+  <link rel="preconnect" href="https://fonts.gstatic.com"/>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- Full-screen animated visualizer canvas -->
+  <canvas id="vizCanvas"></canvas>
+
+  <!-- Floating Vista-style window with playlist -->
+  <section class="player-window" id="playlistWindow">
+    <header class="window-header">
+      <div class="window-left">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+        <span class="window-title">ILAN RADIO PLAYER</span>
+      </div>
+      <span class="track-count" id="trackCount">0 tracks</span>
+    </header>
+
+    <ul class="playlist" id="playlist"></ul>
+  </section>
+
+  <!-- Bottom player bar / dock -->
+  <footer class="player-bar" id="playerBar">
+    <div class="bar-top">
+      <div class="nowplaying">
+        <img
+          id="nowCover"
+          class="nowcover"
+          src="covers/default-cover.jpg"
+          alt="cover"
+        />
+        <div class="nowtext">
+          <div class="nowlabel">NOW PLAYING</div>
+          <div class="nowtitle" id="nowTitle">—</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="prevBtn" class="ctrl-btn">⏮</button>
+        <button id="playPauseBtn" class="ctrl-btn main">▶</button>
+        <button id="nextBtn" class="ctrl-btn">⏭</button>
+      </div>
+    </div>
+
+    <div class="bar-bottom">
+      <span class="time" id="currentTime">0:00</span>
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <span class="time" id="durationTime">0:00</span>
+    </div>
+  </footer>
+
+  <!-- Hidden audio element -->
+  <audio id="audioEl"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
