@@ -1,5 +1,4 @@
-// --- Full list of your tracks ---
-// Each file is inside /audio/
+// Your real track names:
 const tracks = [
   "2 part shit.mp3","42 cent.mp3","67.mp3","808 beat sample.mp3","a break.mp3",
   "all me.mp3","another one.mp3","asher organ.mp3","ass with potench.mp3","bad one.mp3",
@@ -11,61 +10,87 @@ const tracks = [
   "fly guy.mp3","for it.mp3"
 ];
 
+// Grab elements
 const audioEl = document.getElementById("audioElement");
 const trackListEl = document.getElementById("trackList");
 const currentTrackNameEl = document.getElementById("currentTrackName");
+
 const playPauseBtn = document.getElementById("playPauseBtn");
 const stopBtn = document.getElementById("stopBtn");
 const prevBtn = document.getElementById("prevBtn");
 const nextBtn = document.getElementById("nextBtn");
+
 const seekBar = document.getElementById("seekBar");
 const currentTimeEl = document.getElementById("currentTime");
 const durationEl = document.getElementById("duration");
+
 const volumeSlider = document.getElementById("volumeSlider");
 
+// State
 let currentIndex = 0;
 let isPlaying = false;
 
-// Helper: format time
+// safe URL for file with spaces
+function fileURL(name) {
+  // name like "2 part shit.mp3"
+  // -> "audio/2%20part%20shit.mp3"
+  return "audio/" + encodeURIComponent(name);
+}
+
+// format seconds => M:SS
 function formatTime(sec) {
   if (isNaN(sec)) return "0:00";
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
+  return m + ":" + s;
 }
 
-function loadTrack(i) {
-  currentIndex = i;
-  audioEl.src = `audio/${tracks[i]}`;
-  currentTrackNameEl.textContent = tracks[i].replace(".mp3", "");
-  [...trackListEl.children].forEach((li, idx) =>
-    li.classList.toggle("active", idx === i)
-  );
+// load a track
+function loadTrack(index) {
+  currentIndex = index;
+  const filename = tracks[currentIndex];
+
+  audioEl.src = fileURL(filename);
+  audioEl.load(); // force browser to load new source
+  currentTrackNameEl.textContent = filename.replace(/\.mp3$/i, "");
+
+  // highlight active in sidebar
+  [...trackListEl.children].forEach((li, i) => {
+    li.classList.toggle("active", i === currentIndex);
+  });
+
+  // reset UI
   seekBar.value = 0;
   currentTimeEl.textContent = "0:00";
   durationEl.textContent = "0:00";
 }
 
+// play current track
 function playTrack() {
   audioEl.play().then(() => {
     isPlaying = true;
-    playPauseBtn.textContent = "⏸";
+    playPauseBtn.textContent = "⏸ Pause";
+  }).catch(err => {
+    console.log("Playback blocked (maybe no user gesture yet):", err);
   });
 }
 
+// pause current track
 function pauseTrack() {
   audioEl.pause();
   isPlaying = false;
-  playPauseBtn.textContent = "▶";
+  playPauseBtn.textContent = "▶ Play";
 }
 
+// stop (pause + rewind)
 function stopTrack() {
   audioEl.pause();
   audioEl.currentTime = 0;
   isPlaying = false;
-  playPauseBtn.textContent = "▶";
+  playPauseBtn.textContent = "▶ Play";
 }
 
+// next / prev
 function nextTrack() {
   currentIndex = (currentIndex + 1) % tracks.length;
   loadTrack(currentIndex);
@@ -78,6 +103,7 @@ function prevTrack() {
   playTrack();
 }
 
+// build sidebar list
 function buildList() {
   tracks.forEach((name, i) => {
     const li = document.createElement("li");
@@ -90,6 +116,7 @@ function buildList() {
   });
 }
 
+// time/progress updates
 audioEl.addEventListener("timeupdate", () => {
   if (!isNaN(audioEl.duration)) {
     seekBar.value = (audioEl.currentTime / audioEl.duration) * 100;
@@ -98,23 +125,38 @@ audioEl.addEventListener("timeupdate", () => {
   }
 });
 
+// manual seek
 seekBar.addEventListener("input", () => {
   if (!isNaN(audioEl.duration)) {
-    audioEl.currentTime = (seekBar.value / 100) * audioEl.duration;
+    const newTime = (seekBar.value / 100) * audioEl.duration;
+    audioEl.currentTime = newTime;
   }
 });
 
+// volume
 volumeSlider.addEventListener("input", () => {
   audioEl.volume = volumeSlider.value;
 });
 
-audioEl.addEventListener("ended", nextTrack);
-playPauseBtn.addEventListener("click", () => (isPlaying ? pauseTrack() : playTrack()));
+// autoplay next when ended
+audioEl.addEventListener("ended", () => {
+  nextTrack();
+});
+
+// button listeners
+playPauseBtn.addEventListener("click", () => {
+  if (!isPlaying) {
+    playTrack();
+  } else {
+    pauseTrack();
+  }
+});
+
 stopBtn.addEventListener("click", stopTrack);
 nextBtn.addEventListener("click", nextTrack);
 prevBtn.addEventListener("click", prevTrack);
 
-// Init
+// init
 buildList();
 loadTrack(0);
-pauseTrack();
+pauseTrack(); // make sure UI starts in paused state

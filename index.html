@@ -2,53 +2,89 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Ilan Reiss Audio Player</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <h1 class="logo">Audio Files</h1>
-      <ul id="trackList" class="track-list"></ul>
-    </aside>
-
-    <main class="player-area">
-      <div class="now-playing">
-        <div class="np-label">Now Playing:</div>
-        <div id="currentTrackName" class="np-title">—</div>
+  <div class="desktop-bg">
+    <div class="window-shell">
+      <div class="window-topbar">
+        <div class="topbar-left">
+          <div class="window-icon"></div>
+          <span class="topbar-title">DJ_ILAN_PLAYER.exe</span>
+        </div>
+        <div class="topbar-buttons">
+          <div class="btn-min"></div>
+          <div class="btn-max"></div>
+          <div class="btn-close"></div>
+        </div>
       </div>
 
-      <div class="wave-box">
-        <div class="wave-bar"></div><div class="wave-bar"></div>
-        <div class="wave-bar"></div><div class="wave-bar"></div>
-        <div class="wave-bar"></div><div class="wave-bar"></div>
+      <div class="app">
+        <!-- SIDEBAR / FILE EXPLORER -->
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-title">My Audio Folder</div>
+            <div class="sidebar-path">C:\Users\Ilan\audio\</div>
+          </div>
+
+          <ul id="trackList" class="track-list"></ul>
+        </aside>
+
+        <!-- MAIN PLAYER -->
+        <main class="player-area">
+          <div class="now-playing-card">
+            <div class="np-label">Now Playing:</div>
+            <div id="currentTrackName" class="np-title">—</div>
+          </div>
+
+          <!-- fake waveform bars like old visualizer -->
+          <div class="viz-frame">
+            <div class="viz-scanline"></div>
+            <div class="viz-bars">
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+              <div class="viz-bar"></div>
+            </div>
+          </div>
+
+          <audio id="audioElement" preload="metadata"></audio>
+
+          <div class="controls">
+            <button id="prevBtn" class="ctrl-btn small">⏮</button>
+            <button id="playPauseBtn" class="ctrl-btn play-btn">▶ Play</button>
+            <button id="stopBtn" class="ctrl-btn small">⏹ Stop</button>
+            <button id="nextBtn" class="ctrl-btn small">⏭</button>
+          </div>
+
+          <div class="progress-wrapper">
+            <span id="currentTime" class="time-label">0:00</span>
+            <input id="seekBar" type="range" min="0" max="100" value="0" />
+            <span id="duration" class="time-label">0:00</span>
+          </div>
+
+          <div class="volume-wrapper">
+            <label for="volumeSlider">VOL</label>
+            <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
+          </div>
+        </main>
       </div>
 
-      <audio id="audioElement"></audio>
-
-      <div class="controls">
-        <button id="prevBtn" class="btn control-btn">⏮</button>
-        <button id="playPauseBtn" class="btn main-btn">▶</button>
-        <button id="stopBtn" class="btn control-btn">⏹</button>
-        <button id="nextBtn" class="btn control-btn">⏭</button>
+      <div class="bottom-statusbar">
+        <div class="status-left">READY</div>
+        <div class="status-right">© DJ Ilan Reiss</div>
       </div>
-
-      <div class="progress-wrapper">
-        <span id="currentTime" class="time-label">0:00</span>
-        <input id="seekBar" type="range" min="0" max="100" value="0" />
-        <span id="duration" class="time-label">0:00</span>
-      </div>
-
-      <div class="volume-wrapper">
-        <label for="volumeSlider">Vol</label>
-        <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
-      </div>
-    </main>
+    </div>
   </div>
-  <footer class="footer">
-    <p>© DJ Ilan Reiss</p>
-  </footer>
+
   <script src="script.js"></script>
 </body>
 </html>
