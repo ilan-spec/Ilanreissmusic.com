@@ -11,16 +11,192 @@ Make sure the file names exist in the folders.
 
 const TRACKS = [
   {
-    title: "Night Drive (Demo 042)",
-    file: "audio/ilan-nightdrive.mp3",
-    cover: "covers/ilan-nightdrive.jpg"
+    title: "2 part shit",
+    file: "audio/2 part shit.mp3",
+    cover: "covers/default-cover.jpg"
   },
   {
-    title: "Vinyl Warmup Loop",
-    file: "audio/ilan-vinylwarmup.wav",
-    cover: "covers/ilan-vinylwarmup.png"
+    title: "42 cent",
+    file: "audio/42 cent.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "67",
+    file: "audio/67.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "808 beat sample",
+    file: "audio/808 beat sample.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "a break",
+    file: "audio/a break.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "all me",
+    file: "audio/all me.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "another one",
+    file: "audio/another one.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "asher organ",
+    file: "audio/asher organ.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "ass with potench",
+    file: "audio/ass with potench.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "bad one",
+    file: "audio/bad one.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "been a minu",
+    file: "audio/been a minu.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "beeps",
+    file: "audio/beeps.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "before my set",
+    file: "audio/before my set.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "before you go",
+    file: "audio/before you go.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "black airforces",
+    file: "audio/black airforces.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "bubs final",
+    file: "audio/bubs final.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "bubs",
+    file: "audio/bubs.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "buds",
+    file: "audio/buds.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "bullshittin",
+    file: "audio/bullshittin.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "candy shack",
+    file: "audio/candy shack.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "chicos",
+    file: "audio/chicos.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "chilled",
+    file: "audio/chilled.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "com 303 sh",
+    file: "audio/com 303 sh.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "corp. rework",
+    file: "audio/corp. rework.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "corp.",
+    file: "audio/corp..mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "cya",
+    file: "audio/cya.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "cypher chopped",
+    file: "audio/cypher chopped.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "danklin",
+    file: "audio/danklin.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "day ones",
+    file: "audio/day ones.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "day today",
+    file: "audio/day today .mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "delete this track",
+    file: "audio/delete this track.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "dub w.mp3",
+    file: "audio/dub w.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "easter",
+    file: "audio/easter.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "ff",
+    file: "audio/ff.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "flip me",
+    file: "audio/flip me.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "fly guy",
+    file: "audio/fly guy.mp3",
+    cover: "covers/default-cover.jpg"
+  },
+  {
+    title: "for it",
+    file: "audio/for it.mp3",
+    cover: "covers/default-cover.jpg"
   }
 ];
+
 
 /* ========== grab elements ========== */
 
