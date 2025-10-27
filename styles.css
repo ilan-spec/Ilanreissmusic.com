@@ -1,0 +1,258 @@
+/* Windows 98/2000 Theme Variables */
+:root {
+    --win-bg: #c0c0c0;
+    --win-text: #000000;
+    --win-title-active: #000080;
+    --win-title-inactive: #808080;
+    --win-border: #dfdfdf;
+    --win-border-raised: #ffffff;
+    --win-border-sunken: #808080;
+    --win-button: #c0c0c0;
+    --win-button-highlight: #ffffff;
+    --win-button-shadow: #808080;
+}
+
+/* Global Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+    background: #008080;
+    overflow: hidden;
+}
+
+.desktop {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Window Styles */
+.window {
+    position: absolute;
+    background: var(--win-bg);
+    border: 3px solid var(--win-border);
+    box-shadow: inset 1px 1px var(--win-border-raised),
+                inset -1px -1px var(--win-border-sunken);
+    resize: both;
+    overflow: hidden;
+}
+
+#player-window {
+    width: 400px;
+    height: 300px;
+    top: 50px;
+    left: 50px;
+}
+
+#playlist-window {
+    width: 300px;
+    height: 400px;
+    top: 100px;
+    left: 500px;
+}
+
+/* Title Bar */
+.title-bar {
+    background: var(--win-title-active);
+    color: white;
+    padding: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+}
+
+.title-bar-controls {
+    display: flex;
+    gap: 2px;
+}
+
+.title-bar-controls button {
+    width: 16px;
+    height: 14px;
+    border: 1px solid var(--win-border);
+    background: var(--win-button);
+    position: relative;
+    cursor: pointer;
+}
+
+/* Window Body */
+.window-body {
+    padding: 8px;
+    height: calc(100% - 60px);
+}
+
+/* Player Container */
+.player-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.visualization {
+    background: #000;
+    height: 120px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#cover-art {
+    height: 100px;
+    width: 100px;
+    object-fit: cover;
+}
+
+.visualizer-bars {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    padding: 5px;
+}
+
+.bar {
+    width: 20px;
+    background: #00ff00;
+    height: 100%;
+    animation: visualizer 0.5s infinite alternate;
+}
+
+@keyframes visualizer {
+    0% { height: 10%; }
+    100% { height: 100%; }
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    padding: 5px;
+    border: 2px inset var(--win-border);
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px outset var(--win-border);
+    background: var(--win-button);
+    cursor: pointer;
+}
+
+.control-btn:active {
+    border-style: inset;
+}
+
+.volume-slider {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+}
+
+.volume-slider img {
+    width: 16px;
+    height: 16px;
+}
+
+/* Progress Bar */
+.progress-container {
+    width: 100%;
+    height: 20px;
+    border: 2px inset var(--win-border);
+    background: #000;
+}
+
+#progress {
+    height: 100%;
+    background: #00ff00;
+    width: 0;
+}
+
+/* Playlist */
+.playlist-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-bar {
+    display: flex;
+    gap: 10px;
+    padding: 2px;
+    border-bottom: 1px solid var(--win-border-sunken);
+}
+
+.menu-item {
+    padding: 2px 8px;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background: var(--win-title-active);
+    color: white;
+}
+
+.playlist {
+    flex-grow: 1;
+    overflow-y: auto;
+    border: 2px inset var(--win-border);
+    background: white;
+}
+
+.track-item {
+    padding: 4px 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.track-item:hover {
+    background: var(--win-title-active);
+    color: white;
+}
+
+.track-item.active {
+    background: var(--win-title-active);
+    color: white;
+}
+
+/* Status Bar */
+.status-bar {
+    border-top: 1px solid var(--win-border-sunken);
+    padding: 2px 5px;
+    font-size: 12px;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--win-bg);
+    border: 2px inset var(--win-border);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--win-button);
+    border: 2px outset var(--win-border);
+}
+
+/* Time Display */
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 5px;
+    font-family: 'Courier New', monospace;
+}
