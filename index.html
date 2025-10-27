@@ -3,38 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retro Media Player</title>
+    <title>Windows Media Player Classic</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="desktop">
         <!-- Media Player Window -->
         <div class="window" id="player-window">
-            <div class="title-bar">
-                <div class="title-bar-text">Media Player</div>
+            <div class="title-bar" id="player-title-bar">
+                <div class="title-bar-text">Windows Media Player</div>
                 <div class="title-bar-controls">
-                    <button aria-label="Minimize"></button>
-                    <button aria-label="Maximize"></button>
-                    <button aria-label="Close"></button>
+                    <button aria-label="Minimize">_</button>
+                    <button aria-label="Maximize">□</button>
+                    <button aria-label="Close">×</button>
                 </div>
             </div>
             <div class="window-body">
                 <div class="player-container">
-                    <div class="visualization">
-                        <img id="cover-art" src="covers/default-cover.jpg" alt="Cover Art">
-                        <div class="visualizer-bars">
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                            <div class="bar"></div>
-                        </div>
-                    </div>
-                    <div class="track-info">
-                        <div id="current-track-name">No track selected</div>
-                        <div class="time-info">
-                            <span id="current-time">0:00</span>
-                            <span id="duration">0:00</span>
+                    <div class="now-playing-section">
+                        <div class="visualization">
+                            <canvas id="visualizer"></canvas>
+                            <div id="current-track-display">
+                                <div id="current-track-name">No track selected</div>
+                                <div class="time-display">
+                                    <span id="current-time">00:00</span> / 
+                                    <span id="total-time">00:00</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="progress-container">
                             <div class="progress-bar">
@@ -42,45 +37,50 @@
                             </div>
                         </div>
                     </div>
-                    <div class="controls">
-                        <button id="prev-btn" class="control-btn">⏮</button>
-                        <button id="play-btn" class="control-btn">▶</button>
-                        <button id="next-btn" class="control-btn">⏭</button>
-                        <div class="volume-slider">
-                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 5v14l-7-7h-5v-4h5l7-7z'/%3E%3C/svg%3E" alt="Volume">
-                            <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+                    <div class="controls-section">
+                        <div class="transport-controls">
+                            <button id="prev-btn" class="control-btn">⏮</button>
+                            <button id="play-btn" class="control-btn">▶</button>
+                            <button id="stop-btn" class="control-btn">⏹</button>
+                            <button id="next-btn" class="control-btn">⏭</button>
+                        </div>
+                        <div class="volume-control">
+                            <span class="volume-icon">🔊</span>
+                            <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
                         </div>
                     </div>
                 </div>
             </div>
             <div class="status-bar">
-                <div class="status-section">Ready</div>
+                <div class="status-text">Ready</div>
             </div>
         </div>
 
         <!-- Playlist Window -->
         <div class="window" id="playlist-window">
-            <div class="title-bar">
+            <div class="title-bar" id="playlist-title-bar">
                 <div class="title-bar-text">Media Library</div>
                 <div class="title-bar-controls">
-                    <button aria-label="Minimize"></button>
-                    <button aria-label="Maximize"></button>
-                    <button aria-label="Close"></button>
+                    <button aria-label="Minimize">_</button>
+                    <button aria-label="Maximize">□</button>
+                    <button aria-label="Close">×</button>
                 </div>
             </div>
             <div class="window-body">
+                <div class="menu-bar">
+                    <div class="menu-item">File</div>
+                    <div class="menu-item">Edit</div>
+                    <div class="menu-item">View</div>
+                    <div class="menu-item">Help</div>
+                </div>
                 <div class="playlist-container">
-                    <div class="menu-bar">
-                        <div class="menu-item">File</div>
-                        <div class="menu-item">Edit</div>
-                        <div class="menu-item">View</div>
-                        <div class="menu-item">Help</div>
-                    </div>
-                    <div class="playlist" id="playlist"></div>
+                    <div id="playlist" class="playlist"></div>
                 </div>
             </div>
             <div class="status-bar">
-                <div class="status-section"><span id="track-count">0</span> items</div>
+                <div class="status-text">
+                    <span id="track-count">0</span> items
+                </div>
             </div>
         </div>
     </div>

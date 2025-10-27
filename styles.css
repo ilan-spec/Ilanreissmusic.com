@@ -1,42 +1,32 @@
-/* Windows 98/2000 Theme Variables */
 :root {
-    --win-bg: #c0c0c0;
-    --win-text: #000000;
-    --win-title-active: #000080;
-    --win-title-inactive: #808080;
-    --win-border: #dfdfdf;
-    --win-border-raised: #ffffff;
-    --win-border-sunken: #808080;
-    --win-button: #c0c0c0;
-    --win-button-highlight: #ffffff;
-    --win-button-shadow: #808080;
+    --win98-bg: #c0c0c0;
+    --win98-border: #dfdfdf;
+    --win98-border-dark: #808080;
+    --win98-titlebar: #000080;
 }
 
-/* Global Styles */
 body {
     margin: 0;
     padding: 0;
-    font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
     background: #008080;
+    font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
     overflow: hidden;
+    user-select: none;
 }
 
 .desktop {
     width: 100vw;
     height: 100vh;
     position: relative;
-    overflow: hidden;
 }
 
-/* Window Styles */
 .window {
     position: absolute;
-    background: var(--win-bg);
-    border: 3px solid var(--win-border);
-    box-shadow: inset 1px 1px var(--win-border-raised),
-                inset -1px -1px var(--win-border-sunken);
-    resize: both;
-    overflow: hidden;
+    background: var(--win98-bg);
+    border: 3px solid var(--win98-border);
+    box-shadow: inset 1px 1px white, 
+                inset -1px -1px gray, 
+                1px 1px black;
 }
 
 #player-window {
@@ -49,13 +39,12 @@ body {
 #playlist-window {
     width: 300px;
     height: 400px;
-    top: 100px;
-    left: 500px;
+    top: 70px;
+    left: 480px;
 }
 
-/* Title Bar */
 .title-bar {
-    background: var(--win-title-active);
+    background: var(--win98-titlebar);
     color: white;
     padding: 3px;
     display: flex;
@@ -72,79 +61,74 @@ body {
 .title-bar-controls button {
     width: 16px;
     height: 14px;
-    border: 1px solid var(--win-border);
-    background: var(--win-button);
-    position: relative;
+    border: 1px solid white;
+    background: var(--win98-bg);
+    font-size: 10px;
+    line-height: 1;
     cursor: pointer;
 }
 
-/* Window Body */
 .window-body {
     padding: 8px;
     height: calc(100% - 60px);
-}
-
-/* Player Container */
-.player-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
 }
 
 .visualization {
     background: #000;
     height: 120px;
     position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    margin-bottom: 8px;
+    border: 2px inset var(--win98-border);
 }
 
-#cover-art {
-    height: 100px;
-    width: 100px;
-    object-fit: cover;
+#visualizer {
+    width: 100%;
+    height: 100%;
 }
 
-.visualizer-bars {
+#current-track-display {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 30px;
-    display: flex;
-    justify-content: center;
-    gap: 2px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #00ff00;
     padding: 5px;
+    font-family: 'Courier New', monospace;
 }
 
-.bar {
-    width: 20px;
-    background: #00ff00;
+.progress-container {
+    height: 20px;
+    border: 2px inset var(--win98-border);
+    background: black;
+    margin-bottom: 8px;
+}
+
+#progress {
     height: 100%;
-    animation: visualizer 0.5s infinite alternate;
+    width: 0;
+    background: #00ff00;
+    transition: width 0.1s linear;
 }
 
-@keyframes visualizer {
-    0% { height: 10%; }
-    100% { height: 100%; }
-}
-
-/* Controls */
-.controls {
+.controls-section {
     display: flex;
-    gap: 5px;
+    justify-content: space-between;
     align-items: center;
-    padding: 5px;
-    border: 2px inset var(--win-border);
+    padding: 8px;
+    border: 2px inset var(--win98-border);
+}
+
+.transport-controls {
+    display: flex;
+    gap: 4px;
 }
 
 .control-btn {
-    width: 40px;
-    height: 40px;
-    border: 2px outset var(--win-border);
-    background: var(--win-button);
+    width: 32px;
+    height: 32px;
+    border: 2px outset var(--win98-border);
+    background: var(--win98-bg);
     cursor: pointer;
 }
 
@@ -152,61 +136,42 @@ body {
     border-style: inset;
 }
 
-.volume-slider {
+.volume-control {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-left: auto;
+    gap: 8px;
 }
 
-.volume-slider img {
-    width: 16px;
-    height: 16px;
-}
-
-/* Progress Bar */
-.progress-container {
-    width: 100%;
-    height: 20px;
-    border: 2px inset var(--win-border);
-    background: #000;
-}
-
-#progress {
-    height: 100%;
-    background: #00ff00;
-    width: 0;
-}
-
-/* Playlist */
-.playlist-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+.volume-control input {
+    width: 100px;
 }
 
 .menu-bar {
     display: flex;
-    gap: 10px;
-    padding: 2px;
-    border-bottom: 1px solid var(--win-border-sunken);
+    gap: 16px;
+    padding: 4px;
+    border-bottom: 1px solid var(--win98-border-dark);
 }
 
 .menu-item {
-    padding: 2px 8px;
     cursor: pointer;
+    padding: 2px 8px;
 }
 
 .menu-item:hover {
-    background: var(--win-title-active);
+    background: var(--win98-titlebar);
     color: white;
 }
 
-.playlist {
-    flex-grow: 1;
-    overflow-y: auto;
-    border: 2px inset var(--win-border);
+.playlist-container {
+    height: calc(100% - 30px);
+    border: 2px inset var(--win98-border);
     background: white;
+    overflow-y: auto;
+}
+
+.playlist {
+    height: 100%;
 }
 
 .track-item {
@@ -214,45 +179,52 @@ body {
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
 }
 
 .track-item:hover {
-    background: var(--win-title-active);
+    background: var(--win98-titlebar);
     color: white;
 }
 
 .track-item.active {
-    background: var(--win-title-active);
+    background: var(--win98-titlebar);
     color: white;
 }
 
-/* Status Bar */
+.track-icon {
+    width: 16px;
+    height: 16px;
+}
+
 .status-bar {
-    border-top: 1px solid var(--win-border-sunken);
-    padding: 2px 5px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    border-top: 1px solid var(--win98-border-dark);
+    padding: 2px 4px;
     font-size: 12px;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 16px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--win-bg);
-    border: 2px inset var(--win-border);
+    background: var(--win98-bg);
+    border: 2px inset var(--win98-border);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--win-button);
-    border: 2px outset var(--win-border);
+    background: var(--win98-bg);
+    border: 2px outset var(--win98-border);
 }
 
-/* Time Display */
-.time-info {
-    display: flex;
-    justify-content: space-between;
-    padding: 2px 5px;
-    font-family: 'Courier New', monospace;
+.time-display {
+    font-size: 12px;
+    text-align: right;
+    margin-top: 4px;
 }
