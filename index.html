@@ -1,89 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows Media Player Classic</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ilan Reiss Audio Player</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="desktop">
-        <!-- Media Player Window -->
-        <div class="window" id="player-window">
-            <div class="title-bar" id="player-title-bar">
-                <div class="title-bar-text">Windows Media Player</div>
-                <div class="title-bar-controls">
-                    <button aria-label="Minimize">_</button>
-                    <button aria-label="Maximize">□</button>
-                    <button aria-label="Close">×</button>
-                </div>
-            </div>
-            <div class="window-body">
-                <div class="player-container">
-                    <div class="now-playing-section">
-                        <div class="visualization">
-                            <canvas id="visualizer"></canvas>
-                            <div id="current-track-display">
-                                <div id="current-track-name">No track selected</div>
-                                <div class="time-display">
-                                    <span id="current-time">00:00</span> / 
-                                    <span id="total-time">00:00</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="progress-container">
-                            <div class="progress-bar">
-                                <div id="progress"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="controls-section">
-                        <div class="transport-controls">
-                            <button id="prev-btn" class="control-btn">⏮</button>
-                            <button id="play-btn" class="control-btn">▶</button>
-                            <button id="stop-btn" class="control-btn">⏹</button>
-                            <button id="next-btn" class="control-btn">⏭</button>
-                        </div>
-                        <div class="volume-control">
-                            <span class="volume-icon">🔊</span>
-                            <input type="range" id="volume" min="0" max="1" step="0.01" value="1">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="status-bar">
-                <div class="status-text">Ready</div>
-            </div>
-        </div>
+  <div class="app">
+    <aside class="sidebar">
+      <h1 class="logo">Audio Files</h1>
+      <ul id="trackList" class="track-list"></ul>
+    </aside>
 
-        <!-- Playlist Window -->
-        <div class="window" id="playlist-window">
-            <div class="title-bar" id="playlist-title-bar">
-                <div class="title-bar-text">Media Library</div>
-                <div class="title-bar-controls">
-                    <button aria-label="Minimize">_</button>
-                    <button aria-label="Maximize">□</button>
-                    <button aria-label="Close">×</button>
-                </div>
-            </div>
-            <div class="window-body">
-                <div class="menu-bar">
-                    <div class="menu-item">File</div>
-                    <div class="menu-item">Edit</div>
-                    <div class="menu-item">View</div>
-                    <div class="menu-item">Help</div>
-                </div>
-                <div class="playlist-container">
-                    <div id="playlist" class="playlist"></div>
-                </div>
-            </div>
-            <div class="status-bar">
-                <div class="status-text">
-                    <span id="track-count">0</span> items
-                </div>
-            </div>
-        </div>
-    </div>
-    <script src="script.js"></script>
+    <main class="player-area">
+      <div class="now-playing">
+        <div class="np-label">Now Playing:</div>
+        <div id="currentTrackName" class="np-title">—</div>
+      </div>
+
+      <div class="wave-box">
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div>
+      </div>
+
+      <audio id="audioElement"></audio>
+
+      <div class="controls">
+        <button id="prevBtn" class="btn control-btn">⏮</button>
+        <button id="playPauseBtn" class="btn main-btn">▶</button>
+        <button id="stopBtn" class="btn control-btn">⏹</button>
+        <button id="nextBtn" class="btn control-btn">⏭</button>
+      </div>
+
+      <div class="progress-wrapper">
+        <span id="currentTime" class="time-label">0:00</span>
+        <input id="seekBar" type="range" min="0" max="100" value="0" />
+        <span id="duration" class="time-label">0:00</span>
+      </div>
+
+      <div class="volume-wrapper">
+        <label for="volumeSlider">Vol</label>
+        <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
+      </div>
+    </main>
+  </div>
+  <footer class="footer">
+    <p>© DJ Ilan Reiss</p>
+  </footer>
+  <script src="script.js"></script>
 </body>
 </html>
