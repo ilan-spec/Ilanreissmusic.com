@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta
     name="viewport"
-    content="width=device-width,initial-scale=1.0"
+    content="width=device-width,initial-scale=1.0,user-scalable=no"
   />
   <title>ILAN RADIO</title>
 
@@ -18,10 +18,13 @@
 </head>
 
 <body>
-  <!-- Full-screen animated visualizer canvas -->
+  <!-- background image -->
+  <div class="bg-image"></div>
+
+  <!-- visualizer overlay (reacts to audio) -->
   <canvas id="vizCanvas"></canvas>
 
-  <!-- Floating Vista-style window with playlist -->
+  <!-- Floating playlist window -->
   <section class="player-window" id="playlistWindow">
     <header class="window-header">
       <div class="window-left">
@@ -33,10 +36,26 @@
       <span class="track-count" id="trackCount">0 tracks</span>
     </header>
 
-    <ul class="playlist" id="playlist"></ul>
+    <!-- Audio output selector -->
+    <div class="output-row">
+      <label for="outputSelect" class="output-label">
+        Audio Output
+      </label>
+      <select id="outputSelect" class="output-select">
+        <option value="">(default device)</option>
+      </select>
+      <button id="refreshOutputs" class="output-refresh">
+        ↻
+      </button>
+    </div>
+
+    <!-- scrollable list of tracks -->
+    <ul class="playlist" id="playlist">
+      <!-- JS builds the clickable rows -->
+    </ul>
   </section>
 
-  <!-- Bottom player bar / dock -->
+  <!-- Bottom player bar -->
   <footer class="player-bar" id="playerBar">
     <div class="bar-top">
       <div class="nowplaying">
@@ -53,23 +72,23 @@
       </div>
 
       <div class="controls">
-        <button id="prevBtn" class="ctrl-btn">⏮</button>
-        <button id="playPauseBtn" class="ctrl-btn main">▶</button>
-        <button id="nextBtn" class="ctrl-btn">⏭</button>
+        <button id="prevBtn" class="ctrl-btn" aria-label="Previous track">⏮</button>
+        <button id="playPauseBtn" class="ctrl-btn main" aria-label="Play/pause">▶</button>
+        <button id="nextBtn" class="ctrl-btn" aria-label="Next track">⏭</button>
       </div>
     </div>
 
     <div class="bar-bottom">
       <span class="time" id="currentTime">0:00</span>
-      <div class="progress-wrap" id="progressWrap">
+      <div class="progress-wrap" id="progressWrap" aria-label="Scrub bar">
         <div class="progress-bar" id="progressBar"></div>
       </div>
       <span class="time" id="durationTime">0:00</span>
     </div>
   </footer>
 
-  <!-- Hidden audio element -->
-  <audio id="audioEl"></audio>
+  <!-- hidden audio element -->
+  <audio id="audioEl" crossorigin="anonymous"></audio>
 
   <script src="script.js"></script>
 </body>
