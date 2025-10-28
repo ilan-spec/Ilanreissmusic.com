@@ -1,6 +1,4 @@
 :root {
-    --aero-blue: rgba(174, 209, 255, 0.4);
-    --aero-border: rgba(255, 255, 255, 0.5);
     --taskbar-height: 40px;
     --window-header-height: 30px;
 }
@@ -24,14 +22,6 @@ body {
     position: relative;
 }
 
-/* Windows 7 Aero Glass Effect */
-.aero-window {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--aero-border);
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
 /* Desktop Icons */
 .desktop-icons {
     padding: 20px;
@@ -45,6 +35,7 @@ body {
     text-align: center;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
 }
 
 .desktop-icon img {
@@ -64,23 +55,33 @@ body {
 /* Windows 7 Window */
 .window {
     position: absolute;
-    min-width: 800px;
-    min-height: 600px;
-    display: none;
+    width: 800px;
+    height: 600px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
     border-radius: 6px;
-    overflow: hidden;
+    display: none;
+    top: 50px;
+    left: 50px;
+}
+
+.window.active {
+    display: block;
 }
 
 .window-header {
     height: var(--window-header-height);
-    background: linear-gradient(to bottom, #fdfeff 0%, #f5faff 100%);
+    background: linear-gradient(to bottom, #2584e4 0%, #0f5aa4 100%);
     display: flex;
     align-items: center;
     padding: 0 10px;
     cursor: move;
+    border-radius: 6px 6px 0 0;
 }
 
-.window-header .window-icon {
+.window-icon {
     width: 16px;
     height: 16px;
     margin-right: 5px;
@@ -88,8 +89,9 @@ body {
 
 .window-title {
     flex-grow: 1;
+    color: white;
     font-size: 12px;
-    color: #333;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
 }
 
 .window-controls button {
@@ -97,48 +99,28 @@ body {
     height: 25px;
     border: none;
     background: transparent;
+    color: white;
     font-size: 14px;
     cursor: pointer;
 }
 
 .window-controls button:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .window-controls .close:hover {
     background: #e81123;
-    color: white;
 }
 
-/* Window Menu */
-.window-menu {
-    height: 25px;
-    background: linear-gradient(to bottom, #f5faff 0%, #ebf3fc 100%);
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    border-bottom: 1px solid #ddd;
-}
-
-.menu-item {
-    padding: 0 10px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.menu-item:hover {
-    background: var(--aero-blue);
-}
-
-/* Sidebar */
+/* Window Content */
 .window-content {
     display: flex;
-    height: calc(100% - 85px);
+    height: calc(100% - var(--window-header-height));
 }
 
 .sidebar {
     width: 200px;
-    background: #f0f0f0;
+    background: rgba(240, 240, 240, 0.9);
     padding: 10px;
 }
 
@@ -157,7 +139,7 @@ body {
 }
 
 .sidebar-item.active {
-    background: var(--aero-blue);
+    background: rgba(174, 209, 255, 0.5);
 }
 
 /* Main Content */
@@ -165,51 +147,20 @@ body {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
+    padding: 10px;
     background: white;
 }
 
-.address-bar {
-    height: 35px;
-    background: linear-gradient(to bottom, #fdfeff 0%, #f5faff 100%);
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    border-bottom: 1px solid #ddd;
-}
-
-.nav-button {
-    width: 30px;
-    height: 25px;
-    border: 1px solid #ddd;
-    background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
-    margin-right: 5px;
-    cursor: pointer;
-}
-
-.path-bar {
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    background: white;
-    border: 1px solid #ddd;
-    padding: 5px;
-}
-
-.path-bar img {
-    width: 16px;
-    height: 16px;
-    margin-right: 5px;
-}
-
-/* Search Box */
 .search-container {
     padding: 10px;
     background: #f0f0f0;
+    border-radius: 4px;
+    margin-bottom: 10px;
 }
 
 #search-input {
     width: 100%;
-    padding: 5px;
+    padding: 8px;
     border: 1px solid #ddd;
     border-radius: 3px;
 }
@@ -218,12 +169,14 @@ body {
 .track-list {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 .track-item {
     padding: 8px;
-    margin: 2px 0;
+    margin: 2px 10px;
     display: flex;
     align-items: center;
     border-radius: 3px;
@@ -231,12 +184,11 @@ body {
 }
 
 .track-item:hover {
-    background: var(--aero-blue);
+    background: rgba(174, 209, 255, 0.3);
 }
 
 .track-item.playing {
-    background: var(--aero-blue);
-    border: 1px solid #99c1f1;
+    background: rgba(174, 209, 255, 0.5);
 }
 
 .track-item img {
@@ -249,11 +201,13 @@ body {
 .player-container {
     padding: 10px;
     background: #f0f0f0;
-    border-top: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
 }
 
 audio {
     width: 100%;
+    margin-bottom: 10px;
 }
 
 .now-playing {
@@ -270,10 +224,6 @@ audio {
     display: none;
 }
 
-.playing .playing-icon {
-    display: block;
-}
-
 /* Taskbar */
 .taskbar {
     position: fixed;
@@ -281,7 +231,7 @@ audio {
     left: 0;
     right: 0;
     height: var(--taskbar-height);
-    background: rgba(0, 0, 0, 0.75);
+    background: linear-gradient(to bottom, rgba(31, 47, 61, 0.9) 0%, rgba(19, 28, 37, 0.9) 100%);
     backdrop-filter: blur(10px);
     display: flex;
     align-items: center;
@@ -322,7 +272,6 @@ audio {
     display: flex;
     align-items: center;
     padding: 0 10px;
-    color: white;
 }
 
 .tray img {
@@ -333,23 +282,8 @@ audio {
 
 #clock {
     padding: 0 10px;
-    font-size: 12px;
     color: white;
-}
-
-/* Status Bar */
-.status-bar {
-    height: 25px;
-    background: #f0f0f0;
-    border-top: 1px solid #ddd;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
     font-size: 12px;
-}
-
-.status-item {
-    margin-right: 15px;
 }
 
 /* Scrollbar */
@@ -362,10 +296,10 @@ audio {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
+    background: rgba(31, 47, 61, 0.5);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: rgba(31, 47, 61, 0.7);
 }
