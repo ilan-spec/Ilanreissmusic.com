@@ -1,6 +1,7 @@
 class AudioPlayer {
     constructor() {
-        this.audioFiles = [
+        // Your tracks list
+        this.tracks = [
             '2 part shit.mp3', '42 cent.mp3', '67.mp3', '808 beat sample.mp3',
             'a break.mp3', 'all me.mp3', 'another one.mp3', 'asher organ.mp3',
             'ass with potench.mp3', 'bad one.mp3', 'been a minu.mp3', 'beeps.mp3',
@@ -45,92 +46,141 @@ class AudioPlayer {
         this.currentTrackIndex = 0;
         this.isPlaying = false;
         this.audio = new Audio();
-        this.filteredTracks = [...this.audioFiles];
         
-        this.initializeAudioContext();
         this.initializePlayer();
         this.setupEventListeners();
-        this.initializePlaylist();
-        this.setupWindowDragging();
-        this.setupSearch();
     }
 
-    initializeAudioContext() {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        this.analyser = this.audioContext.createAnalyser();
-        this.analyser.fftSize = 256;
-        this.bufferLength = this.analyser.frequencyBinCount;
-        this.dataArray = new Uint8Array(this.bufferLength);
+    initializePlayer() {
+        this.renderPlaylist();
+        this.setupAudioListeners();
+    }
+
+    renderPlaylist() {
+        const playlist = document.getElementById('playlist');
+        playlist.innerHTML = '';
+
+        this.tracks.forEach((track, index) => {
+            const trackElement = document.createElement('div');
+            trackElement.className = 'track-item';
+            trackElement.textContent = track.replace('.mp3', '');
+            trackElement.addEventListener('click', () => this.playTrack(index));
+            playlist.appendChild(trackElement);
+        });
+    }
+
+    setupEventListeners() {
+        // Control buttons
+        document.getElementById('play-btn').addEventListener('click', () => this.togglePlay());
+        document.getElementById('prev-btn').addEventListener('click', () => this.playPrevious());
+        document.getElementById('next-btn').addEventListener('click', () => this.playNext());
         
-        this.source = this.audioContext.createMediaElementSource(this.audio);
-        this.source.connect(this.analyser);
-        this.analyser.connect(this.audioContext.destination);
+        // Volume control
+        document.getElementById('volume').addEventListener('input', (e) => {
+            this.audio.volume = e.target.value;
+        });
+
+        // Search functionality
+        document.getElementById('search').addEventListener('input', (e) => {
+            this.filterTracks(e.target.value);
+        });
+
+        // Progress bar
+        document.querySelector('.progress-bar').addEventListener('click', (e) => {
+            const progressBar = e.currentTarget;
+            const clickPosition = (e.pageX - progressBar.offsetLeft) / progressBar.offsetWidth;
+            this.audio.currentTime = clickPosition * this.audio.duration;
+        });
     }
 
-    setupSearch() {
-        const searchInput = document.getElementById('search-input');
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            this.filteredTracks = this.audioFiles.filter(track => 
-                track.toLowerCase().includes(searchTerm)
-            );
-            this.initializePlaylist();
+    setupAudioListeners() {
+        this.audio.addEventListener('timeupdate', () => {
+            this.updateProgress();
+            this.updateCurrentTime();
+        });
+
+        this.audio.addEventListener('ended', () => {
+            this.playNext();
+        });
+
+        this.audio.addEventListener('loadedmetadata', () => {
+            document.getElementById('duration').textContent = this.formatTime(this.audio.duration);
         });
     }
 
     playTrack(index) {
-        if (index < 0 || index >= this.filteredTracks.length) return;
-        
-        this.currentTrackIndex = index;
-        const fileName = this.filteredTracks[index];
-        const fileUrl = `audio/${encodeURIComponent(fileName)}`;
-        
-        this.updateStatus(`Loading: ${fileName}`);
-        
-        this.audio.src = fileUrl;
-        this.audio.load();
-        this.audio.play()
-            .then(() => {
-                this.isPlaying = true;
-                this.updatePlayButton();
-                this.updateActiveTrack();
-                this.updateTrackInfo();
-                this.updateStatus('Now Playing');
-                
-                if (this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
-                }
-                this.startVisualizer();
-            })
-            .catch(error => {
-                console.error('Error playing track:', error);
-                this.updateStatus('Error: Cannot play file');
-            });
+        if (index >= 0 && index < this.tracks.length) {
+            this.currentTrackIndex = index;
+            const track = this.tracks[index];
+            this.audio.src = `audio/${encodeURIComponent(track)}`;
+            this.audio.play();
+            this.isPlaying = true;
+            this.updatePlayButton();
+            this.updateNowPlaying();
+            this.highlightCurrentTrack();
+        }
     }
 
-    // ... [Previous methods remain the same] ...
+    togglePlay() {
+        if (this.audio.src) {
+            if (this.isPlaying) {
+                this.audio.pause();
+            } else {
+                this.audio.play();
+            }
+            this.isPlaying = !this.isPlaying;
+            this.updatePlayButton();
+        } else {
+            this.playTrack(0);
+        }
+    }
 
-    initializePlaylist() {
+    playNext() {
+        this.playTrack((this.currentTrackIndex + 1) % this.tracks.length);
+    }
+
+    playPrevious() {
+        this.playTrack((this.currentTrackIndex - 1 + this.tracks.length) % this.tracks.length);
+    }
+
+    updateProgress() {
+        const progress = document.getElementById('progress');
+        const percentage = (this.audio.currentTime / this.audio.duration) * 100;
+        progress.style.width = `${percentage}%`;
+    }
+
+    updateCurrentTime() {
+        document.getElementById('current-time').textContent = this.formatTime(this.audio.currentTime);
+    }
+
+    formatTime(seconds) {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    updatePlayButton() {
+        const playBtn = document.getElementById('play-btn');
+        playBtn.textContent = this.isPlaying ? 'Pause' : 'Play';
+    }
+
+    updateNowPlaying() {
+        const currentTrack = document.getElementById('current-track');
+        currentTrack.textContent = this.tracks[this.currentTrackIndex].replace('.mp3', '');
+    }
+
+    highlightCurrentTrack() {
+        document.querySelectorAll('.track-item').forEach((item, index) => {
+            item.classList.toggle('active', index === this.currentTrackIndex);
+        });
+    }
+
+    filterTracks(searchTerm) {
         const playlist = document.getElementById('playlist');
         playlist.innerHTML = '';
-        
-        this.filteredTracks.forEach((file, index) => {
-            const trackItem = document.createElement('div');
-            trackItem.className = 'track-item';
-            trackItem.innerHTML = `
-                <img class="track-icon" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23000' d='M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM8 0a8 8 0 110 16A8 8 0 018 0zm3.5 11.5l-6-4v8l6-4z'/%3E%3C/svg%3E">
-                <span>${file.replace('.mp3', '')}</span>
-            `;
-            
-            trackItem.addEventListener('click', () => this.playTrack(index));
-            playlist.appendChild(trackItem);
-        });
 
-        document.getElementById('track-count').textContent = this.filteredTracks.length;
-    }
-}
-
-// Initialize the player when the document is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    const player = new AudioPlayer();
-});
+        this.tracks.forEach((track, index) => {
+            if (track.toLowerCase().includes(searchTerm.toLowerCase())) {
+                const trackElement = document.createElement('div');
+                trackElement.className = 'track-item';
+                if (index === this.current

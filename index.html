@@ -7,76 +7,36 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="desktop">
-        <!-- Media Player Window -->
-        <div class="window" id="player-window">
-            <div class="title-bar" id="player-title-bar">
-                <div class="title-bar-text">Audio Player</div>
-                <div class="title-bar-controls">
-                    <button aria-label="Minimize">_</button>
-                    <button aria-label="Maximize">□</button>
-                    <button aria-label="Close">×</button>
+    <div class="container">
+        <div class="player-section">
+            <div class="now-playing">
+                <h2>Now Playing</h2>
+                <div id="current-track">No track selected</div>
+                <div class="time-display">
+                    <span id="current-time">0:00</span> / 
+                    <span id="duration">0:00</span>
                 </div>
             </div>
-            <div class="window-body">
-                <div class="player-container">
-                    <div class="visualization">
-                        <canvas id="visualizer"></canvas>
-                        <div id="current-track-display">
-                            <div id="current-track-name">Select a track to play</div>
-                            <div class="time-display">
-                                <span id="current-time">00:00</span> / 
-                                <span id="total-time">00:00</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div id="progress"></div>
-                        </div>
-                    </div>
-                    <div class="controls-section">
-                        <div class="transport-controls">
-                            <button id="prev-btn" class="control-btn" title="Previous Track">⏮</button>
-                            <button id="play-btn" class="control-btn" title="Play/Pause">▶</button>
-                            <button id="stop-btn" class="control-btn" title="Stop">⏹</button>
-                            <button id="next-btn" class="control-btn" title="Next Track">⏭</button>
-                        </div>
-                        <div class="volume-control">
-                            <span class="volume-icon">🔊</span>
-                            <input type="range" id="volume" min="0" max="1" step="0.01" value="1" title="Volume">
-                        </div>
-                    </div>
-                </div>
+            
+            <div class="progress-bar">
+                <div id="progress"></div>
             </div>
-            <div class="status-bar">
-                <div class="status-text">Ready to play</div>
+            
+            <div class="controls">
+                <button id="prev-btn">Previous</button>
+                <button id="play-btn">Play</button>
+                <button id="next-btn">Next</button>
+                <div class="volume-control">
+                    <label for="volume">Volume:</label>
+                    <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+                </div>
             </div>
         </div>
 
-        <!-- Playlist Window -->
-        <div class="window" id="playlist-window">
-            <div class="title-bar" id="playlist-title-bar">
-                <div class="title-bar-text">Track List</div>
-                <div class="title-bar-controls">
-                    <button aria-label="Minimize">_</button>
-                    <button aria-label="Maximize">□</button>
-                    <button aria-label="Close">×</button>
-                </div>
-            </div>
-            <div class="window-body">
-                <div class="search-container">
-                    <input type="text" id="search-input" placeholder="Search tracks...">
-                </div>
-                <div class="playlist-container">
-                    <div id="playlist" class="playlist"></div>
-                </div>
-            </div>
-            <div class="status-bar">
-                <div class="status-text">
-                    <span id="track-count">0</span> tracks available
-                </div>
-            </div>
+        <div class="playlist-section">
+            <h2>Track List</h2>
+            <input type="text" id="search" placeholder="Search tracks...">
+            <div id="playlist" class="playlist"></div>
         </div>
     </div>
     <script src="script.js"></script>
