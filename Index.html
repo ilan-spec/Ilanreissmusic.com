@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Music Player</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="desktop">
+        <!-- Desktop Icons -->
+        <div class="desktop-icons">
+            <div class="desktop-icon" id="music-player-icon">
+                <i class="fas fa-music"></i>
+                <span>Music Player</span>
+            </div>
+            <div class="desktop-icon" id="file-explorer-icon">
+                <i class="fas fa-folder"></i>
+                <span>File Explorer</span>
+            </div>
+        </div>
+
+        <!-- Taskbar -->
+        <div class="taskbar">
+            <div class="start-button">
+                <i class="fas fa-windows"></i>
+            </div>
+            <div class="task-items"></div>
+            <div class="system-tray">
+                <span id="clock"></span>
+            </div>
+        </div>
+
+        <!-- Windows -->
+        <div class="window" id="music-player-window">
+            <div class="window-header">
+                <span class="window-title"><i class="fas fa-music"></i> Music Player</span>
+                <div class="window-controls">
+                    <button class="minimize">─</button>
+                    <button class="maximize">□</button>
+                    <button class="close">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="player-container">
+                    <div class="controls">
+                        <audio id="audio-player" controls>
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                    <div class="now-playing">
+                        <span>Now Playing: </span>
+                        <span id="current-track">No track selected</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="window" id="file-explorer-window">
+            <div class="window-header">
+                <span class="window-title"><i class="fas fa-folder"></i> File Explorer</span>
+                <div class="window-controls">
+                    <button class="minimize">─</button>
+                    <button class="maximize">□</button>
+                    <button class="close">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="file-browser">
+                    <div class="address-bar">
+                        <i class="fas fa-chevron-left"></i>
+                        <i class="fas fa-chevron-right"></i>
+                        <input type="text" value="C:\Music\" readonly>
+                    </div>
+                    <input type="text" id="search-input" placeholder="Search tracks..." class="search-box">
+                    <div class="track-list" id="track-list">
+                        <!-- Tracks will be populated here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
