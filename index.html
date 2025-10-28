@@ -1,90 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Ilan Reiss Audio Player</title>
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Player - ilan-spec</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="desktop-bg">
-    <div class="window-shell">
-      <div class="window-topbar">
-        <div class="topbar-left">
-          <div class="window-icon"></div>
-          <span class="topbar-title">DJ_ILAN_PLAYER.exe</span>
-        </div>
-        <div class="topbar-buttons">
-          <div class="btn-min"></div>
-          <div class="btn-max"></div>
-          <div class="btn-close"></div>
-        </div>
-      </div>
-
-      <div class="app">
-        <!-- SIDEBAR / FILE EXPLORER -->
-        <aside class="sidebar">
-          <div class="sidebar-header">
-            <div class="sidebar-title">My Audio Folder</div>
-            <div class="sidebar-path">C:\Users\Ilan\audio\</div>
-          </div>
-
-          <ul id="trackList" class="track-list"></ul>
-        </aside>
-
-        <!-- MAIN PLAYER -->
-        <main class="player-area">
-          <div class="now-playing-card">
-            <div class="np-label">Now Playing:</div>
-            <div id="currentTrackName" class="np-title">—</div>
-          </div>
-
-          <!-- fake waveform bars like old visualizer -->
-          <div class="viz-frame">
-            <div class="viz-scanline"></div>
-            <div class="viz-bars">
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
-              <div class="viz-bar"></div>
+    <div class="desktop">
+        <!-- Media Player Window -->
+        <div class="window" id="player-window">
+            <div class="title-bar" id="player-title-bar">
+                <div class="title-bar-text">Audio Player</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize">_</button>
+                    <button aria-label="Maximize">□</button>
+                    <button aria-label="Close">×</button>
+                </div>
             </div>
-          </div>
+            <div class="window-body">
+                <div class="player-container">
+                    <div class="visualization">
+                        <canvas id="visualizer"></canvas>
+                        <div id="current-track-display">
+                            <div id="current-track-name">Select a track to play</div>
+                            <div class="time-display">
+                                <span id="current-time">00:00</span> / 
+                                <span id="total-time">00:00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div id="progress"></div>
+                        </div>
+                    </div>
+                    <div class="controls-section">
+                        <div class="transport-controls">
+                            <button id="prev-btn" class="control-btn" title="Previous Track">⏮</button>
+                            <button id="play-btn" class="control-btn" title="Play/Pause">▶</button>
+                            <button id="stop-btn" class="control-btn" title="Stop">⏹</button>
+                            <button id="next-btn" class="control-btn" title="Next Track">⏭</button>
+                        </div>
+                        <div class="volume-control">
+                            <span class="volume-icon">🔊</span>
+                            <input type="range" id="volume" min="0" max="1" step="0.01" value="1" title="Volume">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="status-bar">
+                <div class="status-text">Ready to play</div>
+            </div>
+        </div>
 
-          <audio id="audioElement" preload="metadata"></audio>
-
-          <div class="controls">
-            <button id="prevBtn" class="ctrl-btn small">⏮</button>
-            <button id="playPauseBtn" class="ctrl-btn play-btn">▶ Play</button>
-            <button id="stopBtn" class="ctrl-btn small">⏹ Stop</button>
-            <button id="nextBtn" class="ctrl-btn small">⏭</button>
-          </div>
-
-          <div class="progress-wrapper">
-            <span id="currentTime" class="time-label">0:00</span>
-            <input id="seekBar" type="range" min="0" max="100" value="0" />
-            <span id="duration" class="time-label">0:00</span>
-          </div>
-
-          <div class="volume-wrapper">
-            <label for="volumeSlider">VOL</label>
-            <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="1" />
-          </div>
-        </main>
-      </div>
-
-      <div class="bottom-statusbar">
-        <div class="status-left">READY</div>
-        <div class="status-right">© DJ Ilan Reiss</div>
-      </div>
+        <!-- Playlist Window -->
+        <div class="window" id="playlist-window">
+            <div class="title-bar" id="playlist-title-bar">
+                <div class="title-bar-text">Track List</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize">_</button>
+                    <button aria-label="Maximize">□</button>
+                    <button aria-label="Close">×</button>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search tracks...">
+                </div>
+                <div class="playlist-container">
+                    <div id="playlist" class="playlist"></div>
+                </div>
+            </div>
+            <div class="status-bar">
+                <div class="status-text">
+                    <span id="track-count">0</span> tracks available
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
