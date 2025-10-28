@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Windows Music Player</title>
+    <title>Windows 7 Music Player</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -11,73 +11,99 @@
     <div class="desktop">
         <!-- Desktop Icons -->
         <div class="desktop-icons">
+            <div class="desktop-icon" ondblclick="document.getElementById('computer-window').style.display='block'">
+                <img src="https://win7simu.vilejujo.com/img/computer.png" alt="Computer">
+                <span>Computer</span>
+            </div>
             <div class="desktop-icon" id="music-player-icon">
-                <i class="fas fa-music"></i>
+                <img src="https://win7simu.vilejujo.com/img/folder.png" alt="Music">
                 <span>Music Player</span>
             </div>
-            <div class="desktop-icon" id="file-explorer-icon">
-                <i class="fas fa-folder"></i>
-                <span>File Explorer</span>
+            <div class="desktop-icon" id="recycle-bin">
+                <img src="https://win7simu.vilejujo.com/img/recycle-empty.png" alt="Recycle Bin">
+                <span>Recycle Bin</span>
+            </div>
+        </div>
+
+        <!-- Windows -->
+        <div class="window aero-window" id="music-player-window">
+            <div class="window-header">
+                <img src="https://win7simu.vilejujo.com/img/folder.png" alt="Music" class="window-icon">
+                <span class="window-title">Music Player</span>
+                <div class="window-controls">
+                    <button class="minimize">─</button>
+                    <button class="maximize">□</button>
+                    <button class="close">×</button>
+                </div>
+            </div>
+            <div class="window-menu">
+                <div class="menu-item">File</div>
+                <div class="menu-item">Edit</div>
+                <div class="menu-item">View</div>
+                <div class="menu-item">Tools</div>
+                <div class="menu-item">Help</div>
+            </div>
+            <div class="window-content">
+                <div class="sidebar">
+                    <div class="sidebar-item active">
+                        <img src="https://win7simu.vilejujo.com/img/music.png" alt="Music">
+                        Music
+                    </div>
+                    <div class="sidebar-item">
+                        <img src="https://win7simu.vilejujo.com/img/playlist.png" alt="Playlists">
+                        Playlists
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div class="address-bar">
+                        <button class="nav-button back"><i class="fas fa-arrow-left"></i></button>
+                        <button class="nav-button forward"><i class="fas fa-arrow-right"></i></button>
+                        <div class="path-bar">
+                            <img src="https://win7simu.vilejujo.com/img/folder.png" alt="Music">
+                            Music > Audio Files
+                        </div>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Search Audio Files">
+                    </div>
+                    <div class="player-container">
+                        <div class="controls">
+                            <audio id="audio-player" controls>
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                        <div class="now-playing">
+                            <img src="https://win7simu.vilejujo.com/img/playing.gif" alt="Now Playing" class="playing-icon">
+                            <span id="current-track">No track selected</span>
+                        </div>
+                    </div>
+                    <div class="track-list" id="track-list">
+                        <!-- Tracks will be populated here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            <div class="status-bar">
+                <div class="status-item">120 items</div>
+                <div class="status-item">Available space: 50.5 GB</div>
             </div>
         </div>
 
         <!-- Taskbar -->
         <div class="taskbar">
-            <div class="start-button">
-                <i class="fas fa-windows"></i>
+            <button class="start-button">
+                <img src="https://win7simu.vilejujo.com/img/start.png" alt="Start">
+            </button>
+            <div class="quick-launch">
+                <img src="https://win7simu.vilejujo.com/img/explorer.png" alt="Explorer">
+                <img src="https://win7simu.vilejujo.com/img/ie.png" alt="Internet Explorer">
             </div>
-            <div class="task-items"></div>
-            <div class="system-tray">
-                <span id="clock"></span>
+            <div class="running-apps">
+                <!-- Active windows will appear here -->
             </div>
-        </div>
-
-        <!-- Windows -->
-        <div class="window" id="music-player-window">
-            <div class="window-header">
-                <span class="window-title"><i class="fas fa-music"></i> Music Player</span>
-                <div class="window-controls">
-                    <button class="minimize">─</button>
-                    <button class="maximize">□</button>
-                    <button class="close">×</button>
-                </div>
-            </div>
-            <div class="window-content">
-                <div class="player-container">
-                    <div class="controls">
-                        <audio id="audio-player" controls>
-                            Your browser does not support the audio element.
-                        </audio>
-                    </div>
-                    <div class="now-playing">
-                        <span>Now Playing: </span>
-                        <span id="current-track">No track selected</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="window" id="file-explorer-window">
-            <div class="window-header">
-                <span class="window-title"><i class="fas fa-folder"></i> File Explorer</span>
-                <div class="window-controls">
-                    <button class="minimize">─</button>
-                    <button class="maximize">□</button>
-                    <button class="close">×</button>
-                </div>
-            </div>
-            <div class="window-content">
-                <div class="file-browser">
-                    <div class="address-bar">
-                        <i class="fas fa-chevron-left"></i>
-                        <i class="fas fa-chevron-right"></i>
-                        <input type="text" value="C:\Music\" readonly>
-                    </div>
-                    <input type="text" id="search-input" placeholder="Search tracks..." class="search-box">
-                    <div class="track-list" id="track-list">
-                        <!-- Tracks will be populated here by JavaScript -->
-                    </div>
-                </div>
+            <div class="tray">
+                <img src="https://win7simu.vilejujo.com/img/audio.png" alt="Audio">
+                <img src="https://win7simu.vilejujo.com/img/network.png" alt="Network">
+                <div id="clock"></div>
             </div>
         </div>
     </div>
