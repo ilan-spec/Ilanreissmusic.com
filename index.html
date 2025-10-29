@@ -530,9 +530,7 @@
         </div>
     </div>
 
-    <!-- Minimized Player Icon --><!-- MOVED TO color-picker-container -->
-
-<script>
+    <!-- Minimized Player Icon --><!-- MOVED TO color-picker-container --><script>
     document.addEventListener('DOMContentLoaded', () => {
 
         // --- Configuration & Elements ---
@@ -691,76 +689,61 @@
         // const maxParticles = 200; ... REMOVED
         // class Particle { ... } ... REMOVED
 
-        function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) { // Renamed to "Data Gem" but is the new Sphere
+        function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) {
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-
-            // Base radius
-            const baseRadius = Math.min(canvas.width, canvas.height) / 4;
-            // Pulsing effect from bass
-            const pulseRadius = (bassAvg / 255) * (baseRadius * 0.3);
-            const currentRadius = baseRadius + pulseRadius;
-
-            // --- Draw the 3D Sphere ---
-            // Create a radial gradient for the 3D effect
-            // Highlight is off-center to give a "light source"
-            const gradient = ctx.createRadialGradient(
-                centerX - currentRadius * 0.25, // highlight X
-                centerY - currentRadius * 0.25, // highlight Y
-                currentRadius * 0.1,  // highlight radius
-                centerX, // center X
-                centerY, // center Y
-                currentRadius // outer radius
-            );
             
-            const hslColor = hslToHex(visualizerColor); // Get HSL
-            const lightColor = `hsla(${hslColor.h}, 100%, 85%, 0.7)`; // Lighter highlight
-            const midColor = `hsla(${hslColor.h}, 100%, 65%, 0.5)`;
-            const darkColor = `hsla(${hslColor.h}, 100%, 40%, 0.3)`;
+            // Base size of the overall shape
+            const baseSize = Math.min(canvas.width, canvas.height) * 0.2;
+            
+            // Calculate deformation based on music
+            const deformAmount = (bassAvg / 255) * baseSize * 0.15; // Bass influences overall expansion
+            const twistAmount = (highsAvg / 255) * 0.05; // Highs influence the twist/rotation
+            const midShapeDeform = (midsAvg / 255) * baseSize * 0.1; // Mids influence inner shape deformation
 
-            gradient.addColorStop(0, lightColor);
-            gradient.addColorStop(0.7, midColor);
-            gradient.addColorStop(1, darkColor);
+            const hslColor = hslToHex(visualizerColor);
 
-            ctx.fillStyle = gradient;
-            ctx.shadowColor = visualizerColor;
-            ctx.shadowBlur = 30;
+            // Draw multiple layers to create depth and the "braided" effect
+            for (let layer = 0; layer < 5; layer++) {
+                const layerOffset = layer * 15; // Spacing between layers
+                const currentRadius = baseSize + deformAmount + layerOffset;
+                const rotation = (Date.now() * 0.0001 + layer * 0.2 + twistAmount) % (Math.PI * 2);
 
-            // --- Deform the sphere ---
-            const numPoints = 128; // More points for a smoother circle
-            ctx.beginPath();
-            for (let i = 0; i <= numPoints; i++) { // Use <= to close the loop
-                const angle = (i / numPoints) * Math.PI * 2;
+                // Create a color for the current layer
+                const layerHue = (hslColor.h + layer * 20) % 360; // Shift hue slightly per layer
+                const layerSaturation = Math.min(100, hslColor.s + layer * 10);
+                const layerLightness = Math.max(20, hslColor.l - layer * 5); // Darken layers further back
+                const layerColor = `hsl(${layerHue}, ${layerSaturation}%, ${layerLightness}%)`;
                 
-                // Map a frequency bin to this point on the circle
-                // Use a wider range of frequencies for more "crazy" deformation
-                const freqIndex = Math.floor( (i / numPoints) * (bufferLength * 0.5) ); // Use bottom half of frequencies
-                const freqValue = frequencyData[freqIndex] || 0;
-                
-                // Deform based on frequency and mids
-                const deform = (freqValue / 255) * (baseRadius * 0.4) + (midsAvg / 255) * (baseRadius * 0.2);
-                const radius = currentRadius + deform;
-                
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
+                ctx.fillStyle = layerColor;
+                ctx.shadowColor = layerColor;
+                ctx.shadowBlur = 15 - layer * 3; // Less blur for further layers
+                ctx.globalAlpha = 1.0 - (layer * 0.15); // Fade layers further back
+
+                ctx.beginPath();
+                const numPoints = 100;
+
+                for (let i = 0; i <= numPoints; i++) {
+                    const angle = (i / numPoints) * Math.PI * 2;
+                    
+                    // Simple sinusoidal deformation to get the organic, intertwined look
+                    const waveAmplitude = (Math.sin(angle * 3 + rotation * 2) * 0.5 + 0.5) * (currentRadius * 0.3) + midShapeDeform;
+                    const radius = currentRadius + waveAmplitude;
+                    
+                    const x = centerX + Math.cos(angle + rotation) * radius;
+                    const y = centerY + Math.sin(angle + rotation) * radius;
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
+                ctx.closePath();
+                ctx.fill();
             }
-            ctx.closePath();
             
-            ctx.fill(); // Fill the deformed sphere
-            
-            // Add an outer stroke for definition
-            ctx.strokeStyle = visualizerColor;
-            ctx.lineWidth = 1;
-            ctx.globalAlpha = 0.5;
-            ctx.stroke(); // Stroke the deformed shape
-            
-            // Reset
+            // Reset global alpha and shadow
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
         }
@@ -811,8 +794,8 @@
             draw(ctx) {
                 if (this.points.length < 2) return;
 
-                ctx.globalAlpha = this.life * 0.8;
-                ctx.lineWidth = 1 + (this.age / 500); // Thicken slightly over time
+                ctx.globalAlpha = this.life; /* Increased from 0.8 for brightness */
+                ctx.lineWidth = 2 + (this.age / 400); /* Made thicker */
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
 
@@ -820,8 +803,8 @@
                 gradient.addColorStop(0, this.color1);
                 gradient.addColorStop(1, this.color2);
                 ctx.strokeStyle = gradient;
-                ctx.shadowColor = this.color1; // Glow effect
-                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color1; /* Glow effect */
+                ctx.shadowBlur = 15; /* Increased glow */
 
                 ctx.beginPath();
                 ctx.moveTo(this.points[0].x, this.points[0].y);
@@ -1288,8 +1271,4 @@
 </script>
 </body>
 </html>
-
-
-
-
 
