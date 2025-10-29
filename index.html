@@ -5,9 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Ilan Reiss Music Player</title>
     
+    <!-- iOS & PWA Goodies -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ilan Reiss Music">
-    <link rel="apple-touch-icon" href="cover.png"> <!-- Reference your image directly here --><meta name="theme-color" content="#008080"> <!-- Matches initial background --><!-- Font Awesome for icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Make sure cover.png is in the root of your repo -->
+    <link rel="apple-touch-icon" href="cover.png"> 
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#008080"> 
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -51,11 +59,11 @@
         
         .player-container {
             width: 90%;
-            max-width: 800px; /* Increased from 600px */
-            height: 85vh; /* Increased from 70vh */
-            max-height: 750px; /* Increased from 550px */
-            min-width: 450px; /* Added specific min-width for player */
-            min-height: 550px; /* Added specific min-height for player */
+            max-width: 800px; 
+            height: 85vh; 
+            max-height: 750px; 
+            min-width: 450px; /* Specific min-width for player */
+            min-height: 550px; /* Specific min-height for player */
         }
  
         .title-bar {
@@ -128,9 +136,16 @@
             flex-grow: 1;
             overflow: hidden;
         }
+        
+        .search-sort-container {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+            align-items: center;
+        }
 
         #search-bar {
-            width: 100%;
+            flex-grow: 1; /* Search bar takes available space */
             padding: 8px 10px;
             border: 2px inset #808080;
             border-top-color: #404040;
@@ -142,7 +157,13 @@
             font-size: 1rem;
             font-weight: 500;
             outline: none;
-            flex-shrink: 0;
+        }
+        
+        .sort-button {
+             width: 40px;
+             height: 34px; /* Match search bar height */
+             padding: 0;
+             font-weight: 700;
         }
 
         #search-bar::placeholder {
@@ -428,9 +449,6 @@
 
         /* Minimized Player Icon */
         #minimized-player-icon {
-            /* position: fixed; ... REMOVED */
-            /* bottom: 5px; ... REMOVED */
-            /* left: 5px; ... REMOVED */
             width: 25px; /* Match height of color picker */
             height: 25px; /* Match height of color picker */
             background: #c0c0c0;
@@ -443,7 +461,6 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            /* z-index: 999; ... REMOVED */
             font-size: 1rem; /* Smaller icon */
             color: #000080;
             margin-left: 10px; /* Add space */
@@ -474,7 +491,11 @@
             </div>
             
             <div class="content-inner">
-                <input type="text" id="search-bar" placeholder="Search tracks...">
+                <div class="search-sort-container">
+                    <input type="text" id="search-bar" placeholder="Search tracks...">
+                    <button id="sort-az" class="window-button sort-button">A-Z</button>
+                    <button id="sort-za" class="window-button sort-button">Z-A</button>
+                </div>
 
                 <div class="file-browser">
                     <ul id="file-list"></ul>
@@ -525,12 +546,16 @@
     <div id="color-picker-container">
         <label for="bg-color-picker">BG:</label>
         <input type="color" id="bg-color-picker" value="#008080">
-        <!-- Minimized Player Icon --><div id="minimized-player-icon">
+        
+        <!-- Minimized player icon is now inside the container -->
+        <div id="minimized-player-icon">
             <i class="fas fa-compact-disc"></i>
         </div>
     </div>
 
-    <!-- Minimized Player Icon --><!-- MOVED TO color-picker-container --><script>
+    
+
+<script>
     document.addEventListener('DOMContentLoaded', () => {
 
         // --- Configuration & Elements ---
@@ -565,7 +590,7 @@
             "saturn.mp3", "save rq.mp3", "saved it.mp3", "serup.mp3",
             "shit is trash.mp3", "shortest beat.mp3", "show class.mp3",
             "show trash.mp3", "slash slowed.mp3", "slash.mp3", "slow jam 2.mp3",
-            "slow ride.mp3", "snippes.mp3", "soundbath 2.0.mp3", "soundbath.mp3", // Added new track for testing
+            "slow ride.mp3", "snippes.mp3", "soundbath 2.0.mp3", "soundbath.mp3",
             "SP iPhone sample.mp3", "spit it out.mp3", "standing in the rain.mp3",
             "starterd.mp3", "sue nami.mp3", "surfin.mp3", "swang.mp3",
             "swing song w eli.mp3", "synth demo.mp3", "take 2.mp3", "techno.mp3",
@@ -575,55 +600,59 @@
             "w issy.mp3", "watch it go.mp3", "week from today.mp3",
             "what am i doing.mp3", "what is this.mp3", "z style.mp3"
         ];
+        let currentTracklist = [...audioFiles]; // Array to hold the currently sorted list
 
         const audioPlayer = document.getElementById('audio-player');
         const fileListElement = document.getElementById('file-list');
         const nowPlayingElement = document.getElementById('now-playing');
         const searchBar = document.getElementById('search-bar');
+        const sortAzButton = document.getElementById('sort-az');
+        const sortZaButton = document.getElementById('sort-za');
         
-        const playerContainer = document.getElementById('player-container'); // Changed to getElementById
+        const playerContainer = document.getElementById('player-container');
         const visualizerWindow = document.getElementById('visualizer-window');
         const infoWindow = document.getElementById('info-window');
         const infoButton = document.getElementById('info-button');
         const digitalClock = document.getElementById('digital-clock');
         const bgColorPicker = document.getElementById('bg-color-picker');
-        const visualizerTabs = document.getElementById('visualizer-tabs'); // New element
-        const minimizePlayerButton = document.getElementById('minimize-player-button'); // New element
-        const minimizedPlayerIcon = document.getElementById('minimized-player-icon'); // New element
+        const visualizerTabs = document.getElementById('visualizer-tabs');
+        const minimizePlayerButton = document.getElementById('minimize-player-button');
+        const minimizedPlayerIcon = document.getElementById('minimized-player-icon');
         
         const canvas = document.getElementById('visualizer-canvas');
         const ctx = canvas.getContext('2d');
         
-        let visualizerColor = '#00FFFF'; // Initial color for visualizer
-        let secondaryColor = '#FF00FF'; // For Aero Energy visualizer
-        let activeVisualizer = 'dataGem'; // Default visualizer on load: 'dataGem', 'aeroEnergy', or 'retroWaveform'
+        let visualizerColor = '#00FFFF';
+        let secondaryColor = '#FF00FF';
+        let activeVisualizer = 'dataGem';
 
         // --- Audio Context Setup ---
         let audioContext, analyser, source;
         let frequencyData, timeDomainData;
         let bufferLength;
         let visualizerActive = false;
-        let animationFrameId; // To cancel animation frames
+        let animationFrameId;
 
         function setupAudioContext() {
             if (audioContext) return;
             
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
-            analyser.fftSize = 2048; // Good for both frequency and time domain
+            analyser.fftSize = 2048;
+            analyser.smoothingTimeConstant = 0.8; // Smoother transitions in data
             
             source = audioContext.createMediaElementSource(audioPlayer);
             source.connect(analyser);
             analyser.connect(audioContext.destination);
             
-            bufferLength = analyser.frequencyBinCount; // half of fftSize
+            bufferLength = analyser.frequencyBinCount;
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
         }
 
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
-                cancelAnimationFrame(animationFrameId); // Stop previous loop
+                cancelAnimationFrame(animationFrameId);
             }
             visualizerActive = true;
             visualizerWindow.style.display = 'flex';
@@ -650,11 +679,9 @@
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Get audio data for all visualizers
             analyser.getByteFrequencyData(frequencyData);
             analyser.getByteTimeDomainData(timeDomainData);
             
-            // Calculate average frequencies for control
             let bass = 0, mids = 0, highs = 0;
             const bassRange = [0, Math.floor(bufferLength * 0.05)]; 
             const midRange = [Math.floor(bufferLength * 0.05), Math.floor(bufferLength * 0.2)]; 
@@ -664,11 +691,10 @@
             for (let i = midRange[0]; i < midRange[1]; i++) mids += frequencyData[i];
             for (let i = highRange[0]; i < highRange[1]; i++) highs += frequencyData[i];
 
-            let bassAvg = bass / (bassRange[1] - bassRange[0]) || 0;
-            let midsAvg = mids / (midRange[1] - midRange[0]) || 0;
-            let highsAvg = highs / (highRange[1] - highRange[0]) || 0;
+            let bassAvg = (bass / (bassRange[1] - bassRange[0]) || 0) / 255; // Normalize to 0-1
+            let midsAvg = (mids / (midRange[1] - midRange[0]) || 0) / 255; // Normalize to 0-1
+            let highsAvg = (highs / (highRange[1] - highRange[0]) || 0) / 255; // Normalize to 0-1
 
-            // Call the active visualizer function
             switch (activeVisualizer) {
                 case 'dataGem':
                     drawDataGemVisualizer(bassAvg, midsAvg, highsAvg);
@@ -683,73 +709,78 @@
         }
 
         // --- Visualizer Implementations ---
-
-        // Particle System REMOVED as it's no longer used by DataGem
-        // const particles = []; ... REMOVED
-        // const maxParticles = 200; ... REMOVED
-        // class Particle { ... } ... REMOVED
+        
+        // Data Gem - Bouncing DVD Logo Style
+        let gemX = 150, gemY = 100;
+        let gemVx = 1, gemVy = 1; // Velocity
+        let gemRotation = 0;
+        let gemNumSides = 4;
 
         function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) {
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
+            const centerX = gemX;
+            const centerY = gemY;
+            
+            // Speed based on music
+            const speedMultiplier = 1 + (midsAvg * 3);
+            gemX += gemVx * speedMultiplier;
+            gemY += gemVy * speedMultiplier;
             
             // Base size of the overall shape
-            const baseSize = Math.min(canvas.width, canvas.height) * 0.2;
+            const baseSize = Math.min(canvas.width, canvas.height) * 0.1;
+            const pulseAmount = baseSize * bassAvg * 1.5; // Bass makes it pulse
+            const currentRadius = baseSize + pulseAmount;
+
+            // Bounce off walls
+            if (gemX + currentRadius > canvas.width || gemX - currentRadius < 0) {
+                gemVx *= -1;
+            }
+            if (gemY + currentRadius > canvas.height || gemY - currentRadius < 0) {
+                gemVy *= -1;
+            }
             
-            // Calculate deformation based on music
-            const deformAmount = (bassAvg / 255) * baseSize * 0.15; // Bass influences overall expansion
-            const twistAmount = (highsAvg / 255) * 0.05; // Highs influence the twist/rotation
-            const midShapeDeform = (midsAvg / 255) * baseSize * 0.1; // Mids influence inner shape deformation
+            // Randomly change shape based on highs
+            if (highsAvg > 0.5 && Math.random() > 0.95) {
+                gemNumSides = 3 + Math.floor(Math.random() * 5); // 3 to 7 sides
+            }
+
+            // Twist based on mids
+            gemRotation += midsAvg * 0.05;
 
             const hslColor = hslToHex(visualizerColor);
-
-            // Draw multiple layers to create depth and the "braided" effect
-            for (let layer = 0; layer < 5; layer++) {
-                const layerOffset = layer * 15; // Spacing between layers
-                const currentRadius = baseSize + deformAmount + layerOffset;
-                const rotation = (Date.now() * 0.0001 + layer * 0.2 + twistAmount) % (Math.PI * 2);
-
-                // Create a color for the current layer
-                const layerHue = (hslColor.h + layer * 20) % 360; // Shift hue slightly per layer
-                const layerSaturation = Math.min(100, hslColor.s + layer * 10);
-                const layerLightness = Math.max(20, hslColor.l - layer * 5); // Darken layers further back
-                const layerColor = `hsl(${layerHue}, ${layerSaturation}%, ${layerLightness}%)`;
+            
+            for (let layer = 0; layer < 3; layer++) {
+                const layerOffset = layer * 10;
+                const layerRadius = currentRadius - layerOffset;
+                const layerColor = `hsl(${hslColor.h}, ${hslColor.s}%, ${Math.max(20, hslColor.l - layer * 10)}%)`;
                 
                 ctx.fillStyle = layerColor;
                 ctx.shadowColor = layerColor;
-                ctx.shadowBlur = 15 - layer * 3; // Less blur for further layers
-                ctx.globalAlpha = 1.0 - (layer * 0.15); // Fade layers further back
+                ctx.shadowBlur = 10 - layer * 3;
+                ctx.globalAlpha = 1.0 - (layer * 0.2);
 
                 ctx.beginPath();
-                const numPoints = 100;
-
-                for (let i = 0; i <= numPoints; i++) {
-                    const angle = (i / numPoints) * Math.PI * 2;
+                for (let i = 0; i <= gemNumSides; i++) {
+                    const angle = (i / gemNumSides) * Math.PI * 2 + gemRotation;
+                    // Deform points based on highs
+                    const deform = (1 + Math.sin(angle * 3 + gemRotation) * highsAvg * 0.5); 
+                    const radius = layerRadius * deform;
                     
-                    // Simple sinusoidal deformation to get the organic, intertwined look
-                    const waveAmplitude = (Math.sin(angle * 3 + rotation * 2) * 0.5 + 0.5) * (currentRadius * 0.3) + midShapeDeform;
-                    const radius = currentRadius + waveAmplitude;
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius;
                     
-                    const x = centerX + Math.cos(angle + rotation) * radius;
-                    const y = centerY + Math.sin(angle + rotation) * radius;
-                    
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
                 }
                 ctx.closePath();
                 ctx.fill();
             }
             
-            // Reset global alpha and shadow
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
         }
 
 
-        // Aero Energy Visualizer (inspired by Windows Media Player)
+        // Aero Energy Visualizer
         const aeroLines = [];
         const maxAeroLines = 50;
 
@@ -763,7 +794,7 @@
                 this.angle = Math.random() * Math.PI * 2;
                 this.vx = Math.cos(this.angle) * this.speed;
                 this.vy = Math.sin(this.angle) * this.speed;
-                this.life = 1; // 0 to 1, fades out
+                this.life = 1;
                 this.color1 = color1;
                 this.color2 = color2;
                 this.age = 0;
@@ -772,70 +803,54 @@
             update(bass, mids, highs) {
                 this.x += this.vx;
                 this.y += this.vy;
-
-                // Add some subtle random movement or respond to highs
-                this.vx += (Math.random() - 0.5) * (highs / 255) * 0.5;
-                this.vy += (Math.random() - 0.5) * (highs / 255) * 0.5;
-
-                // Keep line within bounds
+                this.vx += (Math.random() - 0.5) * highs * 0.5;
+                this.vy += (Math.random() - 0.5) * highs * 0.5;
                 if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
                 if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-
                 this.points.unshift({x: this.x, y: this.y});
                 if (this.points.length > this.length) {
                     this.points.pop();
                 }
-
-                this.life -= 0.005 - (mids / 255) * 0.002; // Fade faster with mids
+                this.life -= 0.005 - (mids) * 0.002;
                 if (this.life <= 0) this.life = 0;
                 this.age++;
             }
 
             draw(ctx) {
                 if (this.points.length < 2) return;
-
-                ctx.globalAlpha = this.life; /* Increased from 0.8 for brightness */
-                ctx.lineWidth = 2 + (this.age / 400); /* Made thicker */
+                ctx.globalAlpha = this.life;
+                ctx.lineWidth = 2 + (this.age / 400);
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
-
                 const gradient = ctx.createLinearGradient(this.points[0].x, this.points[0].y, this.points[this.points.length - 1].x, this.points[this.points.length - 1].y);
                 gradient.addColorStop(0, this.color1);
                 gradient.addColorStop(1, this.color2);
                 ctx.strokeStyle = gradient;
-                ctx.shadowColor = this.color1; /* Glow effect */
-                ctx.shadowBlur = 15; /* Increased glow */
-
+                ctx.shadowColor = this.color1;
+                ctx.shadowBlur = 15;
                 ctx.beginPath();
                 ctx.moveTo(this.points[0].x, this.points[0].y);
                 for (let i = 1; i < this.points.length; i++) {
                     ctx.lineTo(this.points[i].x, this.points[i].y);
                 }
                 ctx.stroke();
-
                 ctx.globalAlpha = 1.0;
                 ctx.shadowBlur = 0;
             }
         }
 
         function drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg) {
-            // Spawn new lines
-            if (aeroLines.length < maxAeroLines && Math.random() < 0.05 + (midsAvg / 255) * 0.1) {
+            if (aeroLines.length < maxAeroLines && Math.random() < 0.05 + (midsAvg) * 0.1) {
                 const startX = Math.random() * canvas.width;
                 const startY = Math.random() * canvas.height;
-                
-                // Secondary color shifts with time or music
                 const hueShift = (Date.now() * 0.01) % 360;
                 const dynamicSecondaryColor = `hsl(${(hslToHex(visualizerColor).h + hueShift) % 360}, 100%, 65%)`;
-
                 aeroLines.push(new AeroLine(startX, startY, visualizerColor, dynamicSecondaryColor));
             }
-
-            // Update and draw lines
             for (let i = aeroLines.length - 1; i >= 0; i--) {
                 aeroLines[i].update(bassAvg, midsAvg, highsAvg);
                 aeroLines[i].draw(ctx);
-                if (aeroLines[i].life <= 0 || aeroLines[i].age > 1000) { // Remove old lines
+                if (aeroLines[i].life <= 0 || aeroLines[i].age > 1000) {
                     aeroLines.splice(i, 1);
                 }
             }
@@ -843,37 +858,28 @@
 
         // Retro Waveform Visualizer
         function drawRetroWaveformVisualizer(timeDomainData) {
-            ctx.fillStyle = '#000'; // Clear background
+            ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             ctx.lineWidth = 3;
             ctx.strokeStyle = visualizerColor;
             ctx.shadowColor = visualizerColor;
             ctx.shadowBlur = 10;
-
             ctx.beginPath();
             const sliceWidth = canvas.width * 1.0 / bufferLength;
             let x = 0;
-
             for(let i = 0; i < bufferLength; i++) {
                 const v = timeDomainData[i] / 128.0;
                 const y = v * canvas.height / 2;
-
-                if(i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
+                if(i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
                 x += sliceWidth;
             }
             ctx.lineTo(canvas.width, canvas.height / 2);
             ctx.stroke();
-
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, visualizerColor);
             gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
             gradient.addColorStop(1, visualizerColor);
-
             ctx.fillStyle = gradient;
             ctx.globalAlpha = 0.2;
             ctx.beginPath();
@@ -888,7 +894,6 @@
             ctx.lineTo(canvas.width, canvas.height);
             ctx.closePath();
             ctx.fill();
-
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
         }
@@ -901,8 +906,6 @@
         let dragOffsetX, dragOffsetY;
         let resizeStartX, resizeStartY;
         let initialWidth, initialHeight;
-
-        // Store player's last position/size for minimize/restore
         let playerLastX, playerLastY, playerLastWidth, playerLastHeight;
 
         document.querySelectorAll('.window').forEach(windowEl => {
@@ -919,32 +922,24 @@
 
         function handleDragStart(e, windowEl) {
             if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab')) return;
-
             isDragging = true;
             activeWindow = windowEl;
-            
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
             dragOffsetX = clientX - windowEl.offsetLeft;
             dragOffsetY = clientY - windowEl.offsetTop;
-            
             document.body.style.cursor = 'move';
             if (e.cancelable) e.preventDefault();
         }
 
         function handleDragMove(e) {
             if (!isDragging || !activeWindow) return;
-
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
             let newX = clientX - dragOffsetX;
             let newY = clientY - dragOffsetY;
-            
             newX = Math.max(0, Math.min(newX, window.innerWidth - activeWindow.offsetWidth));
             newY = Math.max(0, Math.min(newY, window.innerHeight - activeWindow.offsetHeight));
-
             activeWindow.style.left = newX + 'px';
             activeWindow.style.top = newY + 'px';
             if (e.cancelable) e.preventDefault();
@@ -953,33 +948,25 @@
         function handleResizeStart(e, windowEl) {
             isResizing = true;
             activeWindow = windowEl;
-
             resizeStartX = e.touches ? e.touches[0].clientX : e.clientX;
             resizeStartY = e.touches ? e.touches[0].clientY : e.clientY;
             initialWidth = windowEl.offsetWidth;
             initialHeight = windowEl.offsetHeight;
-
             document.body.style.cursor = 'nwse-resize';
             if (e.cancelable) e.preventDefault();
         }
 
         function handleResizeMove(e) {
             if (!isResizing || !activeWindow) return;
- 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
- 
             let newWidth = initialWidth + (clientX - resizeStartX);
             let newHeight = initialHeight + (clientY - resizeStartY);
- 
-            // Get the computed minimum size from CSS
             const style = window.getComputedStyle(activeWindow);
             const minW = parseFloat(style.minWidth) || 250;
             const minH = parseFloat(style.minHeight) || 150;
- 
             newWidth = Math.max(minW, newWidth);
             newHeight = Math.max(minH, newHeight);
- 
             activeWindow.style.width = newWidth + 'px';
             activeWindow.style.height = newHeight + 'px';
             if (e.cancelable) e.preventDefault();
@@ -992,14 +979,13 @@
             document.body.style.cursor = 'default';
         }
 
-        // Apply drag/resize to all windows
         document.querySelectorAll('.window').forEach(windowEl => {
             const titleBar = windowEl.querySelector('.title-bar');
             const resizeHandle = windowEl.querySelector('.resize-handle');
-
-            titleBar.addEventListener('mousedown', (e) => handleDragStart(e, windowEl));
-            titleBar.addEventListener('touchstart', (e) => handleDragStart(e, windowEl), { passive: false });
-
+            if(titleBar) {
+                titleBar.addEventListener('mousedown', (e) => handleDragStart(e, windowEl));
+                titleBar.addEventListener('touchstart', (e) => handleDragStart(e, windowEl), { passive: false });
+            }
             if (resizeHandle) {
                 resizeHandle.addEventListener('mousedown', (e) => handleResizeStart(e, windowEl));
                 resizeHandle.addEventListener('touchstart', (e) => handleResizeStart(e, windowEl), { passive: false });
@@ -1013,39 +999,52 @@
         document.addEventListener('mouseup', handleEnd);
         document.addEventListener('touchend', handleEnd);
 
-
         // --- Initialize Window Positions ---
-        // Save initial player position/size
-        playerLastWidth = playerContainer.offsetWidth; // Read calculated width
-        playerLastHeight = playerContainer.offsetHeight; // Read calculated height
-        playerLastX = (window.innerWidth - playerLastWidth) / 2;
-        playerLastY = (window.innerHeight - playerLastHeight) / 2;
-
-        playerContainer.style.left = playerLastX + 'px';
-        playerContainer.style.top = playerLastY + 'px';
-        // Explicitly set the pixel width/height to "lock in" the initial size
-        // This ensures that 'restore' always works with consistent pixel values
-        playerContainer.style.width = playerLastWidth + 'px';
-        playerContainer.style.height = playerLastHeight + 'px';
+        function setInitialPlayerPosition() {
+            const style = window.getComputedStyle(playerContainer);
+            playerLastWidth = parseFloat(style.width) || playerContainer.offsetWidth;
+            playerLastHeight = parseFloat(style.height) || playerContainer.offsetHeight;
+            playerLastX = (window.innerWidth - playerLastWidth) / 2;
+            playerLastY = (window.innerHeight - playerLastHeight) / 2;
+            
+            playerContainer.style.left = playerLastX + 'px';
+            playerContainer.style.top = playerLastY + 'px';
+            playerContainer.style.width = playerLastWidth + 'px';
+            playerContainer.style.height = playerLastHeight + 'px';
+        }
+        setInitialPlayerPosition();
         
         visualizerWindow.style.left = '20px';
         visualizerWindow.style.top = '20px';
         infoWindow.style.left = (window.innerWidth - infoWindow.offsetWidth) / 2 + 'px';
         infoWindow.style.top = (window.innerHeight - infoWindow.offsetHeight) / 2 + 'px';
-
         bringWindowToFront(playerContainer);
 
+        // --- Populate & Sort File List ---
+        function populateFileList(files) {
+            fileListElement.innerHTML = ''; // Clear list
+            files.forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <i class="fas fa-music file-icon"></i>
+                    <span class="file-name">${file.replace('.mp3', '')}</span>
+                `;
+                li.dataset.filename = file;
+                fileListElement.appendChild(li);
+            });
+        }
+        populateFileList(currentTracklist); // Initial population
 
-        // --- Populate File List ---
-        audioFiles.forEach(file => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <i class="fas fa-music file-icon"></i>
-                <span class="file-name">${file.replace('.mp3', '')}</span>
-            `;
-            li.dataset.filename = file;
-            fileListElement.appendChild(li);
+        sortAzButton.addEventListener('click', () => {
+            currentTracklist.sort((a, b) => a.localeCompare(b));
+            populateFileList(currentTracklist);
         });
+
+        sortZaButton.addEventListener('click', () => {
+            currentTracklist.sort((a, b) => b.localeCompare(a));
+            populateFileList(currentTracklist);
+        });
+
 
         // --- Event Listeners ---
 
@@ -1063,6 +1062,7 @@
                 audioPlayer.play();
                 nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
                 
+                // Update active state in the currently displayed list
                 const currentActive = fileListElement.querySelector('.active');
                 if (currentActive) {
                     currentActive.classList.remove('active');
@@ -1086,10 +1086,11 @@
 
         searchBar.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
-            fileListElement.querySelectorAll('li').forEach(fileLi => {
-                const fileName = fileLi.querySelector('.file-name').textContent.toLowerCase();
-                fileLi.style.display = fileName.includes(searchTerm) ? 'flex' : 'none';
-            });
+            // Filter the *currently sorted* list
+            const filteredList = currentTracklist.filter(file => 
+                file.toLowerCase().replace('.mp3', '').includes(searchTerm)
+            );
+            populateFileList(filteredList);
         });
 
         audioPlayer.addEventListener('ended', () => {
@@ -1097,7 +1098,17 @@
             if (currentActive) {
                 let nextTrack = currentActive.nextElementSibling;
                 if (!nextTrack) {
-                    nextTrack = fileListElement.firstElementChild;
+                    // Find the corresponding track in the *sorted* list to loop
+                    const currentFile = currentActive.dataset.filename;
+                    const currentIndex = currentTracklist.indexOf(currentFile);
+                    if (currentIndex > -1 && currentIndex < currentTracklist.length - 1) {
+                        const nextFile = currentTracklist[currentIndex + 1];
+                        nextTrack = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextFile)}"]`);
+                    } else {
+                        // Loop to start
+                        const firstFile = currentTracklist[0];
+                        nextTrack = fileListElement.querySelector(`li[data-filename="${CSS.escape(firstFile)}"]`);
+                    }
                 }
                 if (nextTrack) {
                     nextTrack.click();
@@ -1110,21 +1121,18 @@
             bringWindowToFront(infoWindow);
         });
         
-        // General close buttons for all windows
         document.querySelectorAll('.close-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 const targetWindowId = e.target.dataset.target;
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
                     if (targetWindowId === 'player-container') {
-                        // For the player, minimize instead of close
-                        playerContainer.style.display = 'none';
-                        minimizedPlayerIcon.style.display = 'flex';
-                        // Save current position/size before minimizing
                         playerLastX = playerContainer.offsetLeft;
                         playerLastY = playerContainer.offsetTop;
                         playerLastWidth = playerContainer.offsetWidth;
                         playerLastHeight = playerContainer.offsetHeight;
+                        playerContainer.style.display = 'none';
+                        minimizedPlayerIcon.style.display = 'flex';
                     } else {
                         windowToClose.style.display = 'none';
                         if (targetWindowId === 'visualizer-window') {
@@ -1135,36 +1143,27 @@
             });
         });
 
-        // Minimize player button
         minimizePlayerButton.addEventListener('click', () => {
-            playerContainer.style.display = 'none';
-            minimizedPlayerIcon.style.display = 'flex';
-            // Save current position/size before minimizing
             playerLastX = playerContainer.offsetLeft;
             playerLastY = playerContainer.offsetTop;
             playerLastWidth = playerContainer.offsetWidth;
             playerLastHeight = playerContainer.offsetHeight;
+            playerContainer.style.display = 'none';
+            minimizedPlayerIcon.style.display = 'flex';
         });
 
-        // Restore player from minimized icon
         minimizedPlayerIcon.addEventListener('click', () => {
             playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
             bringWindowToFront(playerContainer);
             
-            // Restore last *size*
+            // Restore last *size and position*
             playerContainer.style.width = playerLastWidth + 'px';
             playerContainer.style.height = playerLastHeight + 'px';
-            
-            // Recalculate and set *center* position
-            const newX = (window.innerWidth - playerLastWidth) / 2;
-            const newY = (window.innerHeight - playerLastHeight) / 2;
-            
-            playerContainer.style.left = newX + 'px';
-            playerContainer.style.top = newY + 'px';
+            playerContainer.style.left = playerLastX + 'px';
+            playerContainer.style.top = playerLastY + 'px';
         });
 
-        // Visualizer tab switching
         visualizerTabs.addEventListener('click', (e) => {
             const clickedTab = e.target.closest('.visualizer-tab');
             if (clickedTab) {
@@ -1172,13 +1171,11 @@
                 clickedTab.classList.add('active');
                 activeVisualizer = clickedTab.dataset.visualizer;
                 if (visualizerActive) {
-                    startVisualizer(); // Restart with new visualizer
+                    startVisualizer();
                 }
             }
         });
-        // Set initial active tab
         document.querySelector(`.visualizer-tab[data-visualizer="${activeVisualizer}"]`).classList.add('active');
-
 
         // --- Color Conversion Helper (Hex to HSL) ---
         function hexToHSL(H) {
@@ -1195,8 +1192,7 @@
             s = +(s * 100).toFixed(1); l = +(l * 100).toFixed(1);
             return {h, s, l};
         }
-        // Helper to convert HSL back to a brighter HSL for visualizer, or just return original color
-        function hslToHex(hslColor) { // Expects "hsl(H, S%, L%)" or "#HEX"
+        function hslToHex(hslColor) {
             let h, s, l;
             if (hslColor.startsWith("#")) {
                 const hex = hslColor;
@@ -1226,18 +1222,16 @@
                 l = parseInt(parts[3]);
                 return {h, s, l};
             }
-            return {h: 0, s: 0, l: 0}; // Default
+            return {h: 0, s: 0, l: 0};
         }
-
 
         // --- Background Color Picker ---
         bgColorPicker.addEventListener('input', (e) => {
             const newColor = e.target.value;
             document.body.style.background = newColor;
-            
             const hsl = hexToHSL(newColor);
-            visualizerColor = `hsl(${hsl.h}, 100%, 65%)`; // Base visualizer color
-            secondaryColor = `hsl(${(hsl.h + 180) % 360}, 100%, 65%)`; // Complementary color for some visualizers
+            visualizerColor = `hsl(${hsl.h}, 100%, 65%)`;
+            secondaryColor = `hsl(${(hsl.h + 180) % 360}, 100%, 65%)`;
         });
 
         // --- Digital Clock ---
@@ -1246,14 +1240,12 @@
             let hours = now.getHours();
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
-            
             hours = hours % 12;
             hours = hours ? hours : 12;
-            
             digitalClock.textContent = `${hours}:${minutes} ${ampm}`;
         }
         setInterval(updateClock, 1000);
-        updateClock(); // Initial call
+        updateClock();
 
         // Initial visualizer color sync
         const initialBgColor = bgColorPicker.value;
@@ -1261,10 +1253,9 @@
         visualizerColor = `hsl(${initialHsl.h}, 100%, 65%)`;
         secondaryColor = `hsl(${(initialHsl.h + 180) % 360}, 100%, 65%)`;
 
-
         // Load the provided image into a hidden img tag to ensure it's loaded for iPhone
         const lockScreenImage = new Image();
-        lockScreenImage.src = "cover.png";
+        lockScreenImage.src = "cover.png"; // Pulling from the root
         lockScreenImage.style.display = 'none';
         document.body.appendChild(lockScreenImage);
     });
