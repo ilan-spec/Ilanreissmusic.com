@@ -112,7 +112,7 @@
             flex-shrink: 0;
             touch-action: manipulation; /* Allow button tap, prevent accidental drag */
         }
-        .window-button:active {
+        .window-button:active, .window-button.active {
             border-top: 1px solid #404040;
             border-left: 1px solid #404040;
             border-right: 1px solid #fff;
@@ -164,6 +164,7 @@
              height: 34px; /* Match search bar height */
              padding: 0;
              font-weight: 700;
+             font-size: 11px; /* Fit text */
         }
 
         #search-bar::placeholder {
@@ -495,6 +496,7 @@
                     <input type="text" id="search-bar" placeholder="Search tracks...">
                     <button id="sort-az" class="window-button sort-button">A-Z</button>
                     <button id="sort-za" class="window-button sort-button">Z-A</button>
+                    <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
                 </div>
 
                 <div class="file-browser">
@@ -509,7 +511,7 @@
     <div id="visualizer-window" class="window">
          <div class="title-bar">
             <div id="visualizer-tabs">
-                <button class="visualizer-tab window-button" data-visualizer="dataGem">Data Gem</button>
+                <button class="visualizer-tab window-button" data-visualizer="nostalgiaWindows">Nostalgia</button>
                 <button class="visualizer-tab window-button" data-visualizer="aeroEnergy">Aero Energy</button>
                 <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
             </div>
@@ -608,6 +610,7 @@
         const searchBar = document.getElementById('search-bar');
         const sortAzButton = document.getElementById('sort-az');
         const sortZaButton = document.getElementById('sort-za');
+        const bitcrushToggle = document.getElementById('bitcrush-toggle'); // New Button
         
         const playerContainer = document.getElementById('player-container');
         const visualizerWindow = document.getElementById('visualizer-window');
@@ -624,10 +627,12 @@
         
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
-        let activeVisualizer = 'dataGem';
+        let activeVisualizer = 'nostalgiaWindows'; // Changed default visualizer
 
         // --- Audio Context Setup ---
         let audioContext, analyser, source;
+        let bitCrusherNode; // New node for 12-bit effect
+        let isBitcrushActive = false; // State for the effect
         let frequencyData, timeDomainData;
         let bufferLength;
         let visualizerActive = false;
@@ -639,9 +644,22 @@
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
-            analyser.smoothingTimeConstant = 0.8; // Smoother transitions in data
+            analyser.smoothingTimeConstant = 0.8; 
             
             source = audioContext.createMediaElementSource(audioPlayer);
+            
+            // --- Create Bitcrusher Node ---
+            bitCrusherNode = audioContext.createWaveShaper();
+            const steps = Math.pow(2, 8); // 8-bit sounds more "lo-fi" than 12-bit
+            const curve = new Float32Array(65536);
+            for (let i = 0; i < curve.length; i++) {
+                const inputSample = (i / (curve.length - 1)) * 2 - 1; // Map i from 0-1 to -1 to 1
+                // Quantize the sample
+                curve[i] = Math.round(inputSample * (steps / 2)) / (steps / 2);
+            }
+            bitCrusherNode.curve = curve;
+            
+            // Initial connection: source -> analyser -> destination
             source.connect(analyser);
             analyser.connect(audioContext.destination);
             
@@ -649,6 +667,28 @@
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
         }
+
+        function toggleBitcrusher() {
+            isBitcrushActive = !isBitcrushActive;
+            
+            // Disconnect to re-route
+            analyser.disconnect();
+            
+            if (isBitcrushActive) {
+                // Route: analyser -> bitcrusher -> destination
+                analyser.connect(bitCrusherNode);
+                bitCrusherNode.connect(audioContext.destination);
+                bitcrushToggle.classList.add('active');
+            } else {
+                // Route: analyser -> destination
+                if (bitCrusherNode) {
+                    bitCrusherNode.disconnect();
+                }
+                analyser.connect(audioContext.destination);
+                bitcrushToggle.classList.remove('active');
+            }
+        }
+
 
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
@@ -676,7 +716,9 @@
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
+            // Use a darker fade for the nostalgia visualizer
+            const fadeAlpha = activeVisualizer === 'nostalgiaWindows' ? '0.05' : '0.1';
+            ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             analyser.getByteFrequencyData(frequencyData);
@@ -696,8 +738,8 @@
             let highsAvg = (highs / (highRange[1] - highRange[0]) || 0) / 255; // Normalize to 0-1
 
             switch (activeVisualizer) {
-                case 'dataGem':
-                    drawDataGemVisualizer(bassAvg, midsAvg, highsAvg);
+                case 'nostalgiaWindows':
+                    drawNostalgiaVisualizer(bassAvg, midsAvg, highsAvg);
                     break;
                 case 'aeroEnergy':
                     drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg);
@@ -710,73 +752,84 @@
 
         // --- Visualizer Implementations ---
         
-        // Data Gem - Bouncing DVD Logo Style
-        let gemX = 150, gemY = 100;
-        let gemVx = 1, gemVy = 1; // Velocity
-        let gemRotation = 0;
-        let gemNumSides = 4;
+        // Nostalgia Windows Visualizer (Plenoptic)
+        const nostalgiaParticles = [];
+        const maxNostalgiaParticles = 70; // Fewer, larger particles
 
-        function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) {
-            const centerX = gemX;
-            const centerY = gemY;
-            
-            // Speed based on music
-            const speedMultiplier = 1 + (midsAvg * 3);
-            gemX += gemVx * speedMultiplier;
-            gemY += gemVy * speedMultiplier;
-            
-            // Base size of the overall shape
-            const baseSize = Math.min(canvas.width, canvas.height) * 0.1;
-            const pulseAmount = baseSize * bassAvg * 1.5; // Bass makes it pulse
-            const currentRadius = baseSize + pulseAmount;
-
-            // Bounce off walls
-            if (gemX + currentRadius > canvas.width || gemX - currentRadius < 0) {
-                gemVx *= -1;
-            }
-            if (gemY + currentRadius > canvas.height || gemY - currentRadius < 0) {
-                gemVy *= -1;
-            }
-            
-            // Randomly change shape based on highs
-            if (highsAvg > 0.5 && Math.random() > 0.95) {
-                gemNumSides = 3 + Math.floor(Math.random() * 5); // 3 to 7 sides
+        class NostalgiaParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.baseColor = color;
+                this.hueShift = Math.random() * 60 - 30; // -30 to +30 degree shift
+                this.size = 50 + Math.random() * 150;
+                this.alpha = 0.02 + Math.random() * 0.05;
+                this.vx = (Math.random() - 0.5) * 0.5; // Slow drift
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.life = 1;
             }
 
-            // Twist based on mids
-            gemRotation += midsAvg * 0.05;
-
-            const hslColor = hslToHex(visualizerColor);
-            
-            for (let layer = 0; layer < 3; layer++) {
-                const layerOffset = layer * 10;
-                const layerRadius = currentRadius - layerOffset;
-                const layerColor = `hsl(${hslColor.h}, ${hslColor.s}%, ${Math.max(20, hslColor.l - layer * 10)}%)`;
+            update(bass, mids, highs) {
+                // Music adds turbulence
+                this.vx += (Math.random() - 0.5) * 0.1 + (mids - 0.5) * 0.1;
+                this.vy += (Math.random() - 0.5) * 0.1 + (highs - 0.5) * 0.1;
                 
-                ctx.fillStyle = layerColor;
-                ctx.shadowColor = layerColor;
-                ctx.shadowBlur = 10 - layer * 3;
-                ctx.globalAlpha = 1.0 - (layer * 0.2);
+                // Dampen velocity
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Pulse with bass
+                this.currentSize = this.size * (1 + bass * 0.2);
+                
+                // Fade out
+                this.life -= 0.001;
 
+                // Wrap around edges
+                if (this.x + this.currentSize < 0) this.x = canvas.width + this.currentSize;
+                if (this.x - this.currentSize > canvas.width) this.x = -this.currentSize;
+                if (this.y + this.currentSize < 0) this.y = canvas.height + this.currentSize;
+                if (this.y - this.currentSize > canvas.height) this.y = -this.currentSize;
+            }
+
+            draw(ctx) {
+                const hsl = hslToHex(this.baseColor);
+                const particleColor = `hsl(${(hsl.h + this.hueShift) % 360}, 100%, 65%)`;
+
+                ctx.fillStyle = particleColor;
+                ctx.globalAlpha = this.alpha * this.life;
                 ctx.beginPath();
-                for (let i = 0; i <= gemNumSides; i++) {
-                    const angle = (i / gemNumSides) * Math.PI * 2 + gemRotation;
-                    // Deform points based on highs
-                    const deform = (1 + Math.sin(angle * 3 + gemRotation) * highsAvg * 0.5); 
-                    const radius = layerRadius * deform;
-                    
-                    const x = centerX + Math.cos(angle) * radius;
-                    const y = centerY + Math.sin(angle) * radius;
-                    
-                    if (i === 0) ctx.moveTo(x, y);
-                    else ctx.lineTo(x, y);
-                }
-                ctx.closePath();
+                ctx.arc(this.x, this.y, this.currentSize, 0, Math.PI * 2);
                 ctx.fill();
             }
+        }
+        
+        function drawNostalgiaVisualizer(bassAvg, midsAvg, highsAvg) {
+            // Spawn new particles
+            if (nostalgiaParticles.length < maxNostalgiaParticles && Math.random() > 0.9) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                nostalgiaParticles.push(new NostalgiaParticle(x, y, visualizerColor));
+            }
             
+            // Enable additive blending for the glow effect
+            ctx.globalCompositeOperation = 'lighter';
+
+            for (let i = nostalgiaParticles.length - 1; i >= 0; i--) {
+                const p = nostalgiaParticles[i];
+                p.baseColor = visualizerColor; // Keep color in sync
+                p.update(bassAvg, midsAvg, highsAvg);
+                p.draw(ctx);
+                if (p.life <= 0) {
+                    nostalgiaParticles.splice(i, 1);
+                }
+            }
+            
+            // Reset composite operation
+            ctx.globalCompositeOperation = 'source-over';
             ctx.globalAlpha = 1.0;
-            ctx.shadowBlur = 0;
         }
 
 
@@ -1047,6 +1100,13 @@
 
 
         // --- Event Listeners ---
+        
+        bitcrushToggle.addEventListener('click', () => {
+            if (!audioContext) { // Safety check
+                setupAudioContext();
+            }
+            toggleBitcrusher();
+        });
 
         fileListElement.addEventListener('click', (event) => {
             const clickedLi = event.target.closest('li');
@@ -1062,7 +1122,6 @@
                 audioPlayer.play();
                 nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
                 
-                // Update active state in the currently displayed list
                 const currentActive = fileListElement.querySelector('.active');
                 if (currentActive) {
                     currentActive.classList.remove('active');
@@ -1086,7 +1145,6 @@
 
         searchBar.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
-            // Filter the *currently sorted* list
             const filteredList = currentTracklist.filter(file => 
                 file.toLowerCase().replace('.mp3', '').includes(searchTerm)
             );
@@ -1098,14 +1156,12 @@
             if (currentActive) {
                 let nextTrack = currentActive.nextElementSibling;
                 if (!nextTrack) {
-                    // Find the corresponding track in the *sorted* list to loop
                     const currentFile = currentActive.dataset.filename;
                     const currentIndex = currentTracklist.indexOf(currentFile);
                     if (currentIndex > -1 && currentIndex < currentTracklist.length - 1) {
                         const nextFile = currentTracklist[currentIndex + 1];
                         nextTrack = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextFile)}"]`);
                     } else {
-                        // Loop to start
                         const firstFile = currentTracklist[0];
                         nextTrack = fileListElement.querySelector(`li[data-filename="${CSS.escape(firstFile)}"]`);
                     }
