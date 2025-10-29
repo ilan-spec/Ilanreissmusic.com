@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <!-- NEW: Added user-scalable=no to prevent zooming -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Ilan Reiss Music Player</title>
     
     <!-- iOS & PWA Goodies -->
@@ -31,7 +32,7 @@
             font-family: 'Inter', system-ui, sans-serif;
             color: #000;
             background: #008080;
-            overflow: hidden;
+            overflow: hidden; /* Changed to hidden for desktop */
             height: 100vh;
             user-select: none;
             -webkit-user-select: none;
@@ -531,8 +532,9 @@
             display: none; /* Hidden by default */
         }
         
+        /* Desktop: Horizontal layout */
         #dj-app-window .content {
-            flex-direction: row; /* Horizontal layout */
+            flex-direction: row; 
             overflow: hidden;
             background: #808080; /* Darker grey bg */
         }
@@ -644,7 +646,7 @@
             overflow: hidden; /* Keep this */
         }
         
-        /* --- NEW: Spinning Platter --- */
+        /* --- Spinning Platter --- */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -686,7 +688,6 @@
         /* --- End Platter Styles --- */
 
         
-        /* NEW CONTAINER */
         .load-info-container {
             display: flex;
             gap: 10px;
@@ -699,7 +700,6 @@
             flex-grow: 1; /* Make button take up space */
         }
         
-        /* NEW BPM DISPLAY */
         .current-bpm-display {
             font-weight: 700;
             font-size: 1.1rem;
@@ -733,8 +733,65 @@
             width: 50px;
             height: 30px;
         }
+
+        /* --- EQ Controls --- */
+        .eq-controls {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            border-top: 2px inset #808080;
+            margin-top: 10px;
+            gap: 5px; /* Added gap */
+        }
+        .eq-dial {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            gap: 5px;
+            flex: 1; /* Allow dials to space out */
+        }
+        .eq-slider { /* Horizontal slider */
+            -webkit-appearance: none;
+            appearance: none;
+            width: 90%; /* Use percentage */
+            max-width: 70px; /* Max width */
+            height: 15px;
+            background: #808080;
+            border-top: 1px solid #404040;
+            border-left: 1px solid #404040;
+            border-right: 1px solid #fff;
+            border-bottom: 1px solid #fff;
+            outline: none;
+            cursor: pointer;
+        }
+        .eq-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px; 
+            height: 20px; 
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            cursor: pointer;
+        }
+        .eq-slider::-moz-range-thumb {
+            width: 15px; 
+            height: 20px; 
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            cursor: pointer;
+            border-radius: 0;
+        }
+
         
-        /* --- NEW: Sliders Container --- */
+        /* --- Sliders Container --- */
         .deck-sliders {
             display: flex;
             justify-content: center;
@@ -794,6 +851,143 @@
             border-right: 1px solid #404040;
             border-bottom: 1px solid #404040;
             cursor: pointer;
+        }
+        .volume-slider::-moz-range-thumb, .bpm-slider::-moz-range-thumb {
+            width: 30px;
+            height: 15px;
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            cursor: pointer;
+            border-radius: 0;
+        }
+
+        /* --- Responsive Media Query --- */
+        @media (max-width: 768px) {
+            body {
+                overflow: auto; /* Allow scrolling */
+                height: auto;
+                min-height: 100vh;
+                padding: 5px;
+                padding-bottom: 120px; /* Space for bottom bars */
+            }
+            .window {
+                position: relative; /* Remove absolute positioning */
+                width: 100% !important; /* Force width */
+                height: auto !important; /* Force height */
+                min-width: 95vw;
+                left: 0 !important;
+                top: 0 !important;
+                margin-bottom: 10px;
+                box-shadow: 1px 1px 0 1px #000; /* Re-add shadow */
+            }
+            .resize-handle { display: none; } /* Hide resize */
+            .title-bar { cursor: default; } /* Disable drag cursor */
+            
+            .player-container {
+                min-height: 0; /* Override desktop min-height */
+                height: auto;
+            }
+
+            .file-browser {
+                min-height: 300px; /* Give it some height on mobile */
+            }
+
+            /* --- NEW: Mobile DJ Layout --- */
+            #dj-app-window .content {
+                flex-direction: row; /* Use row for flex-wrap */
+                flex-wrap: wrap; /* Allow wrapping */
+                height: auto;
+            }
+            #dj-library-container {
+                order: 1; /* Library first */
+                flex-basis: 100%; /* Full width */
+                height: 250px;
+            }
+            .deck-container {
+                order: 2; /* Decks second */
+                flex-basis: 50%; /* 50% width */
+                min-width: 170px; /* Prevent squishing */
+                height: auto; /* Auto height */
+                min-height: 0;
+            }
+
+            .deck-sliders {
+                flex-direction: row; /* Keep as row */
+                justify-content: space-around; /* Spread them out */
+                flex-grow: 0;
+                padding: 10px 0;
+            }
+            
+            .volume-slider, .bpm-slider {
+                height: 120px; /* Shorter vertical sliders */
+            }
+            
+            .scrub-platter {
+                width: 25px; /* Smaller platter */
+                height: 25px;
+            }
+            .platter-spindle {
+                width: 4px;
+                height: 4px;
+            }
+            .track-name-display {
+                gap: 5px; /* Tighter gap */
+            }
+
+            /* Stack bottom bar items */
+            #color-picker-container {
+                position: fixed; /* Keep fixed */
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                flex-wrap: wrap; /* Wrap icons if needed */
+                justify-content: center;
+                z-index: 1001; /* Above clock */
+                border-top: 2px solid #fff;
+                border-right: none;
+                border-left: none; /* Remove side borders */
+            }
+            #digital-clock {
+                position: fixed;
+                bottom: 45px; /* Position above color picker */
+                left: 0;
+                width: 100%;
+                text-align: center;
+                z-index: 1000;
+                border-bottom: 2px solid #404040;
+                border-top: 2px solid #fff;
+                border-left: none;
+                border-right: none;
+                padding: 8px 10px; /* More padding */
+            }
+        }
+        
+        /* Narrower phones */
+        @media (max-width: 380px) {
+             #file-list {
+                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+                gap: 10px;
+            }
+            .eq-controls {
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+            }
+            .eq-slider {
+                width: 70%;
+                max-width: 200px;
+            }
+            /* Stack load button and bpm display */
+            .load-info-container {
+                flex-direction: column;
+                align-items: stretch; /* Full width */
+            }
+            .current-bpm-display {
+                min-width: 0; /* Remove min-width */
+            }
         }
 
     </style>
@@ -877,16 +1071,24 @@
             </div>
         </div>
         <div class="content">
+            <!-- Library -->
+            <div id="dj-library-container">
+                <div id="dj-library-header">
+                    <button class="window-button sort-button" id="sort-bpm" style="width: 100%;">Sort by BPM</button>
+                </div>
+                <ul id="dj-library-list">
+                    <!-- Tracks will be populated by JS -->
+                </ul>
+            </div>
+
             <!-- Deck A -->
             <div class="deck-container" id="deck-a">
                 <div class="track-name-display" id="deck-a-display">
-                    <!-- NEW: Platter and Track Name Span -->
                     <div class="scrub-platter" id="deck-a-platter">
                         <div class="platter-spindle"></div>
                     </div>
                     <span class="track-name-text" id="deck-a-track-name">DECK A</span>
                 </div>
-                <!-- NEW CONTAINER -->
                 <div class="load-info-container">
                     <button class="window-button load-button" id="load-deck-a">LOAD</button>
                     <span class="current-bpm-display" id="deck-a-current-bpm">-- BPM</span>
@@ -897,13 +1099,27 @@
                     <button class="window-button" id="deck-a-pause">PAUSE</button>
                     <button class="window-button" id="deck-a-cue">CUE</button>
                 </div>
-                <!-- NEW: Sliders Container -->
+                <!-- NEW: EQ Controls -->
+                <div class="eq-controls">
+                    <div class="eq-dial">
+                        <label for="deck-a-low">LOW</label>
+                        <input type="range" id="deck-a-low" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-a-mid">MID</label>
+                        <input type="range" id="deck-a-mid" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-a-high">HI</label>
+                        <input type="range" id="deck-a-high" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                </div>
+                <!-- Sliders Container -->
                 <div class="deck-sliders">
                     <div class="volume-slider-container">
                         <label for="deck-a-volume">VOL</label>
                         <input type="range" class="volume-slider" id="deck-a-volume" value="1" min="0" max="1" step="0.01">
                     </div>
-                    <!-- NEW: BPM Slider -->
                     <div class="bpm-slider-container">
                         <div class="bpm-label-group">
                             <label for="deck-a-bpm">BPM</label>
@@ -915,26 +1131,14 @@
                 <audio id="deck-a-audio" crossorigin="anonymous"></audio>
             </div>
             
-            <!-- Library -->
-            <div id="dj-library-container">
-                <div id="dj-library-header">
-                    <button class="window-button sort-button" id="sort-bpm" style="width: 100%;">Sort by BPM</button>
-                </div>
-                <ul id="dj-library-list">
-                    <!-- Tracks will be populated by JS -->
-                </ul>
-            </div>
-
             <!-- Deck B -->
             <div class="deck-container" id="deck-b">
                  <div class="track-name-display" id="deck-b-display">
-                    <!-- NEW: Platter and Track Name Span -->
                     <div class="scrub-platter" id="deck-b-platter">
                         <div class="platter-spindle"></div>
                     </div>
                     <span class="track-name-text" id="deck-b-track-name">DECK B</span>
                 </div>
-                <!-- NEW CONTAINER -->
                 <div class="load-info-container">
                     <button class="window-button load-button" id="load-deck-b">LOAD</button>
                     <span class="current-bpm-display" id="deck-b-current-bpm">-- BPM</span>
@@ -945,13 +1149,27 @@
                     <button class="window-button" id="deck-b-pause">PAUSE</button>
                     <button class="window-button" id="deck-b-cue">CUE</button>
                 </div>
-                <!-- NEW: Sliders Container -->
+                <!-- NEW: EQ Controls -->
+                <div class="eq-controls">
+                    <div class="eq-dial">
+                        <label for="deck-b-low">LOW</label>
+                        <input type="range" id="deck-b-low" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-b-mid">MID</label>
+                        <input type="range" id="deck-b-mid" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-b-high">HI</label>
+                        <input type="range" id="deck-b-high" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                </div>
+                <!-- Sliders Container -->
                 <div class="deck-sliders">
                     <div class="volume-slider-container">
                         <label for="deck-b-volume">VOL</label>
                         <input type="range" class="volume-slider" id="deck-b-volume" value="1" min="0" max="1" step="0.01">
                     </div>
-                    <!-- NEW: BPM Slider -->
                     <div class="bpm-slider-container">
                         <div class="bpm-label-group">
                             <label for="deck-b-bpm">BPM</label>
@@ -989,8 +1207,8 @@
     document.addEventListener('DOMContentLoaded', () => {
 
         // --- Configuration & Elements ---
-        // ! IMPORTANT: BPM is SIMULATED with a random number.
-        // Web browsers cannot analyze MP3s for BPM easily.
+        
+        // This is the full list of files from your JS
         const audioFiles = [
             "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
             "a break.mp3", "all me.mp3", "another one.mp3", "asher organ.mp3",
@@ -1033,10 +1251,63 @@
             "what am i doing.mp3", "what is this.mp3", "z style.mp3"
         ];
         
-        // Create objects with simulated BPM
+        // NEW: BPM Map from your screenshots
+        const bpmMap = new Map([
+            ["last of day.mp3", 126.07], ["surfin.mp3", 92.99], ["a break.mp3", 178.03],
+            ["flip.mp3", 134.02], ["soundbath.mp3", 134.97], ["serup.mp3", 137.00],
+            ["bubs.mp3", 160.03], ["not thru.mp3", 90.01], ["candy shack.mp3", 133.02],
+            ["hammer down.mp3", 137.00], ["delete this track.mp3", 89.00], ["thursday.mp3", 127.02],
+            ["watch it go.mp3", 112.02], ["locked.mp3", 85.00], ["synth demo.mp3", 129.15],
+            ["is ass.mp3", 146.00], ["the worst beat ever.mp3", 110.22], ["have it.mp3", 137.02],
+            ["golf soundscape.mp3", 148.37], ["fuckin idk.mp3", 118.02], ["niko again unfinished.mp3", 121.00],
+            ["read up.mp3", 86.02], ["un house.mp3", 134.02], ["the monitor.mp3", 135.02],
+            ["kirked.mp3", 84.00], ["hit the cart.mp3", 135.00], ["rythm.mp3", 92.02],
+            ["lib beat.mp3", 83.00], ["making progress thru.mp3", 133.92], ["save rq.mp3", 77.50],
+            ["gallery lazy break.mp3", 162.00], ["threw together.mp3", 126.02], ["take 2.mp3", 133.02],
+            ["slow jam 2.mp3", 92.02], ["cya.mp3", 154.00], ["day today .mp3", 90.01],
+            ["my amigo.mp3", 83.00], ["lost it unfinished.mp3", 156.02], ["corp..mp3", 135.01],
+            ["been a minu.mp3", 99.02], ["show class.mp3", 154.00], ["buds.mp3", 95.02],
+            ["House on plane.mp3", 132.00], ["grizzlies.mp3", 95.00], ["MPC iPhone beat.mp3", 82.97],
+            ["insanity.mp3", 134.02], ["swang.mp3", 92.02], ["SP iPhone sample.mp3", 167.43],
+            ["what is this.mp3", 89.00], ["On plane shiz.mp3", 164.00], ["shortest beat.mp3", 162.05],
+            ["spit it out.mp3", 89.02], ["com 303 sh.mp3", 164.00], ["snippes.mp3", 91.02],
+            ["corp. rework.mp3", 135.02], ["black airforces.mp3", 111.02], ["slash slowed.mp3", 105.96],
+            ["new setup.mp3", 123.02], ["reggae.mp3", 145.02], ["half life beat.mp3", 76.50],
+            ["huh.mp3", 144.04], ["easter.mp3", 133.02], ["what am i doing.mp3", 111.02],
+            ["late.mp3", 89.00], ["goin crazy wit 10 racks.mp3", 80.00], ["for the car.mp3", 72.50],
+            ["another one.mp3", 87.00], ["saturn.mp3", 135.02], ["soundbath 2.0.mp3", 142.47],
+            ["dub w.mp3", 122.02], ["redo.mp3", 80.01], ["rabbits.mp3", 169.45],
+            ["postd.mp3", 82.00], ["recipe.mp3", 123.00], ["week from today.mp3", 97.00],
+            ["for it.mp3", 86.97], ["shit is trash.mp3", 96.02], ["niko again .mp3", 121.00],
+            ["null.mp3", 133.02], ["saturday morning.mp3", 137.02], ["i wanna.mp3", 128.04],
+            ["slash.mp3", 126.02], ["bubs final.mp3", 80.00], ["beeps.mp3", 81.50],
+            ["not trash.mp3", 85.00], ["danklin.mp3", 135.99], ["chicos.mp3", 131.00],
+            ["number 3 shit.mp3", 92.02], ["goin crazy with 10 racks.mp3", 80.00], ["all me.mp3", 84.01],
+            ["new jersey club.mp3", 156.00], ["hyper fix.mp3", 137.06], ["this again.mp3", 162.02],
+            ["sue nami.mp3", 152.00], ["67.mp3", 80.00], ["ma.mp3", 128.03],
+            ["jungled.mp3", 172.03], ["funky.mp3", 112.02], ["lastly.mp3", 97.02],
+            ["go 2.mp3", 138.47], ["gallery.mp3", 81.01], ["kenny.mp3", 126.00],
+            ["before you go.mp3", 80.00], ["day ones.mp3", 89.00], ["have to save.mp3", 95.02],
+            ["42 cent.mp3", 89.02], ["fly guy.mp3", 94.00], ["not done beat.mp3", 80.00],
+            ["quiky.mp3", 127.02], ["throw it up.mp3", 101.00], ["fridays.mp3", 145.00],
+            ["rick poppa.mp3", 117.00], ["mini 808.mp3", 134.02], ["niko is talking.mp3", 80.50],
+            ["trios.mp3", 92.08], ["2 part shit.mp3", 128.56], ["chilled.mp3", 129.02],
+            ["standing in the rain.mp3", 83.00], ["cypher chopped.mp3", 174.21], ["saved it.mp3", 96.02],
+            ["before my set.mp3", 126.02], ["giving in.mp3", 83.00], ["that way.mp3", 95.00],
+            ["slow ride.mp3", 88.00], ["same goal.mp3", 124.02], ["trump-pets.mp3", 99.05],
+            ["swing song w eli.mp3", 87.01], ["lyra demo.mp3", 125.02], ["starterd.mp3", 153.00],
+            ["techno.mp3", 143.05], ["my sound scape.mp3", 85.16], ["bullshittin.mp3", 100.00],
+            ["Reiss_soundscape_raw.mp3", 0.00], ["gover.mp3", 121.00], ["reggetons.mp3", 103.00],
+            ["grizzlies ART.mp3", 95.00], ["ff.mp3", 78.50], ["ass with potench.mp3", 123.02],
+            ["808 beat sample.mp3", 134.02], ["z style.mp3", 94.00], ["Reiss_Soundscape_edit.mp3", 100.84],
+            ["practice.mp3", 94.01], ["w issy.mp3", 89.01], ["show trash.mp3", 153.96],
+            ["bad one.mp3", 136.02], ["asher organ.mp3", 133.00], ["making progress.mp3", 134.00]
+        ]);
+
+        // NEW: Create file objects using the BPM map
         const audioFileObjects = audioFiles.map(file => ({
             name: file,
-            bpm: Math.floor(Math.random() * (160 - 90 + 1) + 90) // Random BPM between 90-160
+            bpm: bpmMap.get(file) || 120.00 // Use mapped BPM or 120 as default
         }));
         
         let currentTracklist = [...audioFileObjects]; // Array to hold the currently sorted list
@@ -1081,13 +1352,22 @@
         let activeVisualizer = 'nostalgiaWindows'; 
 
         // --- Audio Context Setup ---
-        let audioContext, analyser, source;
+        let audioContext, analyser;
         let bitCrusherNode; 
         let isBitcrushActive = false; 
         let frequencyData, timeDomainData;
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
+
+        // NEW: Audio sources
+        let sourceMain = null;
+        let sourceDeckA = null;
+        let sourceDeckB = null;
+        
+        // NEW: EQ Filter Nodes
+        let filterALow, filterAMid, filterAHigh;
+        let filterBLow, filterBMid, filterBHigh;
 
         function setupAudioContext() {
             if (audioContext) return;
@@ -1097,8 +1377,39 @@
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
             
-            source = audioContext.createMediaElementSource(audioPlayer);
+            // NEW: Create sources for all players
+            sourceMain = audioContext.createMediaElementSource(audioPlayer);
+            sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
+            sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
+            // NEW: Create 6 filter nodes
+            filterALow = audioContext.createBiquadFilter();
+            filterAMid = audioContext.createBiquadFilter();
+            filterAHigh = audioContext.createBiquadFilter();
+            filterBLow = audioContext.createBiquadFilter();
+            filterBMid = audioContext.createBiquadFilter();
+            filterBHigh = audioContext.createBiquadFilter();
+
+            // Setup Deck A Filters ("cut" = lowshelf/highshelf/peaking with negative gain)
+            filterALow.type = 'lowshelf'; filterALow.frequency.value = 300; filterALow.gain.value = 0;
+            filterAMid.type = 'peaking'; filterAMid.frequency.value = 1200; filterAMid.Q.value = 1.0; filterAMid.gain.value = 0;
+            filterAHigh.type = 'highshelf'; filterAHigh.frequency.value = 4000; filterAHigh.gain.value = 0;
+            
+            // Setup Deck B Filters
+            filterBLow.type = 'lowshelf'; filterBLow.frequency.value = 300; filterBLow.gain.value = 0;
+            filterBMid.type = 'peaking'; filterBMid.frequency.value = 1200; filterBMid.Q.value = 1.0; filterBMid.gain.value = 0;
+            filterBHigh.type = 'highshelf'; filterBHigh.frequency.value = 4000; filterBHigh.gain.value = 0;
+
+            // Chain the filters for each deck
+            sourceDeckA.connect(filterALow);
+            filterALow.connect(filterAMid);
+            filterAMid.connect(filterAHigh); // End of Deck A chain
+            
+            sourceDeckB.connect(filterBLow);
+            filterBLow.connect(filterBMid);
+            filterBMid.connect(filterBHigh); // End of Deck B chain
+            
+            // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
             const steps = Math.pow(2, 8);
             const curve = new Float32Array(65536);
@@ -1108,23 +1419,62 @@
             }
             bitCrusherNode.curve = curve;
             
-            source.connect(analyser);
+            // Connect analyser to destination by default
             analyser.connect(audioContext.destination);
             
             bufferLength = analyser.frequencyBinCount;
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
+
+            // Connect main player as default (will be overridden)
+            sourceMain.connect(analyser);
         }
 
-        function toggleBitcrusher() {
-            isBitcrushActive = !isBitcrushActive;
-            analyser.disconnect();
+        // NEW: Function to set the active audio source for the visualizer
+        function setActiveAudioSource(sourceType) { // 'main', 'deckA', or 'deckB'
+            if (!audioContext) setupAudioContext();
+            
+            // Disconnect all inputs from the analyser
+            try { sourceMain.disconnect(analyser); } catch(e) {}
+            try { filterAHigh.disconnect(analyser); } catch(e) {}
+            try { filterBHigh.disconnect(analyser); } catch(e) {}
+            
+            let activeSource;
+            if (sourceType === 'main') {
+                activeSource = sourceMain;
+            } else if (sourceType === 'deckA') {
+                activeSource = filterAHigh; // End of Deck A's chain
+            } else if (sourceType === 'deckB') {
+                activeSource = filterBHigh; // End of Deck B's chain
+            }
+            
+            // Connect the correct source to the analyser
+            if (activeSource) {
+                activeSource.connect(analyser);
+            }
+            
+            // Re-apply bitcrusher routing
+            toggleBitcrusher(true); // Pass true to force re-connection
+        }
+
+        // NEW: Modified to handle re-connection
+        function toggleBitcrusher(forceReconnect = false) {
+            if (!analyser) return; // Not ready
+            
+            if (!forceReconnect) {
+                isBitcrushActive = !isBitcrushActive;
+            }
+
+            analyser.disconnect(); // Disconnect analyser from its output
+            
             if (isBitcrushActive) {
+                // Connect: ... -> Analyser -> BitCrusher -> Destination
                 analyser.connect(bitCrusherNode);
                 bitCrusherNode.connect(audioContext.destination);
                 bitcrushToggle.classList.add('active');
             } else {
-                if (bitCrusherNode) bitCrusherNode.disconnect();
+                // Connect: ... -> Analyser -> Destination
+                try { bitCrusherNode.disconnect(audioContext.destination); } catch(e) {}
                 analyser.connect(audioContext.destination);
                 bitcrushToggle.classList.remove('active');
             }
@@ -1134,6 +1484,7 @@
             if (visualizerActive && animationFrameId) {
                 cancelAnimationFrame(animationFrameId); // Stop previous loop
             }
+            if (audioContext) audioContext.resume(); // Ensure context is running
             visualizerActive = true;
             visualizerWindow.style.display = 'flex';
             drawVisualizer();
@@ -1153,7 +1504,7 @@
                 stopVisualizer();
             } else {
                 // Tab is visible (or phone unlocked) - resume visualizer if audio is playing
-                if (!audioPlayer.paused) {
+                if (!audioPlayer.paused || !document.getElementById('deck-a-audio').paused || !document.getElementById('deck-b-audio').paused) {
                     startVisualizer();
                 }
             }
@@ -1208,7 +1559,7 @@
         
         // Nostalgia Windows Visualizer (Starfield Tunnel)
         const stars = [];
-        const maxStars = 400; // Reduced for performance
+        const maxStars = 500; // Increased from 400
         let starfieldRotation = 0;
         let starfieldOrigin = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
 
@@ -1220,7 +1571,7 @@
                 this.colorHue = 0;
             }
             update(bass, mids, highs, centerX, centerY) {
-                const speed = 2 + bass * 20; 
+                const speed = 3 + bass * 30; // Increased speed and reactivity
                 this.z -= speed;
                 if (this.z <= 0) {
                     this.z = canvas.width;
@@ -1232,7 +1583,7 @@
                 this.x = rotX; this.y = rotY;
                 this.colorHue = (hslToHex(visualizerColor).h + (this.z / canvas.width) * 360 + Date.now() * 0.01) % 360;
             }
-            draw(ctx, centerX, centerY) {
+            draw(ctx, centerX, centerY, bassAvg) { // Pass bassAvg
                 if (this.z <= 0) return;
                 const k = 128 / this.z;
                 const px = this.x * k + centerX;
@@ -1240,7 +1591,7 @@
                 if (px < 0 || px > canvas.width || py < 0 || py > canvas.height) {
                     this.z = 0; return;
                 }
-                const size = (1 - this.z / canvas.width) * 3;
+                const size = (1 - this.z / canvas.width) * (2 + bassAvg * 5); // NEW: Pulse size with bass
                 ctx.fillStyle = `hsl(${this.colorHue}, 100%, ${70 + (1 - this.z / canvas.width) * 30}%)`;
                 ctx.beginPath();
                 ctx.arc(px, py, Math.max(0.5, size), 0, Math.PI * 2);
@@ -1250,7 +1601,7 @@
         for (let i = 0; i < maxStars; i++) stars.push(new Star());
         
         function drawNostalgiaVisualizer(bassAvg, midsAvg, highsAvg) {
-            starfieldRotation += (midsAvg - 0.1) * 0.005;
+            starfieldRotation += (midsAvg - 0.1) * 0.01; // Increased rotation
             starfieldOrigin.targetX = 0.5 + (Math.sin(Date.now() * 0.0005) * 0.2) * bassAvg;
             starfieldOrigin.targetY = 0.5 + (Math.cos(Date.now() * 0.0005) * 0.2) * bassAvg;
             starfieldOrigin.x += (starfieldOrigin.targetX - starfieldOrigin.x) * 0.05;
@@ -1263,7 +1614,7 @@
             ctx.translate(centerX, centerY);
             stars.forEach(star => {
                 star.update(bassAvg, midsAvg, highsAvg, centerX, centerY);
-                star.draw(ctx, 0, 0);
+                star.draw(ctx, 0, 0, bassAvg); // Pass bassAvg
             });
             ctx.restore();
             const pulseSize = 10 + bassAvg * 50;
@@ -1379,6 +1730,9 @@
         let initialWidth, initialHeight;
         let playerLastX, playerLastY, playerLastWidth, playerLastHeight;
         let djLastX, djLastY, djLastWidth, djLastHeight; // For DJ window
+        
+        // NEW: Check for mobile at start
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
         document.querySelectorAll('.window').forEach(windowEl => {
             windowEl.addEventListener('mousedown', () => bringWindowToFront(windowEl));
@@ -1386,6 +1740,7 @@
         });
 
         function bringWindowToFront(windowEl) {
+            if (isMobile) return; // Don't change z-index on mobile
             document.querySelectorAll('.window').forEach(win => {
                 win.classList.remove('active-window');
             });
@@ -1393,6 +1748,7 @@
         }
 
         function handleDragStart(e, windowEl) {
+            if (isMobile) return; // No dragging on mobile
             if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab')) return;
             isDragging = true;
             activeWindow = windowEl;
@@ -1405,7 +1761,7 @@
         }
 
         function handleDragMove(e) {
-            if (!isDragging || !activeWindow) return;
+            if (isMobile || !isDragging || !activeWindow) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             let newX = clientX - dragOffsetX;
@@ -1418,6 +1774,7 @@
         }
 
         function handleResizeStart(e, windowEl) {
+            if (isMobile) return; // No resizing on mobile
             isResizing = true;
             activeWindow = windowEl;
             resizeStartX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -1429,7 +1786,7 @@
         }
 
         function handleResizeMove(e) {
-            if (!isResizing || !activeWindow) return;
+            if (isMobile || !isResizing || !activeWindow) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             let newWidth = initialWidth + (clientX - resizeStartX);
@@ -1445,6 +1802,7 @@
         }
 
         function handleEnd() {
+            if (isMobile) return;
             isDragging = false;
             isResizing = false;
             activeWindow = null;
@@ -1454,25 +1812,28 @@
         document.querySelectorAll('.window').forEach(windowEl => {
             const titleBar = windowEl.querySelector('.title-bar');
             const resizeHandle = windowEl.querySelector('.resize-handle');
-            if(titleBar) {
+            if(titleBar && !isMobile) { // Only add drag if not mobile
                 titleBar.addEventListener('mousedown', (e) => handleDragStart(e, windowEl));
                 titleBar.addEventListener('touchstart', (e) => handleDragStart(e, windowEl), { passive: false });
             }
-            if (resizeHandle) {
+            if (resizeHandle && !isMobile) { // Only add resize if not mobile
                 resizeHandle.addEventListener('mousedown', (e) => handleResizeStart(e, windowEl));
                 resizeHandle.addEventListener('touchstart', (e) => handleResizeStart(e, windowEl), { passive: false });
             }
         });
 
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('touchmove', handleDragMove, { passive: false });
-        document.addEventListener('mousemove', handleResizeMove);
-        document.addEventListener('touchmove', handleResizeMove, { passive: false });
-        document.addEventListener('mouseup', handleEnd);
-        document.addEventListener('touchend', handleEnd);
+        if (!isMobile) { // Only add desktop move/end listeners if not mobile
+            document.addEventListener('mousemove', handleDragMove);
+            document.addEventListener('touchmove', handleDragMove, { passive: false });
+            document.addEventListener('mousemove', handleResizeMove);
+            document.addEventListener('touchmove', handleResizeMove, { passive: false });
+            document.addEventListener('mouseup', handleEnd);
+            document.addEventListener('touchend', handleEnd);
+        }
  
         // --- Initialize Window Positions ---
         function setInitialPlayerPosition() {
+            if (isMobile) return; // Don't set positions on mobile
             const style = window.getComputedStyle(playerContainer);
             playerLastWidth = parseFloat(style.width) || playerContainer.offsetWidth;
             playerLastHeight = parseFloat(style.height) || playerContainer.offsetHeight;
@@ -1487,6 +1848,7 @@
         setInitialPlayerPosition();
         
         function setInitialDjPosition() {
+            if (isMobile) return; // Don't set positions on mobile
             // Read from CSS styles instead of offsetHeight
             const style = window.getComputedStyle(djAppWindow);
             djLastWidth = parseFloat(style.width) || 900; // Match new max-width
@@ -1500,14 +1862,14 @@
             djAppWindow.style.width = djLastWidth + 'px';
             djAppWindow.style.height = djLastHeight + 'px';
         }
-        // Set its initial position even if hidden
-        // We call this *when the window is opened* to avoid issues
         
-        visualizerWindow.style.left = '20px';
-        visualizerWindow.style.top = '20px';
-        infoWindow.style.left = (window.innerWidth - infoWindow.offsetWidth) / 2 + 'px';
-        infoWindow.style.top = (window.innerHeight - infoWindow.offsetHeight) / 2 + 'px';
-        bringWindowToFront(playerContainer);
+        if (!isMobile) {
+            visualizerWindow.style.left = '20px';
+            visualizerWindow.style.top = '20px';
+            infoWindow.style.left = (window.innerWidth - infoWindow.offsetWidth) / 2 + 'px';
+            infoWindow.style.top = (window.innerHeight - infoWindow.offsetHeight) / 2 + 'px';
+            bringWindowToFront(playerContainer);
+        }
 
         // --- Populate & Sort File List (Main Player) ---
         function populateFileList(files) {
@@ -1541,7 +1903,7 @@
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <span class="dj-track-name">${fileObj.name.replace('.mp3', '')}</span>
-                    <input type="number" class="dj-track-bpm" value="${fileObj.bpm}" data-filename="${fileObj.name}">
+                    <input type="number" class="dj-track-bpm" value="${fileObj.bpm.toFixed(0)}" data-filename="${fileObj.name}">
                 `;
                 
                 // Click to select track
@@ -1584,12 +1946,20 @@
 
         function setupDeck(deckId) {
             const audio = document.getElementById(`${deckId}-audio`);
-            // NEW: Get new elements
             const trackNameText = document.getElementById(`${deckId}-track-name`);
             const platter = document.getElementById(`${deckId}-platter`);
             const bpmSlider = document.getElementById(`${deckId}-bpm`);
-            const bpmDisplay = document.getElementById(`${deckId}-bpm-display`); // This is the percentage
-            const currentBpmDisplay = document.getElementById(`${deckId}-current-bpm`); // NEW: This is the actual BPM
+            const bpmDisplay = document.getElementById(`${deckId}-bpm-display`); 
+            const currentBpmDisplay = document.getElementById(`${deckId}-current-bpm`); 
+            
+            // NEW: EQ Sliders
+            const lowSlider = document.getElementById(`${deckId}-low`);
+            const midSlider = document.getElementById(`${deckId}-mid`);
+            const highSlider = document.getElementById(`${deckId}-high`);
+            
+            // NEW: Get correct filter nodes
+            let filters;
+            // We set filters *after* setupAudioContext is called
             
             const loadBtn = document.getElementById(`load-${deckId}`);
             const playBtn = document.getElementById(`${deckId}-play`);
@@ -1602,14 +1972,24 @@
             let isScrubbingPlatter = false; // For the new platter
             let lastScrubX = 0;
             let baseBpm = null; // NEW: Store the track's base BPM
+            
+            function assignFilters() {
+                 if (deckId === 'deck-a') {
+                    filters = { low: filterALow, mid: filterAMid, high: filterAHigh };
+                } else { // deck-b
+                    filters = { low: filterBLow, mid: filterBMid, high: filterBHigh };
+                }
+            }
 
             loadBtn.addEventListener('click', () => {
                 if (selectedDjTrack) {
+                    if (!audioContext) setupAudioContext(); // Ensure context exists
+                    assignFilters(); // Now we can assign filters
+                    
                     audio.src = 'Audio/' + selectedDjTrack;
-                    trackNameText.textContent = selectedDjTrack.replace('.mp3', ''); // Update text span
+                    trackNameText.textContent = selectedDjTrack.replace('.mp3', ''); 
                     audio.load();
                     
-                    // NEW: Find and set base BPM
                     const trackData = audioFileObjects.find(f => f.name === selectedDjTrack);
                     if (trackData) {
                         baseBpm = trackData.bpm;
@@ -1625,11 +2005,24 @@
                     audio.playbackRate = 1;
                     platter.style.transform = 'rotate(0deg)';
                     platter.style.animationPlayState = 'paused';
+                    
+                    // NEW: Reset EQ
+                    lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
+                    if(filters) {
+                        filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
+                    }
                 }
             });
 
-            // NEW: Update play/pause to control animation
             playBtn.addEventListener('click', () => {
+                 if (!audioContext) setupAudioContext(); // Ensure context exists
+                 assignFilters();
+                 if (deckId === 'deck-a') {
+                    setActiveAudioSource('deckA');
+                 } else {
+                    setActiveAudioSource('deckB');
+                 }
+                 startVisualizer(); 
                  audio.play();
                  platter.style.animationPlayState = 'running';
             });
@@ -1641,18 +2034,22 @@
             cueBtn.addEventListener('click', () => {
                 audio.currentTime = 0;
                 audio.pause();
-                // NEW: Reset platter and BPM
                 platter.style.transform = 'rotate(0deg)';
                 platter.style.animationPlayState = 'paused';
                 bpmSlider.value = 1;
-                bpmDisplay.textContent = '100%'; // NEW
+                bpmDisplay.textContent = '100%'; 
                 audio.playbackRate = 1;
                 
-                // NEW: Reset current BPM display
                 if (baseBpm) {
                     currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
                 } else {
                     currentBpmDisplay.textContent = '-- BPM';
+                }
+                
+                // NEW: Reset EQ
+                lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
+                if(filters) {
+                    filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                 }
             });
 
@@ -1660,36 +2057,48 @@
                 audio.volume = volumeSlider.value;
             });
             
-            // NEW: BPM Slider listener
             bpmSlider.addEventListener('input', () => {
                 const rate = parseFloat(bpmSlider.value);
                 audio.playbackRate = rate;
-                bpmDisplay.textContent = (rate * 100).toFixed(0) + '%'; // NEW
+                bpmDisplay.textContent = (rate * 100).toFixed(0) + '%'; 
                 
-                // NEW: Update current BPM display based on rate
                 if (baseBpm) {
                     const newBpm = baseBpm * rate;
                     currentBpmDisplay.textContent = newBpm.toFixed(1) + ' BPM';
                 }
             });
+            
+            // NEW: EQ Slider Listeners
+            lowSlider.addEventListener('input', () => {
+                if(filters) filters.low.gain.value = lowSlider.value;
+            });
+            midSlider.addEventListener('input', () => {
+                if(filters) filters.mid.gain.value = midSlider.value;
+            });
+            highSlider.addEventListener('input', () => {
+                if(filters) filters.high.gain.value = highSlider.value;
+            });
 
-            // NEW: Update timeupdate to check for *both* scrub types
             audio.addEventListener('timeupdate', () => {
                 if (!isScrubbing && !isScrubbingPlatter && audio.duration) {
                     scrubBar.value = (audio.currentTime / audio.duration) * 1000;
                 }
             });
             
-            // NEW: Add ended listener
             audio.addEventListener('ended', () => {
                 platter.style.animationPlayState = 'paused';
                 platter.style.transform = 'rotate(0deg)';
                 bpmSlider.value = 1;
-                bpmDisplay.textContent = '100%'; // NEW
+                bpmDisplay.textContent = '100%'; 
                 
-                // NEW: Reset current BPM display
                 if (baseBpm) {
                     currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
+                }
+                
+                // NEW: Reset EQ
+                lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
+                if(filters) {
+                    filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                 }
             });
             
@@ -1712,7 +2121,7 @@
                 isScrubbingPlatter = true;
                 lastScrubX = e.touches ? e.touches[0].clientX : e.clientX;
                 platter.style.cursor = 'grabbing';
-                document.body.style.cursor = 'grabbing';
+                if (!isMobile) document.body.style.cursor = 'grabbing';
                 audio.pause();
                 platter.style.animationPlayState = 'paused';
                 
@@ -1750,7 +2159,7 @@
                 if (!isScrubbingPlatter) return;
                 isScrubbingPlatter = false;
                 platter.style.cursor = 'grab';
-                document.body.style.cursor = 'default';
+                if (!isMobile) document.body.style.cursor = 'default';
                 
                 document.removeEventListener('mousemove', platterMove);
                 document.removeEventListener('touchmove', platterMove);
@@ -1779,8 +2188,8 @@
                 const filename = clickedLi.dataset.filename;
                 audioPlayer.src = 'Audio/' + filename;
                 
-                setupAudioContext(); 
-                if (audioContext.state === 'suspended') audioContext.resume();
+                if (!audioContext) setupAudioContext(); 
+                setActiveAudioSource('main'); // NEW: Set main player as source
                 
                 audioPlayer.play();
                 nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
@@ -1788,14 +2197,13 @@
                 const currentActive = fileListElement.querySelector('.active');
                 if (currentActive) currentActive.classList.remove('active');
                 clickedLi.classList.add('active');
-                
-                startVisualizer();
             }
         });
         
         audioPlayer.addEventListener('pause', () => { /* stopVisualizer(); */ });
         audioPlayer.addEventListener('play', () => {
             if (audioContext) {
+                setActiveAudioSource('main'); // NEW: Ensure source is set on play
                 audioContext.resume();
                 startVisualizer();
             }
@@ -1830,7 +2238,7 @@
         
         infoButton.addEventListener('click', () => {
             infoWindow.style.display = 'flex';
-            bringWindowToFront(infoWindow);
+            if (!isMobile) bringWindowToFront(infoWindow);
         });
         
         // --- Window Button Listeners ---
@@ -1841,17 +2249,21 @@
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
                     if (targetWindowId === 'player-container') {
-                        playerLastX = playerContainer.offsetLeft;
-                        playerLastY = playerContainer.offsetTop;
-                        playerLastWidth = playerContainer.offsetWidth;
-                        playerLastHeight = playerContainer.offsetHeight;
+                        if (!isMobile) { // Only save position on desktop
+                            playerLastX = playerContainer.offsetLeft;
+                            playerLastY = playerContainer.offsetTop;
+                            playerLastWidth = playerContainer.offsetWidth;
+                            playerLastHeight = playerContainer.offsetHeight;
+                        }
                         playerContainer.style.display = 'none';
                         minimizedPlayerIcon.style.display = 'flex';
                     } else if (targetWindowId === 'dj-app-window') {
-                        djLastX = djAppWindow.offsetLeft;
-                        djLastY = djAppWindow.offsetTop;
-                        djLastWidth = djAppWindow.offsetWidth;
-                        djLastHeight = djAppWindow.offsetHeight;
+                        if (!isMobile) {
+                            djLastX = djAppWindow.offsetLeft;
+                            djLastY = djAppWindow.offsetTop;
+                            djLastWidth = djAppWindow.offsetWidth;
+                            djLastHeight = djAppWindow.offsetHeight;
+                        }
                         djAppWindow.style.display = 'none';
                         minimizedDjIcon.style.display = 'none'; // Hide minimized
                         openDjAppIcon.style.display = 'flex'; // Show open icon
@@ -1866,10 +2278,12 @@
         });
 
         minimizePlayerButton.addEventListener('click', () => {
-            playerLastX = playerContainer.offsetLeft;
-            playerLastY = playerContainer.offsetTop;
-            playerLastWidth = playerContainer.offsetWidth;
-            playerLastHeight = playerContainer.offsetHeight;
+            if (!isMobile) {
+                playerLastX = playerContainer.offsetLeft;
+                playerLastY = playerContainer.offsetTop;
+                playerLastWidth = playerContainer.offsetWidth;
+                playerLastHeight = playerContainer.offsetHeight;
+            }
             playerContainer.style.display = 'none';
             minimizedPlayerIcon.style.display = 'flex';
         });
@@ -1877,46 +2291,53 @@
         minimizedPlayerIcon.addEventListener('click', () => {
             playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
-            bringWindowToFront(playerContainer);
-            playerContainer.style.width = playerLastWidth + 'px';
-            playerContainer.style.height = playerLastHeight + 'px';
-            playerContainer.style.left = playerLastX + 'px';
-            playerContainer.style.top = playerLastY + 'px';
+            if (!isMobile) {
+                bringWindowToFront(playerContainer);
+                playerContainer.style.width = playerLastWidth + 'px';
+                playerContainer.style.height = playerLastHeight + 'px';
+                playerContainer.style.left = playerLastX + 'px';
+                playerContainer.style.top = playerLastY + 'px';
+            }
         });
         
         // DJ App Minimize/Restore
         openDjAppIcon.addEventListener('click', () => {
-            // Calculate and set position *before* showing
-            setInitialDjPosition(); 
+            if (!isMobile) setInitialDjPosition(); // Set desktop position
             djAppWindow.style.display = 'flex';
-            openDjAppIcon.style.display = 'none'; // Hide open icon
-            minimizedDjIcon.style.display = 'none'; // Hide minimized
-            bringWindowToFront(djAppWindow);
-            djAppWindow.style.width = djLastWidth + 'px';
-            djAppWindow.style.height = djLastHeight + 'px';
-            djAppWindow.style.left = djLastX + 'px';
-            djAppWindow.style.top = djLastY + 'px';
+            openDjAppIcon.style.display = 'none'; 
+            minimizedDjIcon.style.display = 'none'; 
+            if (!isMobile) {
+                bringWindowToFront(djAppWindow);
+                djAppWindow.style.width = djLastWidth + 'px';
+                djAppWindow.style.height = djLastHeight + 'px';
+                djAppWindow.style.left = djLastX + 'px';
+                djAppWindow.style.top = djLastY + 'px';
+            }
         });
         
         minimizeDjButton.addEventListener('click', () => {
-            djLastX = djAppWindow.offsetLeft;
-            djLastY = djAppWindow.offsetTop;
-            djLastWidth = djAppWindow.offsetWidth;
-            djLastHeight = djAppWindow.offsetHeight;
+            if (!isMobile) {
+                djLastX = djAppWindow.offsetLeft;
+                djLastY = djAppWindow.offsetTop;
+                djLastWidth = djAppWindow.offsetWidth;
+                djLastHeight = djAppWindow.offsetHeight;
+            }
             djAppWindow.style.display = 'none';
-            minimizedDjIcon.style.display = 'flex'; // Show minimized
-            openDjAppIcon.style.display = 'none'; // Hide open icon
+            minimizedDjIcon.style.display = 'flex'; 
+            openDjAppIcon.style.display = 'none'; 
         });
         
         minimizedDjIcon.addEventListener('click', () => {
             djAppWindow.style.display = 'flex';
-            minimizedDjIcon.style.display = 'none'; // Hide minimized
-            openDjAppIcon.style.display = 'none'; // Keep open icon hidden
-            bringWindowToFront(djAppWindow);
-            djAppWindow.style.width = djLastWidth + 'px';
-            djAppWindow.style.height = djLastHeight + 'px';
-            djAppWindow.style.left = djLastX + 'px';
-            djAppWindow.style.top = djLastY + 'px';
+            minimizedDjIcon.style.display = 'none'; 
+            openDjAppIcon.style.display = 'none'; 
+            if (!isMobile) {
+                bringWindowToFront(djAppWindow);
+                djAppWindow.style.width = djLastWidth + 'px';
+                djAppWindow.style.height = djLastHeight + 'px';
+                djAppWindow.style.left = djLastX + 'px';
+                djAppWindow.style.top = djLastY + 'px';
+            }
         });
 
         visualizerTabs.addEventListener('click', (e) => {
@@ -2011,5 +2432,4 @@
 </script>
 </body>
 </html>
-
 
