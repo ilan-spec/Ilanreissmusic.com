@@ -24,17 +24,14 @@
             background: #008080;
             overflow: hidden; /* Prevents scrollbars */
             height: 100vh;
+            user-select: none; /* Prevent selection during drag/resize */
+            -webkit-user-select: none;
         }
 
-        /* --- Player UI (Old Computer Style) --- */
-        
-        .player-container {
+        /* --- Reusable Window Style --- */
+        .window {
             display: flex;
             flex-direction: column;
-            width: 90%;
-            max-width: 600px; /* Slightly smaller */
-            height: 70vh;
-            max-height: 550px;
             
             /* Classic Windows grey */
             background: #c0c0c0;
@@ -47,7 +44,15 @@
             box-shadow: 1px 1px 0 1px #000;
             
             position: absolute;
-            /* Cursors will be managed by JS */
+            min-width: 250px; /* Minimum size */
+            min-height: 150px; /* Minimum size */
+        }
+        
+        .player-container {
+            width: 90%;
+            max-width: 600px;
+            height: 70vh;
+            max-height: 550px;
         }
 
         /* The title bar of the player */
@@ -59,11 +64,41 @@
             /* Classic Windows active title bar */
             background: linear-gradient(to right, #000080, #1084d0);
             cursor: move; /* Indicates this is draggable */
-            user-select: none; /* Prevents text selection while dragging */
-            -webkit-user-select: none; /* Safari */
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+        
+        .title-bar-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Close button for windows */
+        .close-button {
+            width: 18px;
+            height: 18px;
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            font-family: "Arial Black", sans-serif;
+            font-size: 12px;
+            font-weight: 900;
+            color: #000;
+            text-align: center;
+            line-height: 16px;
+            cursor: pointer;
+            margin-left: 5px;
+            flex-shrink: 0;
+        }
+        .close-button:active {
+            border-top: 1px solid #404040;
+            border-left: 1px solid #404040;
+            border-right: 1px solid #fff;
+            border-bottom: 1px solid #fff;
         }
 
         .content {
@@ -74,6 +109,18 @@
             flex-grow: 1; /* Makes content fill the space */
             overflow: hidden; /* Prevents internal scrolling */
             border-top: 1px solid #808080;
+        }
+        
+        .player .content {
+             overflow-y: hidden;
+        }
+        
+        .content-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+            overflow: hidden;
         }
 
         /* --- Search Bar Style --- */
@@ -91,6 +138,7 @@
             font-size: 1rem;
             font-weight: 500;
             outline: none;
+            flex-shrink: 0;
         }
 
         #search-bar::placeholder {
@@ -174,7 +222,7 @@
              color: #fff;
         }
 
-        .player {
+        .player-controls {
             flex-shrink: 0; /* Prevents this section from shrinking */
         }
 
@@ -211,43 +259,167 @@
             border-right: 1px solid #404040;
             border-bottom: 1px solid #404040;
         }
+        
+        /* --- New Resize Handle --- */
+        .resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 16px;
+            height: 16px;
+            /* Simple diagonal line icon */
+            background: repeating-linear-gradient(
+                -45deg,
+                #c0c0c0,
+                #c0c0c0 2px,
+                #404040 2px,
+                #404040 4px,
+                #fff 4px,
+                #fff 6px
+            );
+            cursor: nwse-resize;
+            z-index: 100;
+        }
+        
+        /* --- New Visualizer Window --- */
+        #visualizer-window {
+            width: 350px;
+            height: 200px;
+            top: 20px;
+            left: 20px;
+            display: none; /* Hidden by default */
+        }
+        
+        #visualizer-canvas {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: block;
+        }
+        
+        /* --- New Info Window --- */
+        #info-window {
+            width: 300px;
+            height: 250px;
+            top: 150px;
+            left: 100px;
+            display: none; /* Hidden by default */
+        }
+        
+        #info-window .content {
+            padding: 15px;
+            font-size: 0.9rem;
+        }
+        
+        #info-button {
+            width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            font-family: "Arial Black", sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            color: #000080;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+            margin-top: 5px;
+            align-self: flex-start;
+        }
+        #info-button:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
+
+        /* --- New Digital Clock --- */
+        #digital-clock {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            padding: 5px 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 1000;
+            border-bottom: none; /* Sits on bottom edge */
+            border-right: none; /* Sits on right edge */
+        }
     </style>
 </head>
 <body>
 
-    <!-- No more cloud container -->
-
-    <!-- The "Old Computer" Player --><div class="player-container">
+    <!-- The "Old Computer" Player --><div class="player-container window">
         <div class="title-bar">
-            <span>🎵 Ilan Reiss Music Player</span>
-            <!-- Can add minimize/maximize/close buttons here later if needed -->
+            <span class="title-bar-text">🎵 Ilan Reiss Music Player</span>
         </div>
         
         <div class="content">
-            <div class="player">
+            <div class="player-controls">
                 <span id="now-playing">Select a track to play</span>
                 
-                <!-- This is the ACTUAL audio player. 
-                     'controls' adds the play/pause/volume. 
-                     'crossorigin' is NOT needed anymore since visualization is removed. --><audio id="audio-player" controls></audio>
+                <!-- Added 'crossorigin' back for visualizer --><audio id="audio-player" controls crossorigin="anonymous"></audio>
             </div>
             
-            <!-- --- Search Bar HTML --- -->
-            <input type="text" id="search-bar" placeholder="Search tracks...">
+            <div class="content-inner">
+                <input type="text" id="search-bar" placeholder="Search tracks...">
 
-            <div class="file-browser">
-                <!-- Your JavaScript will automatically fill this list --><ul id="file-list">
-                    <!-- The list of files will appear here --></ul>
+                <div class="file-browser">
+                    <ul id="file-list">
+                        <!-- The list of files will appear here --></ul>
+                </div>
+                 <button id="info-button">i</button>
             </div>
         </div>
+        <div class="resize-handle"></div>
     </div>
+    
+    <!-- New Visualizer Window -->
+    <div id="visualizer-window" class="window">
+         <div class="title-bar">
+            <span class="title-bar-text">🔊 Audio Visualizer</span>
+            <span class="close-button" data-target="visualizer-window">X</span>
+        </div>
+        <div class="content" style="padding: 0; border: 2px inset #808080; border-top-color: #404040; border-left-color: #404040; border-right-color: #fff; border-bottom-color: #fff;">
+            <canvas id="visualizer-canvas"></canvas>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+    
+    <!-- New Info Window -->
+    <div id="info-window" class="window">
+         <div class="title-bar">
+            <span class="title-bar-text">ℹ️ Information</span>
+            <span class="close-button" data-target="info-window">X</span>
+        </div>
+        <div class="content">
+            <p><strong>Ilan Reiss Music Player</strong></p>
+            <p>Version 1.0 (Retro)</p>
+            <br>
+            <p>This music player streams files directly from the 'Audio' folder of the GitHub repository.</p>
+            <br>
+            <p><em>(You can edit this text in the ilanreissmusic.com.html file)</em></p>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+    
+    <!-- New Digital Clock -->
+    <div id="digital-clock">9:31 PM</div>
 
 
     <!-- All JavaScript is now inside the HTML file --><script>
         // This function runs once the entire HTML page has loaded
         document.addEventListener('DOMContentLoaded', () => {
 
-            // THIS IS YOUR LIST OF AUDIO FILES
+            // --- AUDIO FILE LIST ---
             const audioFiles = [
                 "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
                 "a break.mp3", "all me.mp3", "another one.mp3", "asher organ.mp3",
@@ -290,143 +462,277 @@
                 "what am i doing.mp3", "what is this.mp3", "z style.mp3"
             ];
 
-            // Get references to the HTML elements
-            const fileListElement = document.getElementById('file-list');
+            // --- ELEMENT REFERENCES ---
             const audioPlayer = document.getElementById('audio-player');
+            const fileListElement = document.getElementById('file-list');
             const nowPlayingElement = document.getElementById('now-playing');
-            
-            // --- Get elements for draggable window ---
-            const playerContainer = document.querySelector('.player-container');
-            const titleBar = document.querySelector('.title-bar');
-
-            // --- Get new search bar element ---
             const searchBar = document.getElementById('search-bar');
+            
+            const playerContainer = document.querySelector('.player-container');
+            const visualizerWindow = document.getElementById('visualizer-window');
+            const infoWindow = document.getElementById('info-window');
+            const infoButton = document.getElementById('info-button');
+            const digitalClock = document.getElementById('digital-clock');
+            
+            const canvas = document.getElementById('visualizer-canvas');
+            const ctx = canvas.getContext('2d');
 
-            // --- 0. Set Initial Window Position ---
-            // Center the window on load
+            // --- AUDIO VISUALIZER SETUP ---
+            let audioContext, analyser, source, dataArray, bufferLength;
+            let visualizerActive = false;
+
+            function setupVisualizer() {
+                if (audioContext) return; // Already set up
+                
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256; // Controls bar count (fftSize / 2)
+                
+                source = audioContext.createMediaElementSource(audioPlayer);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                
+                bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                
+                visualizerWindow.style.display = 'flex'; // Show visualizer
+                visualizerActive = true;
+                drawVisualizer();
+            }
+
+            function drawVisualizer() {
+                if (!visualizerActive) return;
+                
+                requestAnimationFrame(drawVisualizer);
+                
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Set canvas size based on its DOM element size
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+                
+                ctx.fillStyle = '#000'; // Black background
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const barWidth = (canvas.width / bufferLength) * 1.5;
+                let barHeight;
+                let x = 0;
+                
+                const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
+                gradient.addColorStop(0, '#00ff00'); // Green
+                gradient.addColorStop(0.5, '#ffff00'); // Yellow
+                gradient.addColorStop(1, '#ff0000'); // Red
+                
+                ctx.fillStyle = gradient;
+
+                for(let i = 0; i < bufferLength; i++) {
+                    barHeight = (dataArray[i] / 255) * canvas.height;
+                    
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                    
+                    x += barWidth + 2; // Add 2px spacing
+                }
+            }
+
+            // --- WINDOW MANAGEMENT FUNCTIONS ---
+
+            function makeWindowDraggable(windowEl) {
+                const titleBar = windowEl.querySelector('.title-bar');
+                let isDragging = false;
+                let offsetX, offsetY;
+                
+                titleBar.addEventListener('mousedown', (e) => {
+                    // Don't drag if clicking the close button
+                    if (e.target.classList.contains('close-button')) return;
+                    
+                    isDragging = true;
+                    offsetX = e.clientX - windowEl.offsetLeft;
+                    offsetY = e.clientY - windowEl.offsetTop;
+                    document.body.style.cursor = 'move';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    document.body.style.cursor = 'default';
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+
+                    let newX = e.clientX - offsetX;
+                    let newY = e.clientY - offsetY;
+                    
+                    // Constrain to viewport
+                    newX = Math.max(0, Math.min(newX, window.innerWidth - windowEl.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, window.innerHeight - windowEl.offsetHeight));
+
+                    windowEl.style.left = newX + 'px';
+                    windowEl.style.top = newY + 'px';
+                });
+            }
+
+            function makeWindowResizable(windowEl) {
+                const resizeHandle = windowEl.querySelector('.resize-handle');
+                let isResizing = false;
+
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    document.body.style.cursor = 'nwse-resize';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mouseup', () => {
+                    isResizing = false;
+                    document.body.style.cursor = 'default';
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizing) return;
+                    
+                    let newWidth = e.clientX - windowEl.offsetLeft;
+                    let newHeight = e.clientY - windowEl.offsetTop;
+
+                    // Enforce min/max size
+                    newWidth = Math.max(windowEl.style.minWidth || 250, newWidth);
+                    newHeight = Math.max(windowEl.style.minHeight || 150, newHeight);
+
+                    windowEl.style.width = newWidth + 'px';
+                    windowEl.style.height = newHeight + 'px';
+                });
+            }
+
+            // --- INITIALIZE WINDOWS ---
+            [playerContainer, visualizerWindow, infoWindow].forEach(makeWindowDraggable);
+            [playerContainer, visualizerWindow, infoWindow].forEach(makeWindowResizable);
+
+            // Center main player window on load
             playerContainer.style.left = (window.innerWidth - playerContainer.offsetWidth) / 2 + 'px';
             playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
+            
+            // Position other windows
+            visualizerWindow.style.left = '20px';
+            visualizerWindow.style.top = '20px';
+            infoWindow.style.left = (window.innerWidth - 300) / 2 + 'px';
+            infoWindow.style.top = (window.innerHeight - 250) / 2 + 'px';
 
-            // --- 1. Populate the File List ---
+
+            // --- POPULATE FILE LIST ---
             audioFiles.forEach(file => {
                 const li = document.createElement('li');
-                
-                // Add the icon
-                const icon = document.createElement('i');
-                icon.classList.add('fas', 'fa-music', 'file-icon'); // Font Awesome music icon
-                li.appendChild(icon);
-
-                // Add the filename
-                const fileNameSpan = document.createElement('span');
-                fileNameSpan.classList.add('file-name');
-                fileNameSpan.textContent = file.replace('.mp3', ''); // Clean name
-                li.appendChild(fileNameSpan);
-
-                li.dataset.filename = file; // Full name for playback
+                li.innerHTML = `
+                    <i class="fas fa-music file-icon"></i>
+                    <span class="file-name">${file.replace('.mp3', '')}</span>
+                `;
+                li.dataset.filename = file;
                 fileListElement.appendChild(li);
             });
 
-            // --- 2. Handle Clicks on the File List ---
+            // --- EVENT LISTENERS ---
+
+            // File click
             fileListElement.addEventListener('click', (event) => {
-                // Find the closest list item (<li>) to what was clicked
                 const clickedLi = event.target.closest('li');
-
-                if (clickedLi) { // Make sure a list item was actually clicked
+                if (clickedLi) {
                     const filename = clickedLi.dataset.filename;
-
-                    // --- THIS IS THE MOST IMPORTANT PART (FIXED) ---
-                    // Set the audio player's source to the file *inside the 'Audio' folder*
-                    audioPlayer.src = 'Audio/' + filename;
-                    // -------------------------------------
                     
-                    // Play the audio
+                    // --- IMPORTANT: PATH FIXED ---
+                    audioPlayer.src = 'Audio/' + filename;
+                    
+                    // Initialize visualizer on first play
+                    if (!audioContext) {
+                        setupVisualizer();
+                    } else if (audioContext.state === 'suspended') {
+                         audioContext.resume();
+                    }
+                    
                     audioPlayer.play();
-
-                    // Update the "Now Playing" text
-                    nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent; // Use the text from the span
-
-                    // Manage the 'active' class for styling
+                    nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
+                    
                     const currentActive = fileListElement.querySelector('.active');
                     if (currentActive) {
                         currentActive.classList.remove('active');
                     }
                     clickedLi.classList.add('active');
+                    
+                    // Show visualizer window
+                    visualizerWindow.style.display = 'flex';
+                    visualizerActive = true;
+                    drawVisualizer(); // Start loop
+                }
+            });
+            
+            // Stop visualizer when paused
+            audioPlayer.addEventListener('pause', () => {
+                visualizerActive = false;
+            });
+            
+            // Restart visualizer when played
+             audioPlayer.addEventListener('play', () => {
+                if (audioContext) { // Only if initialized
+                    audioContext.resume();
+                    visualizerActive = true;
+                    drawVisualizer(); // Restart loop
                 }
             });
 
-            // --- 3. Make Window Draggable ---
-            let isDragging = false;
-            let offsetX, offsetY;
-
-            titleBar.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                
-                // Calculate offset from top-left corner of the window
-                offsetX = e.clientX - playerContainer.offsetLeft;
-                offsetY = e.clientY - playerContainer.offsetTop;
-
-                // Change cursor style
-                playerContainer.style.cursor = 'move';
-                // Prevent text selection weirdness
-                e.preventDefault();
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
-                playerContainer.style.cursor = 'default';
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-
-                let newX = e.clientX - offsetX;
-                let newY = e.clientY - offsetY;
-
-                // Constrain window to viewport
-                const viewportWidth = window.innerWidth;
-                const viewportHeight = window.innerHeight;
-                const windowWidth = playerContainer.offsetWidth;
-                const windowHeight = playerContainer.offsetHeight;
-
-                if (newX < 0) newX = 0; // Left edge
-                if (newY < 0) newY = 0; // Top edge
-                if (newX + windowWidth > viewportWidth) newX = viewportWidth - windowWidth; // Right edge
-                if (newY + windowHeight > viewportHeight) newY = viewportHeight - windowHeight; // Bottom edge
-
-                playerContainer.style.left = newX + 'px';
-                playerContainer.style.top = newY + 'px';
-            });
-
-            // --- 4. Add Search Bar Functionality ---
+            // Search bar
             searchBar.addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
-                const allFiles = fileListElement.querySelectorAll('li');
-
-                allFiles.forEach(fileLi => {
+                fileListElement.querySelectorAll('li').forEach(fileLi => {
                     const fileName = fileLi.querySelector('.file-name').textContent.toLowerCase();
-                    if (fileName.includes(searchTerm)) {
-                        fileLi.style.display = 'flex'; // Show matching files
-                    } else {
-                        fileLi.style.display = 'none'; // Hide non-matching files
+                    fileLi.style.display = fileName.includes(searchTerm) ? 'flex' : 'none';
+                });
+            });
+
+            // Autoplay next
+            audioPlayer.addEventListener('ended', () => {
+                const currentActive = fileListElement.querySelector('.active');
+                if (currentActive) {
+                    let nextTrack = currentActive.nextElementSibling;
+                    // Loop back to start if at the end
+                    if (!nextTrack) {
+                        nextTrack = fileListElement.firstElementChild;
+                    }
+                    if (nextTrack) {
+                        nextTrack.click();
+                    }
+                }
+            });
+            
+            // Info button
+            infoButton.addEventListener('click', () => {
+                infoWindow.style.display = 'flex';
+            });
+            
+            // Close buttons
+            document.querySelectorAll('.close-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const targetWindowId = e.target.dataset.target;
+                    const windowToClose = document.getElementById(targetWindowId);
+                    if (windowToClose) {
+                        windowToClose.style.display = 'none';
+                        if (targetWindowId === 'visualizer-window') {
+                            visualizerActive = false; // Stop visualizer loop
+                        }
                     }
                 });
             });
 
-            // --- 5. Auto-play next track ---
-            audioPlayer.addEventListener('ended', () => {
-                const currentActive = fileListElement.querySelector('.active');
-                if (currentActive) {
-                    const nextSibling = currentActive.nextElementSibling;
-                    if (nextSibling && nextSibling.tagName === 'LI') { // Ensure it's a valid LI
-                        nextSibling.click(); // Programmatically click the next track
-                    } else {
-                        // If no next track, maybe go back to the first one or just stop
-                        nowPlayingElement.textContent = "Select a track to play";
-                        currentActive.classList.remove('active');
-                    }
-                }
-            });
-
+            // --- DIGITAL CLOCK ---
+            function updateClock() {
+                const now = new Date();
+                let hours = now.getHours();
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                
+                hours = hours % 12;
+                hours = hours ? hours : 12; // 0 hour should be 12
+                
+                digitalClock.textContent = `${hours}:${minutes} ${ampm}`;
+            }
+            setInterval(updateClock, 1000);
+            updateClock(); // Initial call
         });
     </script>
 </body>
