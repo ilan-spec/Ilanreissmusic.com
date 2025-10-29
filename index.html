@@ -353,6 +353,50 @@
             border-bottom: none; /* Sits on bottom edge */
             border-right: none; /* Sits on right edge */
         }
+        
+        /* --- New Color Picker --- */
+        #color-picker-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            padding: 5px 10px;
+            z-index: 1000;
+            border-bottom: none; /* Sits on bottom edge */
+            border-left: none; /* Sits on left edge */
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        #color-picker-container label {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        #bg-color-picker {
+            width: 40px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            cursor: pointer;
+            padding: 0; /* Remove default padding */
+        }
+        
+        /* Webkit specific styles for color input */
+        #bg-color-picker::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        #bg-color-picker::-webkit-color-swatch {
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -414,6 +458,11 @@
     <!-- New Digital Clock -->
     <div id="digital-clock">9:31 PM</div>
 
+    <!-- New Color Picker -->
+    <div id="color-picker-container">
+        <label for="bg-color-picker">BG:</label>
+        <input type="color" id="bg-color-picker" value="#008080">
+    </div>
 
     <!-- All JavaScript is now inside the HTML file --><script>
         // This function runs once the entire HTML page has loaded
@@ -473,6 +522,7 @@
             const infoWindow = document.getElementById('info-window');
             const infoButton = document.getElementById('info-button');
             const digitalClock = document.getElementById('digital-clock');
+            const bgColorPicker = document.getElementById('bg-color-picker'); // New
             
             const canvas = document.getElementById('visualizer-canvas');
             const ctx = canvas.getContext('2d');
@@ -486,13 +536,13 @@
                 
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 256; // Controls bar count (fftSize / 2)
+                analyser.fftSize = 2048; // Higher for smoother waveform
                 
                 source = audioContext.createMediaElementSource(audioPlayer);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
                 
-                bufferLength = analyser.frequencyBinCount;
+                bufferLength = analyser.frequencyBinCount; // Will be 1024
                 dataArray = new Uint8Array(bufferLength);
                 
                 visualizerWindow.style.display = 'flex'; // Show visualizer
@@ -505,7 +555,8 @@
                 
                 requestAnimationFrame(drawVisualizer);
                 
-                analyser.getByteFrequencyData(dataArray);
+                // --- Switched to Time Domain for Waveform ---
+                analyser.getByteTimeDomainData(dataArray);
                 
                 // Set canvas size based on its DOM element size
                 canvas.width = canvas.clientWidth;
@@ -514,24 +565,37 @@
                 ctx.fillStyle = '#000'; // Black background
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                const barWidth = (canvas.width / bufferLength) * 1.5;
-                let barHeight;
+                // --- Draw Waveform ---
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#00FFFF'; // Electric Cyan
+                ctx.shadowColor = '#00FFFF'; // "Aero" Glow
+                ctx.shadowBlur = 10;
+                
+                ctx.beginPath();
+                
+                const sliceWidth = (canvas.width * 1.0) / bufferLength;
                 let x = 0;
-                
-                const gradient = ctx.createLinearGradient(0, canvas.height, 0, 0);
-                gradient.addColorStop(0, '#00ff00'); // Green
-                gradient.addColorStop(0.5, '#ffff00'); // Yellow
-                gradient.addColorStop(1, '#ff0000'); // Red
-                
-                ctx.fillStyle = gradient;
 
                 for(let i = 0; i < bufferLength; i++) {
-                    barHeight = (dataArray[i] / 255) * canvas.height;
+                    // dataArray values are 0-255. Normalize to -1 to 1.
+                    const v = dataArray[i] / 128.0; 
+                    // Calculate y-position
+                    const y = (v * canvas.height) / 2; 
+
+                    if(i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                     
-                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-                    
-                    x += barWidth + 2; // Add 2px spacing
+                    x += sliceWidth;
                 }
+
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
+                
+                // Reset shadow blur so it doesn't affect other elements
+                ctx.shadowBlur = 0; 
             }
 
             // --- WINDOW MANAGEMENT FUNCTIONS ---
@@ -719,6 +783,11 @@
                 });
             });
 
+            // --- BACKGROUND COLOR PICKER ---
+            bgColorPicker.addEventListener('input', (e) => {
+                document.body.style.background = e.target.value;
+            });
+
             // --- DIGITAL CLOCK ---
             function updateClock() {
                 const now = new Date();
@@ -737,4 +806,5 @@
     </script>
 </body>
 </html>
+
 
