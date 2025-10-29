@@ -8,7 +8,7 @@
     <!-- Font Awesome for the music icon --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- All CSS is now inside the HTML file --><style>
-        /* Import a clean font */
+        /* Import a clean font, 'VT323' for a retro feel or 'Inter' for clean */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
         * {
@@ -19,166 +19,102 @@
 
         body {
             font-family: 'Inter', system-ui, sans-serif;
-            color: #333;
-            /* New light blue sky background */
-            background: linear-gradient(to bottom, #87CEEB 0%, #E0F8FF 100%);
-            overflow: hidden; /* Prevents scrollbars from moving clouds */
+            color: #000;
+            /* Classic Windows teal background */
+            background: #008080;
+            overflow: hidden; /* Prevents scrollbars */
             height: 100vh;
         }
 
-        /* --- Animated Cloud Background --- */
-        
-        #cloud-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        /* This wrapper handles the left-to-right movement */
-        .cloud-wrapper {
-            position: absolute;
-            top: 5%;
-            left: 0;
-            width: 200px;
-            height: 100px;
-            animation: moveClouds 25s linear infinite;
-        }
-
-        /* This inner cloud is what we animate with JavaScript */
-        .cloud {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: #ffffff;
-            border-radius: 50%; /* Makes the base oval */
-            
-            /* This shadow is what JavaScript will control */
-            box-shadow: 0 0 30px 15px rgba(255, 255, 255, 0.8);
-            
-            /* Smooth transitions for scaling and shadow */
-            transition: all 0.2s ease-out;
-        }
-
-        /* Creates the "puffy" look using pseudo-elements */
-        .cloud::before, .cloud::after {
-            content: '';
-            position: absolute;
-            background: #ffffff;
-            border-radius: 50%;
-        }
-
-        .cloud::before {
-            width: 100px;
-            height: 100px;
-            top: -50px;
-            left: 30px;
-        }
-
-        .cloud::after {
-            width: 140px;
-            height: 140px;
-            top: -70px;
-            right: 0px;
-        }
-
-        /* Create variations for a more natural sky */
-        .cloud-wrapper.cloud-2 {
-            top: 25%;
-            transform: scale(0.8);
-            animation-duration: 35s;
-            animation-delay: -5s;
-        }
-        
-        .cloud-wrapper.cloud-3 {
-            top: 50%;
-            transform: scale(1.2);
-            animation-duration: 45s;
-            animation-delay: -15s;
-        }
-
-        .cloud-wrapper.cloud-4 {
-            top: 65%;
-            transform: scale(0.6);
-            animation-duration: 30s;
-            animation-delay: -10s;
-        }
-
-
-        /* The main animation for moving clouds left-to-right */
-        @keyframes moveClouds {
-            0% {
-                transform: translateX(-250px); /* Start off-screen left */
-            }
-            100% {
-                transform: translateX(100vw); /* End off-screen right */
-            }
-        }
-
-
-        /* --- Player UI --- */
+        /* --- Player UI (Old Computer Style) --- */
         
         .player-container {
             display: flex;
             flex-direction: column;
             width: 90%;
-            max-width: 700px;
+            max-width: 600px; /* Slightly smaller */
             height: 70vh;
-            max-height: 600px;
+            max-height: 550px;
             
-            /* This is the "frosted glass" effect */
-            background: rgba(255, 255, 255, 0.35);
-            backdrop-filter: blur(15px) saturate(180%);
-            -webkit-backdrop-filter: blur(15px) saturate(180%);
+            /* Classic Windows grey */
+            background: #c0c0c0;
             
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            /* Classic 3D border */
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: 1px 1px 0 1px #000;
             
-            /* Center the player - Will be set by JS now */
             position: absolute;
             /* Cursors will be managed by JS */
         }
 
         /* The title bar of the player */
         .title-bar {
-            padding: 12px 20px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #fff; /* Changed from #113 */
-            border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 5px 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff; 
+            /* Classic Windows active title bar */
+            background: linear-gradient(to right, #000080, #1084d0);
             cursor: move; /* Indicates this is draggable */
             user-select: none; /* Prevents text selection while dragging */
             -webkit-user-select: none; /* Safari */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .content {
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 10px;
             flex-grow: 1; /* Makes content fill the space */
             overflow: hidden; /* Prevents internal scrolling */
+            border-top: 1px solid #808080;
+        }
+
+        /* --- Search Bar Style --- */
+        #search-bar {
+            width: 100%;
+            padding: 8px 10px;
+            /* Classic inset border */
+            border: 2px inset #808080;
+            border-top-color: #404040;
+            border-left-color: #404040;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
+            background: #fff;
+            color: #000;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+        }
+
+        #search-bar::placeholder {
+            color: #808080;
         }
 
         /* The scrollable file list */
         .file-browser {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 8px;
+            background: #fff;
+            /* Classic inset border */
+            border: 2px inset #808080;
+            border-top-color: #404040;
+            border-left-color: #404040;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
             padding: 10px;
-            /* This flex-grow is key for the layout */
             flex-grow: 1; 
             overflow-y: auto; /* Adds the scrollbar! */
-            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         #file-list {
             list-style-type: none;
             display: grid; /* Use CSS Grid for the icon layout */
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Auto-responsive columns */
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Auto-responsive columns */
             gap: 15px; /* Space between icons */
         }
 
@@ -187,32 +123,30 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 10px 5px;
+            border-radius: 0;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: none; /* Remove transitions */
             font-size: 0.85rem;
             font-weight: 500;
             text-align: center;
-            color: #fff; /* Changed from #111 */
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            height: 120px; /* Fixed height for square look */
+            color: #000; /* Text color black */
+            background: transparent;
+            border: 1px solid transparent; /* For focus */
+            height: 100px; /* Fixed height for square look */
         }
         
         #file-list li:hover {
-            background: rgba(255, 255, 255, 0.7);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            /* No hover effect, handled by active */
+            background: transparent;
         }
 
         /* The icon part */
         #file-list li .file-icon {
-            font-size: 3rem; /* Large icon */
-            color: #fff; /* Changed from #0078D4 */
+            font-size: 2.5rem; /* Large icon */
+            color: #000080; /* Dark Blue */
             margin-bottom: 8px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-            transition: color 0.2s ease;
+            text-shadow: none;
         }
 
         /* Make icon white on active */
@@ -226,16 +160,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%; /* Ensure text ellipsis works */
-            color: #fff; /* Changed from #111 */
+            color: #000; /* Black text */
+            padding: 2px 4px; /* Give text a background on active */
         }
 
         /* This class is added by JavaScript to the playing track */
         #file-list li.active {
-            background: rgba(0, 110, 200, 0.8);
-            color: #fff;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 110, 200, 0.4);
-            border-color: rgba(0, 110, 200, 0.9);
+            background: #000080; /* Dark blue background */
+            color: #fff; /* White text */
         }
         
         #file-list li.active .file-name {
@@ -248,10 +180,11 @@
 
         #now-playing {
             display: block;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
-            color: #fff; /* Changed from #000 */
-            margin-bottom: 12px;
+            color: #000; /* Black text */
+            margin-bottom: 10px;
+            padding: 5px;
             /* Fade text if too long */
             white-space: nowrap;
             overflow: hidden;
@@ -263,43 +196,31 @@
             width: 100%;
         }
 
-        /* Custom scrollbar to match the look */
+        /* Custom scrollbar to match the look (simple) */
         ::-webkit-scrollbar {
-            width: 10px;
+            width: 16px;
+            background: #c0c0c0;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 10px;
+            background: #c0c0c0;
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 10px;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.9);
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
         }
     </style>
 </head>
 <body>
 
-    <!-- Animated Cloud Background --><div id="cloud-container">
-        <!-- These wrappers move left-to-right --><div class="cloud-wrapper cloud-1">
-            <div class="cloud"></div> <!-- This inner cloud pulses --></div>
-        <div class="cloud-wrapper cloud-2">
-            <div class="cloud"></div>
-        </div>
-        <div class="cloud-wrapper cloud-3">
-            <div class="cloud"></div>
-        </div>
-        <div class="cloud-wrapper cloud-4">
-            <div class="cloud"></div>
-        </div>
-    </div>
+    <!-- No more cloud container -->
 
-    <!-- The "Frosted Glass" Player --><div class="player-container">
+    <!-- The "Old Computer" Player --><div class="player-container">
         <div class="title-bar">
-            🎵 Ilan Reiss Music Player
+            <span>🎵 Ilan Reiss Music Player</span>
+            <!-- Can add minimize/maximize/close buttons here later if needed -->
         </div>
         
         <div class="content">
@@ -308,9 +229,12 @@
                 
                 <!-- This is the ACTUAL audio player. 
                      'controls' adds the play/pause/volume. 
-                     'crossorigin' is needed for the audio analysis to work. --><audio id="audio-player" controls crossorigin="anonymous"></audio>
+                     'crossorigin' is NOT needed anymore since visualization is removed. --><audio id="audio-player" controls></audio>
             </div>
             
+            <!-- --- Search Bar HTML --- -->
+            <input type="text" id="search-bar" placeholder="Search tracks...">
+
             <div class="file-browser">
                 <!-- Your JavaScript will automatically fill this list --><ul id="file-list">
                     <!-- The list of files will appear here --></ul>
@@ -324,8 +248,6 @@
         document.addEventListener('DOMContentLoaded', () => {
 
             // THIS IS YOUR LIST OF AUDIO FILES
-            // I have copied all the names you provided.
-            // This list MUST match the files you put in the 'audio' folder.
             const audioFiles = [
                 "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
                 "a break.mp3", "all me.mp3", "another one.mp3", "asher organ.mp3",
@@ -372,12 +294,13 @@
             const fileListElement = document.getElementById('file-list');
             const audioPlayer = document.getElementById('audio-player');
             const nowPlayingElement = document.getElementById('now-playing');
-            // Get all the inner cloud elements
-            const clouds = document.querySelectorAll('.cloud');
             
             // --- Get elements for draggable window ---
             const playerContainer = document.querySelector('.player-container');
             const titleBar = document.querySelector('.title-bar');
+
+            // --- Get new search bar element ---
+            const searchBar = document.getElementById('search-bar');
 
             // --- 0. Set Initial Window Position ---
             // Center the window on load
@@ -385,7 +308,6 @@
             playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
 
             // --- 1. Populate the File List ---
-            // This part runs right away to build your track list
             audioFiles.forEach(file => {
                 const li = document.createElement('li');
                 
@@ -404,86 +326,7 @@
                 fileListElement.appendChild(li);
             });
 
-            // --- 2. Set up Audio Visualization ---
-            // We need variables to hold the audio analysis tools
-            let audioContext;
-            let analyser;
-            let source;
-            let dataArray;
-            let bufferLength;
-
-            function setupAudioContext() {
-                // Create a new AudioContext
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                // Create an Analyser node to "read" the audio data
-                analyser = audioContext.createAnalyser();
-                // Set how much data to collect
-                analyser.fftSize = 256;
-                // Get the audio from the <audio> element
-                source = audioContext.createMediaElementSource(audioPlayer);
-                
-                // Connect the nodes together:
-                // Audio Player -> Analyser -> Computer Speakers
-                source.connect(analyser);
-                analyser.connect(audioContext.destination);
-
-                // Create an array to store the audio data
-                bufferLength = analyser.frequencyBinCount;
-                dataArray = new Uint8Array(bufferLength);
-                
-                // Start the animation loop
-                animateClouds();
-            }
-
-            // --- 3. Create the Animation Loop ---
-            // This function runs ~60 times per second
-            function animateClouds() {
-                // Loop this function
-                requestAnimationFrame(animateClouds);
-
-                // Only run visualization if audio is playing and context is active
-                if (audioContext && audioPlayer.paused === false) { 
-                    // Get the audio frequency data *right now*
-                    analyser.getByteFrequencyData(dataArray);
-
-                    // Calculate the average volume (bass)
-                    let sum = 0;
-                    // We only check the first 1/3 of frequencies (bass/low-mids)
-                    for (let i = 0; i < bufferLength / 3; i++) {
-                        sum += dataArray[i];
-                    }
-                    let average = sum / (bufferLength / 3);
-
-                    // --- Control the Clouds ---
-                    // 'average' will be 0 (silent) to ~150 (loud)
-                    // We'll map this to a scale and shadow "intensity"
-                    
-                    // 1. Map average to an intensity (0 to ~2.0)
-                    const intensity = (average / 75); // Tweak '75' to make it more/less sensitive
-                    
-                    // 2. Map intensity to a scale (e.g., 1.0 to 1.3)
-                    const scale = 1 + (intensity * 0.15);
-                    
-                    // 3. Map intensity to a shadow spread (e.g., 15px to 45px)
-                    const spread = 15 + (intensity * 15);
-                    // 4. Map intensity to a shadow blur (e.g., 30px to 60px)
-                    const blur = 30 + (intensity * 15);
-
-                    // Apply these new styles to ALL clouds
-                    clouds.forEach(cloud => {
-                        cloud.style.transform = `scale(${Math.min(scale, 1.5)})`; // Cap scale at 1.5
-                        cloud.style.boxShadow = `0 0 ${blur}px ${spread}px rgba(255, 255, 255, 0.8)`;
-                    });
-                } else {
-                    // When paused, return clouds to default state
-                    clouds.forEach(cloud => {
-                        cloud.style.transform = `scale(1)`; 
-                        cloud.style.boxShadow = `0 0 30px 15px rgba(255, 255, 255, 0.8)`;
-                    });
-                }
-            }
-
-            // --- 4. Handle Clicks on the File List ---
+            // --- 2. Handle Clicks on the File List ---
             fileListElement.addEventListener('click', (event) => {
                 // Find the closest list item (<li>) to what was clicked
                 const clickedLi = event.target.closest('li');
@@ -491,19 +334,10 @@
                 if (clickedLi) { // Make sure a list item was actually clicked
                     const filename = clickedLi.dataset.filename;
 
-                    // --- THIS IS THE MOST IMPORTANT PART ---
-                    // Set the audio player's source to the file *inside the audio folder*
-                    audioPlayer.src = 'audio/' + filename;
+                    // --- THIS IS THE MOST IMPORTANT PART (FIXED) ---
+                    // Set the audio player's source to the file *inside the 'Audio' folder*
+                    audioPlayer.src = 'Audio/' + filename;
                     // -------------------------------------
-
-                    // Set up the audio visualizer *on the first click*
-                    // This is required by browsers to interact with audio
-                    if (!audioContext) {
-                        setupAudioContext();
-                    } else if (audioContext.state === 'suspended') {
-                        // Resume audio context if it was suspended (e.g., after user inactivity)
-                        audioContext.resume();
-                    }
                     
                     // Play the audio
                     audioPlayer.play();
@@ -520,7 +354,7 @@
                 }
             });
 
-            // --- 5. Make Window Draggable ---
+            // --- 3. Make Window Draggable ---
             let isDragging = false;
             let offsetX, offsetY;
 
@@ -562,6 +396,37 @@
                 playerContainer.style.left = newX + 'px';
                 playerContainer.style.top = newY + 'px';
             });
+
+            // --- 4. Add Search Bar Functionality ---
+            searchBar.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const allFiles = fileListElement.querySelectorAll('li');
+
+                allFiles.forEach(fileLi => {
+                    const fileName = fileLi.querySelector('.file-name').textContent.toLowerCase();
+                    if (fileName.includes(searchTerm)) {
+                        fileLi.style.display = 'flex'; // Show matching files
+                    } else {
+                        fileLi.style.display = 'none'; // Hide non-matching files
+                    }
+                });
+            });
+
+            // --- 5. Auto-play next track ---
+            audioPlayer.addEventListener('ended', () => {
+                const currentActive = fileListElement.querySelector('.active');
+                if (currentActive) {
+                    const nextSibling = currentActive.nextElementSibling;
+                    if (nextSibling && nextSibling.tagName === 'LI') { // Ensure it's a valid LI
+                        nextSibling.click(); // Programmatically click the next track
+                    } else {
+                        // If no next track, maybe go back to the first one or just stop
+                        nowPlayingElement.textContent = "Select a track to play";
+                        currentActive.classList.remove('active');
+                    }
+                }
+            });
+
         });
     </script>
 </body>
