@@ -634,16 +634,87 @@
             border-left-color: #404040;
             border-right-color: #fff;
             border-bottom-color: #fff;
-            padding: 8px;
+            padding: 5px 8px; /* Adjusted padding */
             font-weight: 600;
+            
+            /* --- Flexbox for platter --- */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden; /* Keep this */
+        }
+        
+        /* --- NEW: Spinning Platter --- */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .scrub-platter {
+            width: 30px;
+            height: 30px;
+            background-color: #333;
+            border: 2px solid #555;
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+            cursor: grab;
+            touch-action: none; /* Critical for touch drag */
+            animation: spin 2s linear infinite paused; /* Paused by default */
+        }
+        .scrub-platter:active {
+            cursor: grabbing;
+        }
+        
+        .platter-spindle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #c0c0c0;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .track-name-text {
+            flex-grow: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        /* --- End Platter Styles --- */
+
+        
+        /* NEW CONTAINER */
+        .load-info-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
         
         .load-button {
-            height: 30px;
+            height: 40px; 
             font-weight: 700;
+            flex-grow: 1; /* Make button take up space */
+        }
+        
+        /* NEW BPM DISPLAY */
+        .current-bpm-display {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #000;
+            background: #fff;
+            border: 2px inset #808080;
+            border-top-color: #404040;
+            border-left-color: #404040;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
+            padding: 8px 10px;
+            min-width: 90px; /* Give it a fixed width */
+            text-align: center;
+            flex-shrink: 0;
+            height: 40px; /* Match button */
         }
         
         .scrub-bar {
@@ -663,14 +734,39 @@
             height: 30px;
         }
         
-        .volume-slider-container {
+        /* --- NEW: Sliders Container --- */
+        .deck-sliders {
             display: flex;
             justify-content: center;
+            gap: 20px;
             flex-grow: 1;
             padding: 10px 0;
         }
         
-        .volume-slider {
+        .volume-slider-container, .bpm-slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .bpm-slider-container .bpm-label-group {
+            display: flex;
+            gap: 5px;
+            align-items: baseline;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .bpm-display {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #000080;
+            min-width: 40px; /* Give it space */
+            text-align: center;
+        }
+        
+        .volume-slider, .bpm-slider {
             -webkit-appearance: none;
             appearance: none;
             width: 80%;
@@ -687,7 +783,7 @@
             height: 150px; /* Fixed height */
         }
         
-        .volume-slider::-webkit-slider-thumb {
+        .volume-slider::-webkit-slider-thumb, .bpm-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 30px;
@@ -783,16 +879,38 @@
         <div class="content">
             <!-- Deck A -->
             <div class="deck-container" id="deck-a">
-                <div class="track-name-display" id="deck-a-display">DECK A</div>
-                <button class="window-button load-button" id="load-deck-a">LOAD</button>
+                <div class="track-name-display" id="deck-a-display">
+                    <!-- NEW: Platter and Track Name Span -->
+                    <div class="scrub-platter" id="deck-a-platter">
+                        <div class="platter-spindle"></div>
+                    </div>
+                    <span class="track-name-text" id="deck-a-track-name">DECK A</span>
+                </div>
+                <!-- NEW CONTAINER -->
+                <div class="load-info-container">
+                    <button class="window-button load-button" id="load-deck-a">LOAD</button>
+                    <span class="current-bpm-display" id="deck-a-current-bpm">-- BPM</span>
+                </div>
                 <input type="range" class="scrub-bar" id="deck-a-scrub" value="0" min="0" max="1000">
                 <div class="deck-controls">
                     <button class="window-button" id="deck-a-play">PLAY</button>
                     <button class="window-button" id="deck-a-pause">PAUSE</button>
                     <button class="window-button" id="deck-a-cue">CUE</button>
                 </div>
-                <div class="volume-slider-container">
-                    <input type="range" class="volume-slider" id="deck-a-volume" value="1" min="0" max="1" step="0.01">
+                <!-- NEW: Sliders Container -->
+                <div class="deck-sliders">
+                    <div class="volume-slider-container">
+                        <label for="deck-a-volume">VOL</label>
+                        <input type="range" class="volume-slider" id="deck-a-volume" value="1" min="0" max="1" step="0.01">
+                    </div>
+                    <!-- NEW: BPM Slider -->
+                    <div class="bpm-slider-container">
+                        <div class="bpm-label-group">
+                            <label for="deck-a-bpm">BPM</label>
+                            <span class="bpm-display" id="deck-a-bpm-display">100%</span>
+                        </div>
+                        <input type="range" class="bpm-slider" id="deck-a-bpm" value="1" min="0.5" max="1.5" step="0.01">
+                    </div>
                 </div>
                 <audio id="deck-a-audio" crossorigin="anonymous"></audio>
             </div>
@@ -809,16 +927,38 @@
 
             <!-- Deck B -->
             <div class="deck-container" id="deck-b">
-                <div class="track-name-display" id="deck-b-display">DECK B</div>
-                <button class="window-button load-button" id="load-deck-b">LOAD</button>
+                 <div class="track-name-display" id="deck-b-display">
+                    <!-- NEW: Platter and Track Name Span -->
+                    <div class="scrub-platter" id="deck-b-platter">
+                        <div class="platter-spindle"></div>
+                    </div>
+                    <span class="track-name-text" id="deck-b-track-name">DECK B</span>
+                </div>
+                <!-- NEW CONTAINER -->
+                <div class="load-info-container">
+                    <button class="window-button load-button" id="load-deck-b">LOAD</button>
+                    <span class="current-bpm-display" id="deck-b-current-bpm">-- BPM</span>
+                </div>
                 <input type="range" class="scrub-bar" id="deck-b-scrub" value="0" min="0" max="1000">
                 <div class="deck-controls">
                     <button class="window-button" id="deck-b-play">PLAY</button>
                     <button class="window-button" id="deck-b-pause">PAUSE</button>
                     <button class="window-button" id="deck-b-cue">CUE</button>
                 </div>
-                <div class="volume-slider-container">
-                    <input type="range" class="volume-slider" id="deck-b-volume" value="1" min="0" max="1" step="0.01">
+                <!-- NEW: Sliders Container -->
+                <div class="deck-sliders">
+                    <div class="volume-slider-container">
+                        <label for="deck-b-volume">VOL</label>
+                        <input type="range" class="volume-slider" id="deck-b-volume" value="1" min="0" max="1" step="0.01">
+                    </div>
+                    <!-- NEW: BPM Slider -->
+                    <div class="bpm-slider-container">
+                        <div class="bpm-label-group">
+                            <label for="deck-b-bpm">BPM</label>
+                            <span class="bpm-display" id="deck-b-bpm-display">100%</span>
+                        </div>
+                        <input type="range" class="bpm-slider" id="deck-b-bpm" value="1" min="0.5" max="1.5" step="0.01">
+                    </div>
                 </div>
                 <audio id="deck-b-audio" crossorigin="anonymous"></audio>
             </div>
@@ -1444,7 +1584,13 @@
 
         function setupDeck(deckId) {
             const audio = document.getElementById(`${deckId}-audio`);
-            const display = document.getElementById(`${deckId}-display`);
+            // NEW: Get new elements
+            const trackNameText = document.getElementById(`${deckId}-track-name`);
+            const platter = document.getElementById(`${deckId}-platter`);
+            const bpmSlider = document.getElementById(`${deckId}-bpm`);
+            const bpmDisplay = document.getElementById(`${deckId}-bpm-display`); // This is the percentage
+            const currentBpmDisplay = document.getElementById(`${deckId}-current-bpm`); // NEW: This is the actual BPM
+            
             const loadBtn = document.getElementById(`load-${deckId}`);
             const playBtn = document.getElementById(`${deckId}-play`);
             const pauseBtn = document.getElementById(`${deckId}-pause`);
@@ -1452,46 +1598,168 @@
             const scrubBar = document.getElementById(`${deckId}-scrub`);
             const volumeSlider = document.getElementById(`${deckId}-volume`);
 
-            let isScrubbing = false;
+            let isScrubbing = false; // For the bottom bar
+            let isScrubbingPlatter = false; // For the new platter
+            let lastScrubX = 0;
+            let baseBpm = null; // NEW: Store the track's base BPM
 
             loadBtn.addEventListener('click', () => {
                 if (selectedDjTrack) {
                     audio.src = 'Audio/' + selectedDjTrack;
-                    display.textContent = selectedDjTrack.replace('.mp3', '');
+                    trackNameText.textContent = selectedDjTrack.replace('.mp3', ''); // Update text span
                     audio.load();
+                    
+                    // NEW: Find and set base BPM
+                    const trackData = audioFileObjects.find(f => f.name === selectedDjTrack);
+                    if (trackData) {
+                        baseBpm = trackData.bpm;
+                        currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
+                    } else {
+                        baseBpm = null;
+                        currentBpmDisplay.textContent = '-- BPM';
+                    }
+                    
+                    // Reset platter and BPM slider
+                    bpmSlider.value = 1;
+                    bpmDisplay.textContent = '100%'; 
+                    audio.playbackRate = 1;
+                    platter.style.transform = 'rotate(0deg)';
+                    platter.style.animationPlayState = 'paused';
                 }
             });
 
-            playBtn.addEventListener('click', () => audio.play());
-            pauseBtn.addEventListener('click', () => audio.pause());
+            // NEW: Update play/pause to control animation
+            playBtn.addEventListener('click', () => {
+                 audio.play();
+                 platter.style.animationPlayState = 'running';
+            });
+            pauseBtn.addEventListener('click', () => {
+                audio.pause();
+                platter.style.animationPlayState = 'paused';
+            });
+            
             cueBtn.addEventListener('click', () => {
                 audio.currentTime = 0;
                 audio.pause();
+                // NEW: Reset platter and BPM
+                platter.style.transform = 'rotate(0deg)';
+                platter.style.animationPlayState = 'paused';
+                bpmSlider.value = 1;
+                bpmDisplay.textContent = '100%'; // NEW
+                audio.playbackRate = 1;
+                
+                // NEW: Reset current BPM display
+                if (baseBpm) {
+                    currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
+                } else {
+                    currentBpmDisplay.textContent = '-- BPM';
+                }
             });
 
             volumeSlider.addEventListener('input', () => {
                 audio.volume = volumeSlider.value;
             });
+            
+            // NEW: BPM Slider listener
+            bpmSlider.addEventListener('input', () => {
+                const rate = parseFloat(bpmSlider.value);
+                audio.playbackRate = rate;
+                bpmDisplay.textContent = (rate * 100).toFixed(0) + '%'; // NEW
+                
+                // NEW: Update current BPM display based on rate
+                if (baseBpm) {
+                    const newBpm = baseBpm * rate;
+                    currentBpmDisplay.textContent = newBpm.toFixed(1) + ' BPM';
+                }
+            });
 
+            // NEW: Update timeupdate to check for *both* scrub types
             audio.addEventListener('timeupdate', () => {
-                if (!isScrubbing && audio.duration) {
+                if (!isScrubbing && !isScrubbingPlatter && audio.duration) {
                     scrubBar.value = (audio.currentTime / audio.duration) * 1000;
                 }
             });
             
+            // NEW: Add ended listener
+            audio.addEventListener('ended', () => {
+                platter.style.animationPlayState = 'paused';
+                platter.style.transform = 'rotate(0deg)';
+                bpmSlider.value = 1;
+                bpmDisplay.textContent = '100%'; // NEW
+                
+                // NEW: Reset current BPM display
+                if (baseBpm) {
+                    currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
+                }
+            });
+            
+            // --- Old Scrub Bar Logic ---
             const handleScrub = () => {
                 if (audio.duration) {
                     audio.currentTime = (scrubBar.value / 1000) * audio.duration;
                 }
             };
-            
             scrubBar.addEventListener('mousedown', () => isScrubbing = true);
             scrubBar.addEventListener('touchstart', () => isScrubbing = true, { passive: true });
-            
             scrubBar.addEventListener('input', handleScrub);
-            
             scrubBar.addEventListener('mouseup', () => isScrubbing = false);
             scrubBar.addEventListener('touchend', () => isScrubbing = false);
+            
+            
+            // --- NEW: Platter Scrubbing Logic ---
+            function platterStart(e) {
+                if (!audio.duration) return;
+                isScrubbingPlatter = true;
+                lastScrubX = e.touches ? e.touches[0].clientX : e.clientX;
+                platter.style.cursor = 'grabbing';
+                document.body.style.cursor = 'grabbing';
+                audio.pause();
+                platter.style.animationPlayState = 'paused';
+                
+                document.addEventListener('mousemove', platterMove);
+                document.addEventListener('touchmove', platterMove, { passive: false });
+                document.addEventListener('mouseup', platterEnd);
+                document.addEventListener('touchend', platterEnd);
+                
+                if (e.cancelable) e.preventDefault();
+            }
+            
+            function platterMove(e) {
+                if (!isScrubbingPlatter) return;
+                
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const deltaX = clientX - lastScrubX;
+                lastScrubX = clientX;
+                
+                // Scrub time
+                // Adjust sensitivity: 5 seconds per 300px drag
+                const scrubAmount = (deltaX / 300) * 5; 
+                let newTime = audio.currentTime + scrubAmount;
+                newTime = Math.max(0, Math.min(newTime, audio.duration));
+                audio.currentTime = newTime;
+                
+                // Manually rotate platter
+                const currentRotation = parseFloat(platter.style.transform.replace('rotate(', '').replace('deg)', '')) || 0;
+                const newRotation = currentRotation + deltaX * 2.0; // Rotation sensitivity
+                platter.style.transform = `rotate(${newRotation}deg)`;
+                
+                if (e.cancelable) e.preventDefault();
+            }
+            
+            function platterEnd() {
+                if (!isScrubbingPlatter) return;
+                isScrubbingPlatter = false;
+                platter.style.cursor = 'grab';
+                document.body.style.cursor = 'default';
+                
+                document.removeEventListener('mousemove', platterMove);
+                document.removeEventListener('touchmove', platterMove);
+                document.removeEventListener('mouseup', platterEnd);
+                document.removeEventListener('touchend', platterEnd);
+            }
+            
+            platter.addEventListener('mousedown', platterStart);
+            platter.addEventListener('touchstart', platterStart, { passive: false });
         }
         
         setupDeck('deck-a');
@@ -1743,4 +2011,5 @@
 </script>
 </body>
 </html>
+
 
