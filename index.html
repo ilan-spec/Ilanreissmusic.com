@@ -203,7 +203,7 @@
         }
 
         /* The file name text */
-        #file-list li .file-name {
+        .file-name { /* <-- **FIXED** Was "li .file-name" which was less specific */
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -284,10 +284,47 @@
         /* --- New Visualizer Window --- */
         #visualizer-window {
             width: 350px;
-            height: 200px;
+            height: 250px; /* Made slightly taller for buttons */
             top: 20px;
             left: 20px;
             display: none; /* Hidden by default */
+        }
+        
+        #visualizer-window .content {
+            padding: 5px; /* Reduced padding */
+            border: 2px inset #808080; 
+            border-top-color: #404040; 
+            border-left-color: #404040; 
+            border-right-color: #fff; 
+            border-bottom-color: #fff;
+        }
+        
+        #viz-controls {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
+        }
+        
+        .viz-btn {
+            flex-grow: 1;
+            padding: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            cursor: pointer;
+        }
+        
+        .viz-btn:active, .viz-btn.active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            background: #e0e0e0;
         }
         
         #visualizer-canvas {
@@ -295,6 +332,7 @@
             height: 100%;
             background: #000;
             display: block;
+            flex-grow: 1; /* Make canvas fill remaining space */
         }
         
         /* --- New Info Window --- */
@@ -432,7 +470,12 @@
             <span class="title-bar-text">🔊 Audio Visualizer</span>
             <span class="close-button" data-target="visualizer-window">X</span>
         </div>
-        <div class="content" style="padding: 0; border: 2px inset #808080; border-top-color: #404040; border-left-color: #404040; border-right-color: #fff; border-bottom-color: #fff;">
+        <div class="content">
+            <div id="viz-controls">
+                <button class="viz-btn active" data-mode="particles">Particles</button>
+                <button class="viz-btn" data-mode="oscilloscope">Scope</button>
+                <button class="viz-btn" data-mode="synthwave">80s</button>
+            </div>
             <canvas id="visualizer-canvas"></canvas>
         </div>
         <div class="resize-handle"></div>
@@ -446,7 +489,7 @@
         </div>
         <div class="content">
             <p><strong>Ilan Reiss Music Player</strong></p>
-            <p>Version 1.0 (Retro)</p>
+            <p>Version 1.1 (Retro)</p>
             <br>
             <p>This music player streams files directly from the 'Audio' folder of the GitHub repository.</p>
             <br>
@@ -522,10 +565,48 @@
             const infoWindow = document.getElementById('info-window');
             const infoButton = document.getElementById('info-button');
             const digitalClock = document.getElementById('digital-clock');
-            const bgColorPicker = document.getElementById('bg-color-picker'); // New
+            const bgColorPicker = document.getElementById('bg-color-picker');
             
             const canvas = document.getElementById('visualizer-canvas');
             const ctx = canvas.getContext('2d');
+            const vizControls = document.getElementById('viz-controls');
+            
+            let visualizerColor = '#00FFFF'; // Initial color (cyan)
+            let currentVizMode = 'particles'; // Default viz mode
+
+            // --- Particle System ---
+            let particles = [];
+            const maxParticles = 150; // More particles
+
+            function Particle(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = (Math.random() * 3) + 0.5; // Random speed
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.life = Math.random() * 100 + 50; // 50-150 frames
+                this.size = Math.random() * 3 + 1; // 1-4px
+            }
+
+            Particle.prototype.update = function() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 1;
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            };
+
+            Particle.prototype.draw = function(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = Math.max(0, this.life / 100); // Fade out
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            };
+            // --- End Particle System ---
+
 
             // --- AUDIO VISUALIZER SETUP ---
             let audioContext, analyser, source, dataArray, bufferLength;
@@ -536,39 +617,134 @@
                 
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 2048; // Higher for smoother waveform
+                // Set initial fftSize, will be changed by drawVisualizer
+                analyser.fftSize = 256; 
                 
                 source = audioContext.createMediaElementSource(audioPlayer);
                 source.connect(analyser);
                 analyser.connect(audioContext.destination);
                 
-                bufferLength = analyser.frequencyBinCount; // Will be 1024
+                bufferLength = analyser.frequencyBinCount;
                 dataArray = new Uint8Array(bufferLength);
                 
                 visualizerWindow.style.display = 'flex'; // Show visualizer
                 visualizerActive = true;
                 drawVisualizer();
             }
-
+            
+            // --- MAIN DRAW LOOP (Router) ---
             function drawVisualizer() {
                 if (!visualizerActive) return;
                 
                 requestAnimationFrame(drawVisualizer);
                 
-                // --- Switched to Time Domain for Waveform ---
-                analyser.getByteTimeDomainData(dataArray);
-                
-                // Set canvas size based on its DOM element size
                 canvas.width = canvas.clientWidth;
                 canvas.height = canvas.clientHeight;
                 
+                switch (currentVizMode) {
+                    case 'particles':
+                        // Ensure correct analyser settings for this mode
+                        if (analyser.fftSize !== 256) analyser.fftSize = 256;
+                        bufferLength = analyser.frequencyBinCount; // 128
+                        if (dataArray.length !== bufferLength) dataArray = new Uint8Array(bufferLength);
+                        
+                        analyser.getByteFrequencyData(dataArray); // Get data
+                        drawVizParticles(); // Draw
+                        break;
+                        
+                    case 'oscilloscope':
+                        // Ensure correct analyser settings for this mode
+                        if (analyser.fftSize !== 2048) analyser.fftSize = 2048;
+                        bufferLength = analyser.frequencyBinCount; // 1024
+                        if (dataArray.length !== bufferLength) dataArray = new Uint8Array(bufferLength);
+                        
+                        analyser.getByteTimeDomainData(dataArray); // Get data
+                        drawVizOscilloscope(); // Draw
+                        break;
+                        
+                    case 'synthwave':
+                         // Ensure correct analyser settings for this mode
+                        if (analyser.fftSize !== 256) analyser.fftSize = 256;
+                        bufferLength = analyser.frequencyBinCount; // 128
+                        if (dataArray.length !== bufferLength) dataArray = new Uint8Array(bufferLength);
+                        
+                        analyser.getByteFrequencyData(dataArray); // Get data
+                        drawVizSynthwave(); // Draw
+                        break;
+                }
+            }
+
+            // --- VIZ MODE 1: PARTICLES ---
+            function drawVizParticles() {
+                // Fading effect for particle trails
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; // Slower fade for trails
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                let bass = 0;
+                let mids = 0;
+                const bassEnd = Math.floor(bufferLength * 0.2); // ~25 bins
+                const midsEnd = Math.floor(bufferLength * 0.6); // ~76 bins
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    if (i < bassEnd) bass += dataArray[i];
+                    else if (i < midsEnd) mids += dataArray[i];
+                }
+                let bassAvg = (bass / bassEnd) || 0;
+                let midsAvg = (mids / (midsEnd - bassEnd)) || 0;
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                const spawnRate = Math.floor(midsAvg / 50); // 0-5 particles per frame
+                if (particles.length < maxParticles) { 
+                    for (let i = 0; i < spawnRate; i++) {
+                        particles.push(new Particle(centerX, centerY, visualizerColor));
+                    }
+                }
+                
+                ctx.globalAlpha = 1.0;
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    particles[i].update();
+                    particles[i].draw(ctx);
+                    if (particles[i].life <= 0 || 
+                        particles[i].x < -particles[i].size || particles[i].x > canvas.width + particles[i].size || 
+                        particles[i].y < -particles[i].size || particles[i].y > canvas.height + particles[i].size) 
+                    {
+                        particles.splice(i, 1);
+                    }
+                }
+                
+                const radiusMod = (bassAvg / 255) * (canvas.height / 8);
+                const baseRadius = canvas.height / 10;
+                const currentRadius = baseRadius + radiusMod;
+                
+                ctx.shadowColor = visualizerColor;
+                ctx.shadowBlur = 30;
+                ctx.strokeStyle = visualizerColor;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = visualizerColor;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, Math.max(0, currentRadius * 0.9), 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
+            }
+            
+            // --- VIZ MODE 2: OSCILLOSCOPE ---
+            function drawVizOscilloscope() {
                 ctx.fillStyle = '#000'; // Black background
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // --- Draw Waveform ---
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#00FFFF'; // Electric Cyan
-                ctx.shadowColor = '#00FFFF'; // "Aero" Glow
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#00FF00'; // Classic green
+                ctx.shadowColor = '#00FF00';
                 ctx.shadowBlur = 10;
                 
                 ctx.beginPath();
@@ -577,67 +753,196 @@
                 let x = 0;
 
                 for(let i = 0; i < bufferLength; i++) {
-                    // dataArray values are 0-255. Normalize to -1 to 1.
-                    const v = dataArray[i] / 128.0; 
-                    // Calculate y-position
+                    const v = dataArray[i] / 128.0; // 0-255 -> 0.0-2.0
                     const y = (v * canvas.height) / 2; 
 
-                    if(i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
+                    if(i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
                     
                     x += sliceWidth;
                 }
 
                 ctx.lineTo(canvas.width, canvas.height / 2);
                 ctx.stroke();
-                
-                // Reset shadow blur so it doesn't affect other elements
                 ctx.shadowBlur = 0; 
             }
+            
+            // --- VIZ MODE 3: 80s SYNTHWAVE ---
+            let roadOffset = 0; // For "driving" effect
+            function drawVizSynthwave() {
+                let bass = 0;
+                let mids = 0;
+                const bassEnd = Math.floor(bufferLength * 0.2); // ~25 bins
+                const midsEnd = Math.floor(bufferLength * 0.6); // ~76 bins
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    if (i < bassEnd) bass += dataArray[i];
+                    else if (i < midsEnd) mids += dataArray[i];
+                }
+                let bassAvg = (bass / bassEnd) || 0; // 0-255
+                let midsAvg = (mids / (midsEnd - bassEnd)) || 0; // 0-255
+                
+                const w = canvas.width;
+                const h = canvas.height;
+                const horizonY = h * 0.6;
+                const horizonBounce = (midsAvg / 255) * 15; // Max 15px bounce
+                
+                // 1. Draw Sky
+                const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+                skyGrad.addColorStop(0, '#1a023a'); // Dark purple
+                skyGrad.addColorStop(1, '#ff0080'); // Hot pink
+                ctx.fillStyle = skyGrad;
+                ctx.fillRect(0, 0, w, horizonY);
+                
+                // 2. Draw Sun
+                const sunRadius = h / 10;
+                const sunY = horizonY - sunRadius * 0.3;
+                const sunGrad = ctx.createRadialGradient(w/2, sunY, sunRadius * 0.1, w/2, sunY, sunRadius);
+                sunGrad.addColorStop(0, '#ffff00');
+                sunGrad.addColorStop(0.5, '#ff8000');
+                sunGrad.addColorStop(1, 'rgba(255, 0, 128, 0)');
+                ctx.fillStyle = sunGrad;
+                ctx.fillRect(0, 0, w, horizonY); // Clip to sky
+                
+                // 3. Draw Ground
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, horizonY, w, h - horizonY);
+                
+                // 4. Draw Road Grid
+                ctx.strokeStyle = visualizerColor; // Use dynamic color
+                ctx.shadowColor = visualizerColor;
+                ctx.shadowBlur = 15;
+                ctx.lineWidth = 1;
+                
+                roadOffset = (roadOffset + 2) % 40; // Animate road lines
+                
+                for(let i = -20; i < 20; i++) {
+                    // Horizontal lines
+                    const y = horizonY + Math.pow(i/20, 2) * (h - horizonY) + (roadOffset / 40) * (h-horizonY)/20;
+                    if (y < h) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(w, y);
+                        ctx.globalAlpha = 1 - (y - horizonY) / (h - horizonY); // Fade out
+                        ctx.stroke();
+                    }
+                }
+                // Vertical lines (perspective)
+                for(let i = -10; i <= 10; i++) {
+                    const x1 = w/2 + (i * w/20);
+                    const y1 = horizonY;
+                    const x2 = w/2 + (i * w/2);
+                    const y2 = h;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1 + horizonBounce); // Make horizon bounce
+                    ctx.lineTo(x2, y2);
+                    ctx.globalAlpha = 1;
+                    ctx.stroke();
+                }
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+
+                // 5. Draw Speakers
+                const speakerW = w / 5;
+                const speakerH = h / 3;
+                const speakerY = h - speakerH;
+                const wooferPulse = (bassAvg / 255) * (speakerW / 8); // Pulse radius
+                
+                // Left Speaker
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(0, speakerY, speakerW, speakerH);
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(speakerW/2, speakerY + speakerH/2, speakerW/3 + wooferPulse, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Right Speaker
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(w - speakerW, speakerY, speakerW, speakerH);
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(w - speakerW/2, speakerY + speakerH/2, speakerW/3 + wooferPulse, 0, Math.PI*2);
+                ctx.fill();
+            }
+            
+            // --- VIZ MODE SWITCHER ---
+            vizControls.addEventListener('click', (e) => {
+                if(e.target.tagName === 'BUTTON') {
+                    // Update active class
+                    vizControls.querySelector('.active').classList.remove('active');
+                    e.target.classList.add('active');
+                    // Set mode
+                    currentVizMode = e.target.dataset.mode;
+                    
+                    // Reset particles if switching away
+                    if(currentVizMode !== 'particles') {
+                        particles = [];
+                    }
+                }
+            });
+
 
             // --- WINDOW MANAGEMENT FUNCTIONS ---
-
             function makeWindowDraggable(windowEl) {
                 const titleBar = windowEl.querySelector('.title-bar');
                 let isDragging = false;
                 let offsetX, offsetY;
                 
                 titleBar.addEventListener('mousedown', (e) => {
-                    // Don't drag if clicking the close button
                     if (e.target.classList.contains('close-button')) return;
-                    
                     isDragging = true;
                     offsetX = e.clientX - windowEl.offsetLeft;
                     offsetY = e.clientY - windowEl.offsetTop;
                     document.body.style.cursor = 'move';
                     e.preventDefault();
                 });
+                
+                titleBar.addEventListener('touchstart', (e) => {
+                    if (e.target.classList.contains('close-button')) return;
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    offsetX = touch.clientX - windowEl.offsetLeft;
+                    offsetY = touch.clientY - windowEl.offsetTop;
+                    e.preventDefault();
+                }, { passive: false });
 
                 document.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    document.body.style.cursor = 'default';
+                });
+                
+                document.addEventListener('touchend', () => {
                     isDragging = false;
                     document.body.style.cursor = 'default';
                 });
 
                 document.addEventListener('mousemove', (e) => {
                     if (!isDragging) return;
-
                     let newX = e.clientX - offsetX;
                     let newY = e.clientY - offsetY;
-                    
-                    // Constrain to viewport
                     newX = Math.max(0, Math.min(newX, window.innerWidth - windowEl.offsetWidth));
                     newY = Math.max(0, Math.min(newY, window.innerHeight - windowEl.offsetHeight));
-
                     windowEl.style.left = newX + 'px';
                     windowEl.style.top = newY + 'px';
                 });
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    const touch = e.touches[0];
+                    let newX = touch.clientX - offsetX;
+                    let newY = touch.clientY - offsetY;
+                    newX = Math.max(0, Math.min(newX, window.innerWidth - windowEl.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, window.innerHeight - windowEl.offsetHeight));
+                    windowEl.style.left = newX + 'px';
+                    windowEl.style.top = newY + 'px';
+                    e.preventDefault();
+                }, { passive: false });
             }
 
             function makeWindowResizable(windowEl) {
                 const resizeHandle = windowEl.querySelector('.resize-handle');
+                if (!resizeHandle) return; // Guard clause
                 let isResizing = false;
 
                 resizeHandle.addEventListener('mousedown', (e) => {
@@ -645,25 +950,43 @@
                     document.body.style.cursor = 'nwse-resize';
                     e.preventDefault();
                 });
+                
+                resizeHandle.addEventListener('touchstart', (e) => {
+                    isResizing = true;
+                    e.preventDefault();
+                }, { passive: false });
 
                 document.addEventListener('mouseup', () => {
+                    isResizing = false;
+                    document.body.style.cursor = 'default';
+                });
+                
+                document.addEventListener('touchend', () => {
                     isResizing = false;
                     document.body.style.cursor = 'default';
                 });
 
                 document.addEventListener('mousemove', (e) => {
                     if (!isResizing) return;
-                    
                     let newWidth = e.clientX - windowEl.offsetLeft;
                     let newHeight = e.clientY - windowEl.offsetTop;
-
-                    // Enforce min/max size
-                    newWidth = Math.max(windowEl.style.minWidth || 250, newWidth);
-                    newHeight = Math.max(windowEl.style.minHeight || 150, newHeight);
-
+                    newWidth = Math.max(250, newWidth);
+                    newHeight = Math.max(150, newHeight);
                     windowEl.style.width = newWidth + 'px';
                     windowEl.style.height = newHeight + 'px';
                 });
+                
+                document.addEventListener('touchmove', (e) => {
+                    if (!isResizing) return;
+                    const touch = e.touches[0];
+                    let newWidth = touch.clientX - windowEl.offsetLeft;
+                    let newHeight = touch.clientY - windowEl.offsetTop;
+                    newWidth = Math.max(250, newWidth);
+                    newHeight = Math.max(150, newHeight);
+                    windowEl.style.width = newWidth + 'px';
+                    windowEl.style.height = newHeight + 'px';
+                    e.preventDefault();
+                }, { passive: false });
             }
 
             // --- INITIALIZE WINDOWS ---
@@ -674,7 +997,6 @@
             playerContainer.style.left = (window.innerWidth - playerContainer.offsetWidth) / 2 + 'px';
             playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
             
-            // Position other windows
             visualizerWindow.style.left = '20px';
             visualizerWindow.style.top = '20px';
             infoWindow.style.left = (window.innerWidth - 300) / 2 + 'px';
@@ -684,6 +1006,7 @@
             // --- POPULATE FILE LIST ---
             audioFiles.forEach(file => {
                 const li = document.createElement('li');
+                // **FIXED** class="file-name"
                 li.innerHTML = `
                     <i class="fas fa-music file-icon"></i>
                     <span class="file-name">${file.replace('.mp3', '')}</span>
@@ -700,10 +1023,8 @@
                 if (clickedLi) {
                     const filename = clickedLi.dataset.filename;
                     
-                    // --- IMPORTANT: PATH FIXED ---
                     audioPlayer.src = 'Audio/' + filename;
                     
-                    // Initialize visualizer on first play
                     if (!audioContext) {
                         setupVisualizer();
                     } else if (audioContext.state === 'suspended') {
@@ -711,7 +1032,26 @@
                     }
                     
                     audioPlayer.play();
-                    nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
+                    
+                    const trackName = clickedLi.querySelector('.file-name').textContent;
+                    nowPlayingElement.textContent = trackName;
+                    
+                    // --- NEW: Media Session API for Lock Screen ---
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.metadata = new MediaMetadata({
+                            title: trackName,
+                            artist: 'Ilan Reiss',
+                            album: 'Ilan Reiss Music Player',
+                            artwork: [
+                                // Simple Data URI for a music note icon
+                                { 
+                                  src: 'data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="white"><rect width="100" height="100" fill="black"/><path d="M45,65 L45,20 C45,15 50,15 50,20 L50,50 L70,45 C75,44 76,51 71,52 L50,57 L50,65 C50,75 40,77 35,70 C30,63 30,55 40,55 C43,55 45,57 45,60 L45,65 Z M35,65 C33,65 33,63 35,63 C37,63 37,65 35,65 Z"/></svg>', 
+                                  type: 'image/svg+xml' 
+                                }
+                            ]
+                        });
+                    }
+                    // --- End Media Session ---
                     
                     const currentActive = fileListElement.querySelector('.active');
                     if (currentActive) {
@@ -719,24 +1059,25 @@
                     }
                     clickedLi.classList.add('active');
                     
-                    // Show visualizer window
                     visualizerWindow.style.display = 'flex';
                     visualizerActive = true;
-                    drawVisualizer(); // Start loop
+                    if (audioContext.state === 'suspended') {
+                        audioContext.resume().then(drawVisualizer);
+                    } else {
+                        drawVisualizer(); // Start loop
+                    }
                 }
             });
             
-            // Stop visualizer when paused
             audioPlayer.addEventListener('pause', () => {
                 visualizerActive = false;
             });
             
-            // Restart visualizer when played
              audioPlayer.addEventListener('play', () => {
-                if (audioContext) { // Only if initialized
+                if (audioContext) { 
                     audioContext.resume();
                     visualizerActive = true;
-                    drawVisualizer(); // Restart loop
+                    drawVisualizer(); 
                 }
             });
 
@@ -754,7 +1095,6 @@
                 const currentActive = fileListElement.querySelector('.active');
                 if (currentActive) {
                     let nextTrack = currentActive.nextElementSibling;
-                    // Loop back to start if at the end
                     if (!nextTrack) {
                         nextTrack = fileListElement.firstElementChild;
                     }
@@ -764,12 +1104,10 @@
                 }
             });
             
-            // Info button
             infoButton.addEventListener('click', () => {
                 infoWindow.style.display = 'flex';
             });
             
-            // Close buttons
             document.querySelectorAll('.close-button').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const targetWindowId = e.target.dataset.target;
@@ -777,27 +1115,55 @@
                     if (windowToClose) {
                         windowToClose.style.display = 'none';
                         if (targetWindowId === 'visualizer-window') {
-                            visualizerActive = false; // Stop visualizer loop
+                            visualizerActive = false; 
                         }
                     }
                 });
             });
+            
+            function hexToHSL(H) {
+                let r = 0, g = 0, b = 0;
+                if (H.length == 4) {
+                    r = "0x" + H[1] + H[1];
+                    g = "0x" + H[2] + H[2];
+                    b = "0x" + H[3] + H[3];
+                } else if (H.length == 7) {
+                    r = "0x" + H[1] + H[2];
+                    g = "0x" + H[3] + H[4];
+                    b = "0x" + H[5] + H[6];
+                }
+                r /= 255; g /= 255; b /= 255;
+                let cmin = Math.min(r,g,b),
+                    cmax = Math.max(r,g,b),
+                    delta = cmax - cmin,
+                    h = 0, s = 0, l = 0;
+                if (delta == 0) h = 0;
+                else if (cmax == r) h = ((g - b) / delta) % 6;
+                else if (cmax == g) h = (b - r) / delta + 2;
+                else h = (r - g) / delta + 4;
+                h = Math.round(h * 60);
+                if (h < 0) h += 360;
+                l = (cmax + cmin) / 2;
+                s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+                s = +(s * 100).toFixed(1);
+                l = +(l * 100).toFixed(1);
+                return {h, s, l};
+            }
 
-            // --- BACKGROUND COLOR PICKER ---
             bgColorPicker.addEventListener('input', (e) => {
-                document.body.style.background = e.target.value;
+                const newColor = e.target.value;
+                document.body.style.background = newColor;
+                const hsl = hexToHSL(newColor);
+                visualizerColor = `hsl(${hsl.h}, 100%, 65%)`;
             });
 
-            // --- DIGITAL CLOCK ---
             function updateClock() {
                 const now = new Date();
                 let hours = now.getHours();
                 const minutes = now.getMinutes().toString().padStart(2, '0');
                 const ampm = hours >= 12 ? 'PM' : 'AM';
-                
                 hours = hours % 12;
                 hours = hours ? hours : 12; // 0 hour should be 12
-                
                 digitalClock.textContent = `${hours}:${minutes} ${ampm}`;
             }
             setInterval(updateClock, 1000);
@@ -805,6 +1171,3 @@
         });
     </script>
 </body>
-</html>
-
-
