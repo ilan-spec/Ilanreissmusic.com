@@ -692,7 +692,7 @@
 
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
+                cancelAnimationFrame(animationFrameId); // Stop previous loop
             }
             visualizerActive = true;
             visualizerWindow.style.display = 'flex';
@@ -705,6 +705,20 @@
                 cancelAnimationFrame(animationFrameId);
             }
         }
+
+        // iPhone Lock Screen Fix: Pause visualizer when tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                // Tab is hidden (or phone locked) - pause visualizer
+                stopVisualizer();
+            } else {
+                // Tab is visible (or phone unlocked) - resume visualizer if audio is playing
+                if (!audioPlayer.paused) {
+                    startVisualizer();
+                }
+            }
+        });
+
 
         function drawVisualizer() {
             if (!visualizerActive) {
@@ -752,90 +766,110 @@
 
         // --- Visualizer Implementations ---
         
-        // Nostalgia Windows Visualizer (Plenoptic)
-        const nostalgiaParticles = [];
-        const maxNostalgiaParticles = 70; // Fewer, larger particles
+        // Nostalgia Windows Visualizer (Starfield Tunnel)
+        const stars = [];
+        const maxStars = 500; // Reduced for performance
+        let starfieldRotation = 0;
+        let starfieldOrigin = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
 
-        class NostalgiaParticle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.baseColor = color;
-                this.hueShift = Math.random() * 60 - 30; // -30 to +30 degree shift
-                this.size = 50 + Math.random() * 150;
-                this.alpha = 0.02 + Math.random() * 0.05;
-                this.vx = (Math.random() - 0.5) * 0.5; // Slow drift
-                this.vy = (Math.random() - 0.5) * 0.5;
-                this.life = 1;
+        class Star {
+            constructor() {
+                this.x = (Math.random() - 0.5) * canvas.width;
+                this.y = (Math.random() - 0.5) * canvas.height;
+                this.z = Math.random() * canvas.width;
+                this.colorHue = 0;
             }
 
-            update(bass, mids, highs) {
-                // Music adds turbulence
-                this.vx += (Math.random() - 0.5) * 0.1 + (mids - 0.5) * 0.1;
-                this.vy += (Math.random() - 0.5) * 0.1 + (highs - 0.5) * 0.1;
-                
-                // Dampen velocity
-                this.vx *= 0.98;
-                this.vy *= 0.98;
-                
-                this.x += this.vx;
-                this.y += this.vy;
-                
-                // Pulse with bass
-                this.currentSize = this.size * (1 + bass * 0.2);
-                
-                // Fade out
-                this.life -= 0.001;
+            update(bass, mids, highs, centerX, centerY) {
+                const speed = 2 + bass * 20; // Bass controls speed
+                this.z -= speed;
 
-                // Wrap around edges
-                if (this.x + this.currentSize < 0) this.x = canvas.width + this.currentSize;
-                if (this.x - this.currentSize > canvas.width) this.x = -this.currentSize;
-                if (this.y + this.currentSize < 0) this.y = canvas.height + this.currentSize;
-                if (this.y - this.currentSize > canvas.height) this.y = -this.currentSize;
+                if (this.z <= 0) {
+                    this.z = canvas.width;
+                    this.x = (Math.random() - 0.5) * canvas.width;
+                    this.y = (Math.random() - 0.5) * canvas.height;
+                }
+
+                // Rotation
+                const rotX = Math.cos(starfieldRotation) * this.x - Math.sin(starfieldRotation) * this.y;
+                const rotY = Math.sin(starfieldRotation) * this.x + Math.cos(starfieldRotation) * this.y;
+                
+                this.x = rotX;
+                this.y = rotY;
+
+                // Color cycling
+                this.colorHue = (hslToHex(visualizerColor).h + (this.z / canvas.width) * 360 + Date.now() * 0.01) % 360;
             }
 
-            draw(ctx) {
-                const hsl = hslToHex(this.baseColor);
-                const particleColor = `hsl(${(hsl.h + this.hueShift) % 360}, 100%, 65%)`;
+            draw(ctx, centerX, centerY) {
+                if (this.z <= 0) return;
 
-                ctx.fillStyle = particleColor;
-                ctx.globalAlpha = this.alpha * this.life;
+                const k = 128 / this.z;
+                const px = this.x * k + centerX;
+                const py = this.y * k + centerY;
+
+                if (px < 0 || px > canvas.width || py < 0 || py > canvas.height) {
+                    this.z = 0; // Reset if off-screen
+                    return;
+                }
+
+                const size = (1 - this.z / canvas.width) * 3;
+                
+                ctx.fillStyle = `hsl(${this.colorHue}, 100%, ${70 + (1 - this.z / canvas.width) * 30}%)`;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.currentSize, 0, Math.PI * 2);
+                ctx.arc(px, py, Math.max(0.5, size), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
+
+        // Initialize stars
+        for (let i = 0; i < maxStars; i++) {
+            stars.push(new Star());
+        }
         
         function drawNostalgiaVisualizer(bassAvg, midsAvg, highsAvg) {
-            // Spawn new particles
-            if (nostalgiaParticles.length < maxNostalgiaParticles && Math.random() > 0.9) {
-                const x = Math.random() * canvas.width;
-                const y = Math.random() * canvas.height;
-                nostalgiaParticles.push(new NostalgiaParticle(x, y, visualizerColor));
-            }
+            // Update rotation
+            starfieldRotation += (midsAvg - 0.1) * 0.005; // Mids control rotation
             
-            // Enable additive blending for the glow effect
-            ctx.globalCompositeOperation = 'lighter';
+            // Update origin point (pulse/move with bass)
+            starfieldOrigin.targetX = 0.5 + (Math.sin(Date.now() * 0.0005) * 0.2) * bassAvg;
+            starfieldOrigin.targetY = 0.5 + (Math.cos(Date.now() * 0.0005) * 0.2) * bassAvg;
+            starfieldOrigin.x += (starfieldOrigin.targetX - starfieldOrigin.x) * 0.05;
+            starfieldOrigin.y += (starfieldOrigin.targetY - starfieldOrigin.y) * 0.05;
+            
+            const centerX = canvas.width * starfieldOrigin.x;
+            const centerY = canvas.height * starfieldOrigin.y;
 
-            for (let i = nostalgiaParticles.length - 1; i >= 0; i--) {
-                const p = nostalgiaParticles[i];
-                p.baseColor = visualizerColor; // Keep color in sync
-                p.update(bassAvg, midsAvg, highsAvg);
-                p.draw(ctx);
-                if (p.life <= 0) {
-                    nostalgiaParticles.splice(i, 1);
-                }
-            }
+            // Fainter trail
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Reset composite operation
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = 1.0;
+            ctx.save();
+            ctx.translate(centerX, centerY); // Move origin
+            
+            stars.forEach(star => {
+                star.update(bassAvg, midsAvg, highsAvg, centerX, centerY);
+                star.draw(ctx, 0, 0); // Draw relative to new origin
+            });
+            
+            ctx.restore();
+            
+            // Pulsing center glow
+            const pulseSize = 10 + bassAvg * 50;
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseSize);
+            gradient.addColorStop(0, `hsla(${hslToHex(visualizerColor).h}, 100%, 75%, 0.3)`);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pulseSize, 0, Math.PI * 2);
+            ctx.fill();
         }
 
 
         // Aero Energy Visualizer
         const aeroLines = [];
-        const maxAeroLines = 50;
+        const maxAeroLines = 40; // Reduced for performance
 
         class AeroLine {
             constructor(x, y, color1, color2) {
@@ -1133,7 +1167,8 @@
         });
         
         audioPlayer.addEventListener('pause', () => {
-            stopVisualizer();
+            // Don't stop visualizer, just let it idle
+            // stopVisualizer();
         });
         
         audioPlayer.addEventListener('play', () => {
@@ -1227,7 +1262,7 @@
                 clickedTab.classList.add('active');
                 activeVisualizer = clickedTab.dataset.visualizer;
                 if (visualizerActive) {
-                    startVisualizer();
+                    startVisualizer(); // Restart with new visualizer
                 }
             }
         });
