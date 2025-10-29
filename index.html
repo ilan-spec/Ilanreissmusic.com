@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Ilan Reiss Music Player</title>
     
-    <!-- iPhone Lock Screen Meta Tags (for Now Playing info) --><meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ilan Reiss Music">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/IlanReiss/ilanreissmusic.com/main/cover.png"> <!-- Reference your image directly here --><meta name="theme-color" content="#008080"> <!-- Matches initial background --><!-- Font Awesome for icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="apple-touch-icon" href="cover.png"> <!-- Reference your image directly here --><meta name="theme-color" content="#008080"> <!-- Matches initial background --><!-- Font Awesome for icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -40,22 +40,24 @@
             border-bottom: 2px solid #404040;
             box-shadow: 1px 1px 0 1px #000;
             position: absolute;
-            min-width: 250px;
-            min-height: 150px;
+            min-width: 300px; /* Increased base min-width */
+            min-height: 200px; /* Increased base min-height */
             z-index: 10; /* Default stacking order */
         }
-
+ 
         .window.active-window {
             z-index: 100; /* Bring active window to front */
         }
         
         .player-container {
             width: 90%;
-            max-width: 600px;
-            height: 70vh;
-            max-height: 550px;
+            max-width: 800px; /* Increased from 600px */
+            height: 85vh; /* Increased from 70vh */
+            max-height: 750px; /* Increased from 550px */
+            min-width: 450px; /* Added specific min-width for player */
+            min-height: 550px; /* Added specific min-height for player */
         }
-
+ 
         .title-bar {
             padding: 5px 8px;
             font-weight: 700;
@@ -426,11 +428,11 @@
 
         /* Minimized Player Icon */
         #minimized-player-icon {
-            position: fixed;
-            bottom: 5px;
-            left: 5px;
-            width: 40px;
-            height: 40px;
+            /* position: fixed; ... REMOVED */
+            /* bottom: 5px; ... REMOVED */
+            /* left: 5px; ... REMOVED */
+            width: 25px; /* Match height of color picker */
+            height: 25px; /* Match height of color picker */
             background: #c0c0c0;
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
@@ -441,9 +443,10 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            z-index: 999; /* Below clock/color picker, but above other windows */
-            font-size: 1.5rem;
+            /* z-index: 999; ... REMOVED */
+            font-size: 1rem; /* Smaller icon */
             color: #000080;
+            margin-left: 10px; /* Add space */
         }
         #minimized-player-icon:active {
             border-top: 2px solid #404040;
@@ -522,11 +525,12 @@
     <div id="color-picker-container">
         <label for="bg-color-picker">BG:</label>
         <input type="color" id="bg-color-picker" value="#008080">
+        <!-- Minimized Player Icon --><div id="minimized-player-icon">
+            <i class="fas fa-compact-disc"></i>
+        </div>
     </div>
 
-    <!-- Minimized Player Icon --><div id="minimized-player-icon">
-        <i class="fas fa-compact-disc"></i>
-    </div>
+    <!-- Minimized Player Icon --><!-- MOVED TO color-picker-container -->
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -682,119 +686,81 @@
 
         // --- Visualizer Implementations ---
 
-        // Particle System for Particle Wave Visualizer (Now used for Data Gem)
-        const particles = [];
-        const maxParticles = 200;
+        // Particle System REMOVED as it's no longer used by DataGem
+        // const particles = []; ... REMOVED
+        // const maxParticles = 200; ... REMOVED
+        // class Particle { ... } ... REMOVED
 
-        class Particle {
-            constructor(x, y, color, targetX, targetY) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.angle = Math.random() * Math.PI * 2;
-                this.speed = (Math.random() * 2) + 0.5;
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-                this.life = Math.random() * 80 + 80;
-                this.size = Math.random() * 2 + 1;
-                this.targetX = targetX;
-                this.targetY = targetY;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= 1;
-                this.vx *= 0.98;
-                this.vy *= 0.98;
-                
-                // Gradually move towards target if defined
-                if (this.targetX !== undefined) {
-                    this.x += (this.targetX - this.x) * 0.02;
-                    this.y += (this.targetY - this.y) * 0.02;
-                }
-            }
-
-            draw(ctx) {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = Math.max(0, this.life / 160);
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
-        function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) {
+        function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) { // Renamed to "Data Gem" but is the new Sphere
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
 
-            // Gem shape parameters
-            const numSides = 3 + Math.floor(bassAvg / 60); // Triangle to Hexagon
-            const baseRadius = Math.min(canvas.width, canvas.height) / 5;
-            const pulseRadius = (midsAvg / 255) * (baseRadius * 0.8);
+            // Base radius
+            const baseRadius = Math.min(canvas.width, canvas.height) / 4;
+            // Pulsing effect from bass
+            const pulseRadius = (bassAvg / 255) * (baseRadius * 0.3);
             const currentRadius = baseRadius + pulseRadius;
 
-            ctx.shadowColor = visualizerColor;
-            ctx.shadowBlur = 25;
-            ctx.strokeStyle = visualizerColor;
-            ctx.lineWidth = 3;
+            // --- Draw the 3D Sphere ---
+            // Create a radial gradient for the 3D effect
+            // Highlight is off-center to give a "light source"
+            const gradient = ctx.createRadialGradient(
+                centerX - currentRadius * 0.25, // highlight X
+                centerY - currentRadius * 0.25, // highlight Y
+                currentRadius * 0.1,  // highlight radius
+                centerX, // center X
+                centerY, // center Y
+                currentRadius // outer radius
+            );
+            
+            const hslColor = hslToHex(visualizerColor); // Get HSL
+            const lightColor = `hsla(${hslColor.h}, 100%, 85%, 0.7)`; // Lighter highlight
+            const midColor = `hsla(${hslColor.h}, 100%, 65%, 0.5)`;
+            const darkColor = `hsla(${hslColor.h}, 100%, 40%, 0.3)`;
 
+            gradient.addColorStop(0, lightColor);
+            gradient.addColorStop(0.7, midColor);
+            gradient.addColorStop(1, darkColor);
+
+            ctx.fillStyle = gradient;
+            ctx.shadowColor = visualizerColor;
+            ctx.shadowBlur = 30;
+
+            // --- Deform the sphere ---
+            const numPoints = 128; // More points for a smoother circle
             ctx.beginPath();
-            for (let i = 0; i < numSides; i++) {
-                const angle = (i * Math.PI * 2 / numSides) + (Date.now() * 0.0001 * highsAvg/200); // Rotate slowly
-                const x = centerX + Math.cos(angle) * currentRadius;
-                const y = centerY + Math.sin(angle) * currentRadius;
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+            for (let i = 0; i <= numPoints; i++) { // Use <= to close the loop
+                const angle = (i / numPoints) * Math.PI * 2;
+                
+                // Map a frequency bin to this point on the circle
+                // Use a wider range of frequencies for more "crazy" deformation
+                const freqIndex = Math.floor( (i / numPoints) * (bufferLength * 0.5) ); // Use bottom half of frequencies
+                const freqValue = frequencyData[freqIndex] || 0;
+                
+                // Deform based on frequency and mids
+                const deform = (freqValue / 255) * (baseRadius * 0.4) + (midsAvg / 255) * (baseRadius * 0.2);
+                const radius = currentRadius + deform;
+                
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
             }
             ctx.closePath();
-            ctx.stroke();
-
-            // Inner fill
-            ctx.globalAlpha = 0.15;
-            ctx.fillStyle = visualizerColor;
-            ctx.fill();
-
-            // Emit particles from center or vertices
-            const spawnRate = Math.floor((midsAvg + highsAvg) / 80);
-            if (particles.length < maxParticles) {
-                for (let i = 0; i < spawnRate; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const offsetX = Math.cos(angle) * (currentRadius * 0.3);
-                    const offsetY = Math.sin(angle) * (currentRadius * 0.3);
-                    particles.push(new Particle(centerX + offsetX, centerY + offsetY, visualizerColor));
-                }
-            }
-
-            // Update and draw particles
-            ctx.globalAlpha = 1.0;
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw(ctx);
-                if (particles[i].life <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
             
-            // Draw connecting lines between a few particles
-            ctx.globalAlpha = 0.05 + (highsAvg / 255) * 0.1; // More lines on high notes
+            ctx.fill(); // Fill the deformed sphere
+            
+            // Add an outer stroke for definition
             ctx.strokeStyle = visualizerColor;
             ctx.lineWidth = 1;
-            const numConnections = Math.min(10, particles.length);
-            for (let i = 0; i < numConnections; i++) {
-                for (let j = i + 1; j < numConnections; j++) {
-                    const p1 = particles[i];
-                    const p2 = particles[j];
-                    const dist = Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
-                    if (dist < 100) { // Only connect nearby particles
-                        ctx.beginPath();
-                        ctx.moveTo(p1.x, p1.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.stroke();
-                    }
-                }
-            }
-
+            ctx.globalAlpha = 0.5;
+            ctx.stroke(); // Stroke the deformed shape
+            
+            // Reset
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
         }
@@ -1016,16 +982,21 @@
 
         function handleResizeMove(e) {
             if (!isResizing || !activeWindow) return;
-
+ 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
+ 
             let newWidth = initialWidth + (clientX - resizeStartX);
             let newHeight = initialHeight + (clientY - resizeStartY);
-
-            newWidth = Math.max(activeWindow.style.minWidth ? parseFloat(activeWindow.style.minWidth) : 250, newWidth);
-            newHeight = Math.max(activeWindow.style.minHeight ? parseFloat(activeWindow.style.minHeight) : 150, newHeight);
-
+ 
+            // Get the computed minimum size from CSS
+            const style = window.getComputedStyle(activeWindow);
+            const minW = parseFloat(style.minWidth) || 250;
+            const minH = parseFloat(style.minHeight) || 150;
+ 
+            newWidth = Math.max(minW, newWidth);
+            newHeight = Math.max(minH, newHeight);
+ 
             activeWindow.style.width = newWidth + 'px';
             activeWindow.style.height = newHeight + 'px';
             if (e.cancelable) e.preventDefault();
@@ -1062,13 +1033,17 @@
 
         // --- Initialize Window Positions ---
         // Save initial player position/size
-        playerLastX = (window.innerWidth - playerContainer.offsetWidth) / 2;
-        playerLastY = (window.innerHeight - playerContainer.offsetHeight) / 2;
-        playerLastWidth = playerContainer.offsetWidth;
-        playerLastHeight = playerContainer.offsetHeight;
+        playerLastWidth = playerContainer.offsetWidth; // Read calculated width
+        playerLastHeight = playerContainer.offsetHeight; // Read calculated height
+        playerLastX = (window.innerWidth - playerLastWidth) / 2;
+        playerLastY = (window.innerHeight - playerLastHeight) / 2;
 
         playerContainer.style.left = playerLastX + 'px';
         playerContainer.style.top = playerLastY + 'px';
+        // Explicitly set the pixel width/height to "lock in" the initial size
+        // This ensures that 'restore' always works with consistent pixel values
+        playerContainer.style.width = playerLastWidth + 'px';
+        playerContainer.style.height = playerLastHeight + 'px';
         
         visualizerWindow.style.left = '20px';
         visualizerWindow.style.top = '20px';
@@ -1193,11 +1168,17 @@
             playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
             bringWindowToFront(playerContainer);
-            // Restore last position/size
-            playerContainer.style.left = playerLastX + 'px';
-            playerContainer.style.top = playerLastY + 'px';
+            
+            // Restore last *size*
             playerContainer.style.width = playerLastWidth + 'px';
             playerContainer.style.height = playerLastHeight + 'px';
+            
+            // Recalculate and set *center* position
+            const newX = (window.innerWidth - playerLastWidth) / 2;
+            const newY = (window.innerHeight - playerLastHeight) / 2;
+            
+            playerContainer.style.left = newX + 'px';
+            playerContainer.style.top = newY + 'px';
         });
 
         // Visualizer tab switching
@@ -1300,11 +1281,15 @@
 
         // Load the provided image into a hidden img tag to ensure it's loaded for iPhone
         const lockScreenImage = new Image();
-        lockScreenImage.src = "https://raw.githubusercontent.com/IlanReiss/ilanreissmusic.com/main/cover.png";
+        lockScreenImage.src = "cover.png";
         lockScreenImage.style.display = 'none';
         document.body.appendChild(lockScreenImage);
     });
 </script>
 </body>
 </html>
+
+
+
+
 
