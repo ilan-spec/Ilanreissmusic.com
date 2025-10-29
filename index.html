@@ -287,7 +287,42 @@
             background: #000;
             display: block;
         }
-        
+
+        /* New Visualizer Tabs */
+        #visualizer-tabs {
+            display: flex;
+            flex-grow: 1; /* Allow tabs to take space */
+            margin-right: 5px;
+            justify-content: flex-start; /* Align tabs to the left */
+        }
+        .visualizer-tab {
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            padding: 3px 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 2px;
+            color: #000;
+            touch-action: manipulation;
+        }
+        .visualizer-tab.active {
+            background: #000080;
+            color: #fff;
+            border-bottom: none;
+            position: relative;
+            top: 1px;
+        }
+        /* Override window-button styling for tabs */
+        .visualizer-tab.window-button {
+             width: auto;
+             height: auto;
+             line-height: normal;
+        }
+
         #info-window {
             width: 300px;
             height: 250px;
@@ -299,6 +334,10 @@
         #info-window .content {
             padding: 15px;
             font-size: 0.9rem;
+        }
+
+        #info-window p {
+            margin-bottom: 8px;
         }
         
         #info-button {
@@ -384,14 +423,43 @@
         #bg-color-picker::-webkit-color-swatch {
             border: none;
         }
+
+        /* Minimized Player Icon */
+        #minimized-player-icon {
+            position: fixed;
+            bottom: 5px;
+            left: 5px;
+            width: 40px;
+            height: 40px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: 1px 1px 0 1px #000;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 999; /* Below clock/color picker, but above other windows */
+            font-size: 1.5rem;
+            color: #000080;
+        }
+        #minimized-player-icon:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
     </style>
 </head>
 <body>
 
-    <div class="player-container window">
+    <div class="player-container window" id="player-container">
         <div class="title-bar">
             <span class="title-bar-text">🎵 Ilan Reiss Music Player</span>
             <div class="title-bar-buttons">
+                <button class="window-button" id="minimize-player-button">_</button>
                 <button class="window-button close-button" data-target="player-container">X</button>
             </div>
         </div>
@@ -416,9 +484,12 @@
     
     <div id="visualizer-window" class="window">
          <div class="title-bar">
-            <span class="title-bar-text">🔊 Audio Visualizer</span>
+            <div id="visualizer-tabs">
+                <button class="visualizer-tab window-button" data-visualizer="dataGem">Data Gem</button>
+                <button class="visualizer-tab window-button" data-visualizer="aeroEnergy">Aero Energy</button>
+                <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
+            </div>
             <div class="title-bar-buttons">
-                <button id="toggle-visualizer-button" class="window-button">⇌</button>
                 <button class="window-button close-button" data-target="visualizer-window">X</button>
             </div>
         </div>
@@ -430,19 +501,16 @@
     
     <div id="info-window" class="window">
          <div class="title-bar">
-            <span class="title-bar-text">ℹ️ Information</span>
+            <span class="title-bar-text">ℹ️ Ilan Reiss Music Player Info</span>
             <div class="title-bar-buttons">
                 <button class="window-button close-button" data-target="info-window">X</button>
             </div>
         </div>
         <div class="content">
-            <p><strong>Ilan Reiss Music Player</strong></p>
+            <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
             <p>Version 2.0 (Enhanced Retro)</p>
             <br>
-            <p>This music player streams files directly from the 'Audio' folder of the GitHub repository.</p>
-            <br>
-            <p>Use the color picker to change the background and visualizer theme!</p>
-            <p>Click the '⇌' button in the visualizer window to change styles.</p>
+            <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
             <p><em>(You can edit this text in the ilanreissmusic.com.html file)</em></p>
         </div>
@@ -454,6 +522,10 @@
     <div id="color-picker-container">
         <label for="bg-color-picker">BG:</label>
         <input type="color" id="bg-color-picker" value="#008080">
+    </div>
+
+    <!-- Minimized Player Icon --><div id="minimized-player-icon">
+        <i class="fas fa-compact-disc"></i>
     </div>
 
 <script>
@@ -491,7 +563,7 @@
             "saturn.mp3", "save rq.mp3", "saved it.mp3", "serup.mp3",
             "shit is trash.mp3", "shortest beat.mp3", "show class.mp3",
             "show trash.mp3", "slash slowed.mp3", "slash.mp3", "slow jam 2.mp3",
-            "slow ride.mp3", "snippes.mp3", "soundbath 2.mp3", "soundbath.mp3",
+            "slow ride.mp3", "snippes.mp3", "soundbath 2.0.mp3", "soundbath.mp3", // Added new track for testing
             "SP iPhone sample.mp3", "spit it out.mp3", "standing in the rain.mp3",
             "starterd.mp3", "sue nami.mp3", "surfin.mp3", "swang.mp3",
             "swing song w eli.mp3", "synth demo.mp3", "take 2.mp3", "techno.mp3",
@@ -507,25 +579,29 @@
         const nowPlayingElement = document.getElementById('now-playing');
         const searchBar = document.getElementById('search-bar');
         
-        const playerContainer = document.querySelector('.player-container');
+        const playerContainer = document.getElementById('player-container'); // Changed to getElementById
         const visualizerWindow = document.getElementById('visualizer-window');
         const infoWindow = document.getElementById('info-window');
         const infoButton = document.getElementById('info-button');
         const digitalClock = document.getElementById('digital-clock');
         const bgColorPicker = document.getElementById('bg-color-picker');
-        const toggleVisualizerButton = document.getElementById('toggle-visualizer-button');
+        const visualizerTabs = document.getElementById('visualizer-tabs'); // New element
+        const minimizePlayerButton = document.getElementById('minimize-player-button'); // New element
+        const minimizedPlayerIcon = document.getElementById('minimized-player-icon'); // New element
         
         const canvas = document.getElementById('visualizer-canvas');
         const ctx = canvas.getContext('2d');
         
         let visualizerColor = '#00FFFF'; // Initial color for visualizer
-        let activeVisualizer = 'particleWave'; // 'particleWave' or 'retroWaveform'
+        let secondaryColor = '#FF00FF'; // For Aero Energy visualizer
+        let activeVisualizer = 'dataGem'; // Default visualizer on load: 'dataGem', 'aeroEnergy', or 'retroWaveform'
 
         // --- Audio Context Setup ---
         let audioContext, analyser, source;
         let frequencyData, timeDomainData;
         let bufferLength;
         let visualizerActive = false;
+        let animationFrameId; // To cancel animation frames
 
         function setupAudioContext() {
             if (audioContext) return;
@@ -543,63 +619,44 @@
             timeDomainData = new Uint8Array(bufferLength);
         }
 
-        // --- Visualizer Implementations ---
-
-        // Particle System for Particle Wave Visualizer
-        const particles = [];
-        const maxParticles = 200;
-
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x;
-                this.y = y;
-                this.color = color;
-                this.angle = Math.random() * Math.PI * 2;
-                this.speed = (Math.random() * 3) + 0.5;
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-                this.life = Math.random() * 100 + 100; // Longer life for smoother fade
-                this.size = Math.random() * 2 + 1; // 1-3px
+        function startVisualizer() {
+            if (visualizerActive && animationFrameId) {
+                cancelAnimationFrame(animationFrameId); // Stop previous loop
             }
+            visualizerActive = true;
+            visualizerWindow.style.display = 'flex';
+            drawVisualizer();
+        }
 
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= 1;
-                this.vx *= 0.99;
-                this.vy *= 0.99;
-            }
-
-            draw(ctx) {
-                ctx.fillStyle = this.color;
-                ctx.globalAlpha = Math.max(0, this.life / 200);
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
+        function stopVisualizer() {
+            visualizerActive = false;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
             }
         }
 
-        function drawParticleWaveVisualizer() {
-            if (!visualizerActive) return;
-            
-            requestAnimationFrame(drawParticleWaveVisualizer);
-            
-            analyser.getByteFrequencyData(frequencyData);
+        function drawVisualizer() {
+            if (!visualizerActive) {
+                return;
+            }
+
+            animationFrameId = requestAnimationFrame(drawVisualizer);
             
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
             
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Slight fade for trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
 
+            // Get audio data for all visualizers
+            analyser.getByteFrequencyData(frequencyData);
+            analyser.getByteTimeDomainData(timeDomainData);
+            
             // Calculate average frequencies for control
             let bass = 0, mids = 0, highs = 0;
-            const bassRange = [0, Math.floor(bufferLength * 0.05)]; // ~0-500Hz
-            const midRange = [Math.floor(bufferLength * 0.05), Math.floor(bufferLength * 0.2)]; // ~500Hz-2kHz
-            const highRange = [Math.floor(bufferLength * 0.2), Math.floor(bufferLength * 0.4)]; // ~2kHz-4kHz
+            const bassRange = [0, Math.floor(bufferLength * 0.05)]; 
+            const midRange = [Math.floor(bufferLength * 0.05), Math.floor(bufferLength * 0.2)]; 
+            const highRange = [Math.floor(bufferLength * 0.2), Math.floor(bufferLength * 0.4)]; 
 
             for (let i = bassRange[0]; i < bassRange[1]; i++) bass += frequencyData[i];
             for (let i = midRange[0]; i < midRange[1]; i++) mids += frequencyData[i];
@@ -609,14 +666,106 @@
             let midsAvg = mids / (midRange[1] - midRange[0]) || 0;
             let highsAvg = highs / (highRange[1] - highRange[0]) || 0;
 
-            // Particle spawning (more responsive to mids)
-            const spawnRate = Math.floor(midsAvg / 30); // Adjust divisor for sensitivity
-            if (particles.length < maxParticles) {
-                for (let i = 0; i < spawnRate; i++) {
-                    particles.push(new Particle(centerX, centerY, visualizerColor));
+            // Call the active visualizer function
+            switch (activeVisualizer) {
+                case 'dataGem':
+                    drawDataGemVisualizer(bassAvg, midsAvg, highsAvg);
+                    break;
+                case 'aeroEnergy':
+                    drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg);
+                    break;
+                case 'retroWaveform':
+                    drawRetroWaveformVisualizer(timeDomainData);
+                    break;
+            }
+        }
+
+        // --- Visualizer Implementations ---
+
+        // Particle System for Particle Wave Visualizer (Now used for Data Gem)
+        const particles = [];
+        const maxParticles = 200;
+
+        class Particle {
+            constructor(x, y, color, targetX, targetY) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = (Math.random() * 2) + 0.5;
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.life = Math.random() * 80 + 80;
+                this.size = Math.random() * 2 + 1;
+                this.targetX = targetX;
+                this.targetY = targetY;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 1;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                
+                // Gradually move towards target if defined
+                if (this.targetX !== undefined) {
+                    this.x += (this.targetX - this.x) * 0.02;
+                    this.y += (this.targetY - this.y) * 0.02;
                 }
             }
-            
+
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = Math.max(0, this.life / 160);
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawDataGemVisualizer(bassAvg, midsAvg, highsAvg) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Gem shape parameters
+            const numSides = 3 + Math.floor(bassAvg / 60); // Triangle to Hexagon
+            const baseRadius = Math.min(canvas.width, canvas.height) / 5;
+            const pulseRadius = (midsAvg / 255) * (baseRadius * 0.8);
+            const currentRadius = baseRadius + pulseRadius;
+
+            ctx.shadowColor = visualizerColor;
+            ctx.shadowBlur = 25;
+            ctx.strokeStyle = visualizerColor;
+            ctx.lineWidth = 3;
+
+            ctx.beginPath();
+            for (let i = 0; i < numSides; i++) {
+                const angle = (i * Math.PI * 2 / numSides) + (Date.now() * 0.0001 * highsAvg/200); // Rotate slowly
+                const x = centerX + Math.cos(angle) * currentRadius;
+                const y = centerY + Math.sin(angle) * currentRadius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            // Inner fill
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = visualizerColor;
+            ctx.fill();
+
+            // Emit particles from center or vertices
+            const spawnRate = Math.floor((midsAvg + highsAvg) / 80);
+            if (particles.length < maxParticles) {
+                for (let i = 0; i < spawnRate; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const offsetX = Math.cos(angle) * (currentRadius * 0.3);
+                    const offsetY = Math.sin(angle) * (currentRadius * 0.3);
+                    particles.push(new Particle(centerX + offsetX, centerY + offsetY, visualizerColor));
+                }
+            }
+
             // Update and draw particles
             ctx.globalAlpha = 1.0;
             for (let i = particles.length - 1; i >= 0; i--) {
@@ -626,58 +775,129 @@
                     particles.splice(i, 1);
                 }
             }
-
-            // Draw pulsing circle (responsive to bass)
-            const baseRadius = Math.min(canvas.width, canvas.height) / 8;
-            const pulseRadius = (bassAvg / 255) * (baseRadius * 0.6); // Max pulse for bass
-            const currentRadius = baseRadius + pulseRadius;
             
-            ctx.shadowColor = visualizerColor;
-            ctx.shadowBlur = 20;
+            // Draw connecting lines between a few particles
+            ctx.globalAlpha = 0.05 + (highsAvg / 255) * 0.1; // More lines on high notes
             ctx.strokeStyle = visualizerColor;
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, currentRadius, 0, Math.PI * 2);
-            ctx.stroke();
-
-            // Draw radial waves (responsive to mids)
-            const numWaves = 3;
-            const waveAmplitude = (midsAvg / 255) * (baseRadius / 4);
-            for (let i = 0; i < numWaves; i++) {
-                const waveRadius = currentRadius + (i + 1) * (baseRadius / 3) + Math.sin(Date.now() * 0.005 + i) * waveAmplitude;
-                ctx.globalAlpha = 0.4 - (i * 0.1); // Fade outer waves
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, waveRadius, 0, Math.PI * 2);
-                ctx.stroke();
+            ctx.lineWidth = 1;
+            const numConnections = Math.min(10, particles.length);
+            for (let i = 0; i < numConnections; i++) {
+                for (let j = i + 1; j < numConnections; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    const dist = Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2);
+                    if (dist < 100) { // Only connect nearby particles
+                        ctx.beginPath();
+                        ctx.moveTo(p1.x, p1.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
             }
 
-            // Inner core fill (subtle)
-            ctx.globalAlpha = 0.2;
-            ctx.fillStyle = visualizerColor;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, Math.max(0, currentRadius * 0.7), 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Reset context
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
         }
 
+
+        // Aero Energy Visualizer (inspired by Windows Media Player)
+        const aeroLines = [];
+        const maxAeroLines = 50;
+
+        class AeroLine {
+            constructor(x, y, color1, color2) {
+                this.x = x;
+                this.y = y;
+                this.points = [{x: x, y: y}];
+                this.length = 10 + Math.random() * 50;
+                this.speed = 1 + Math.random() * 3;
+                this.angle = Math.random() * Math.PI * 2;
+                this.vx = Math.cos(this.angle) * this.speed;
+                this.vy = Math.sin(this.angle) * this.speed;
+                this.life = 1; // 0 to 1, fades out
+                this.color1 = color1;
+                this.color2 = color2;
+                this.age = 0;
+            }
+
+            update(bass, mids, highs) {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Add some subtle random movement or respond to highs
+                this.vx += (Math.random() - 0.5) * (highs / 255) * 0.5;
+                this.vy += (Math.random() - 0.5) * (highs / 255) * 0.5;
+
+                // Keep line within bounds
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+                this.points.unshift({x: this.x, y: this.y});
+                if (this.points.length > this.length) {
+                    this.points.pop();
+                }
+
+                this.life -= 0.005 - (mids / 255) * 0.002; // Fade faster with mids
+                if (this.life <= 0) this.life = 0;
+                this.age++;
+            }
+
+            draw(ctx) {
+                if (this.points.length < 2) return;
+
+                ctx.globalAlpha = this.life * 0.8;
+                ctx.lineWidth = 1 + (this.age / 500); // Thicken slightly over time
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                const gradient = ctx.createLinearGradient(this.points[0].x, this.points[0].y, this.points[this.points.length - 1].x, this.points[this.points.length - 1].y);
+                gradient.addColorStop(0, this.color1);
+                gradient.addColorStop(1, this.color2);
+                ctx.strokeStyle = gradient;
+                ctx.shadowColor = this.color1; // Glow effect
+                ctx.shadowBlur = 10;
+
+                ctx.beginPath();
+                ctx.moveTo(this.points[0].x, this.points[0].y);
+                for (let i = 1; i < this.points.length; i++) {
+                    ctx.lineTo(this.points[i].x, this.points[i].y);
+                }
+                ctx.stroke();
+
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg) {
+            // Spawn new lines
+            if (aeroLines.length < maxAeroLines && Math.random() < 0.05 + (midsAvg / 255) * 0.1) {
+                const startX = Math.random() * canvas.width;
+                const startY = Math.random() * canvas.height;
+                
+                // Secondary color shifts with time or music
+                const hueShift = (Date.now() * 0.01) % 360;
+                const dynamicSecondaryColor = `hsl(${(hslToHex(visualizerColor).h + hueShift) % 360}, 100%, 65%)`;
+
+                aeroLines.push(new AeroLine(startX, startY, visualizerColor, dynamicSecondaryColor));
+            }
+
+            // Update and draw lines
+            for (let i = aeroLines.length - 1; i >= 0; i--) {
+                aeroLines[i].update(bassAvg, midsAvg, highsAvg);
+                aeroLines[i].draw(ctx);
+                if (aeroLines[i].life <= 0 || aeroLines[i].age > 1000) { // Remove old lines
+                    aeroLines.splice(i, 1);
+                }
+            }
+        }
+
         // Retro Waveform Visualizer
-        function drawRetroWaveformVisualizer() {
-            if (!visualizerActive) return;
-
-            requestAnimationFrame(drawRetroWaveformVisualizer);
-
-            analyser.getByteTimeDomainData(timeDomainData); // Use time domain for waveform
-
-            canvas.width = canvas.clientWidth;
-            canvas.height = canvas.clientHeight;
-            
+        function drawRetroWaveformVisualizer(timeDomainData) {
             ctx.fillStyle = '#000'; // Clear background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.lineWidth = 3; // Smoother line
+            ctx.lineWidth = 3;
             ctx.strokeStyle = visualizerColor;
             ctx.shadowColor = visualizerColor;
             ctx.shadowBlur = 10;
@@ -700,38 +920,28 @@
             ctx.lineTo(canvas.width, canvas.height / 2);
             ctx.stroke();
 
-            // Gradient fill underneath
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, visualizerColor);
             gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
             gradient.addColorStop(1, visualizerColor);
 
             ctx.fillStyle = gradient;
-            ctx.globalAlpha = 0.2; // Subtle fill
+            ctx.globalAlpha = 0.2;
             ctx.beginPath();
             x = 0;
-            ctx.moveTo(0, canvas.height); // Start at bottom left
+            ctx.moveTo(0, canvas.height);
             for(let i = 0; i < bufferLength; i++) {
                 const v = timeDomainData[i] / 128.0;
                 const y = v * canvas.height / 2;
                 ctx.lineTo(x, y);
                 x += sliceWidth;
             }
-            ctx.lineTo(canvas.width, canvas.height); // Go to bottom right
+            ctx.lineTo(canvas.width, canvas.height);
             ctx.closePath();
             ctx.fill();
 
-
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 0;
-        }
-
-        function startVisualizerLoop() {
-            if (activeVisualizer === 'particleWave') {
-                drawParticleWaveVisualizer();
-            } else {
-                drawRetroWaveformVisualizer();
-            }
         }
 
         // --- Window Management ---
@@ -743,7 +953,9 @@
         let resizeStartX, resizeStartY;
         let initialWidth, initialHeight;
 
-        // Bring window to front on interaction
+        // Store player's last position/size for minimize/restore
+        let playerLastX, playerLastY, playerLastWidth, playerLastHeight;
+
         document.querySelectorAll('.window').forEach(windowEl => {
             windowEl.addEventListener('mousedown', () => bringWindowToFront(windowEl));
             windowEl.addEventListener('touchstart', () => bringWindowToFront(windowEl), { passive: true });
@@ -757,8 +969,7 @@
         }
 
         function handleDragStart(e, windowEl) {
-            // Check if it's a close/toggle button
-            if (e.target.classList.contains('window-button')) return;
+            if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab')) return;
 
             isDragging = true;
             activeWindow = windowEl;
@@ -770,7 +981,7 @@
             dragOffsetY = clientY - windowEl.offsetTop;
             
             document.body.style.cursor = 'move';
-            if (e.cancelable) e.preventDefault(); // Prevent accidental scroll on touch
+            if (e.cancelable) e.preventDefault();
         }
 
         function handleDragMove(e) {
@@ -787,7 +998,7 @@
 
             activeWindow.style.left = newX + 'px';
             activeWindow.style.top = newY + 'px';
-            if (e.cancelable) e.preventDefault(); // Prevent accidental scroll on touch
+            if (e.cancelable) e.preventDefault();
         }
 
         function handleResizeStart(e, windowEl) {
@@ -800,7 +1011,7 @@
             initialHeight = windowEl.offsetHeight;
 
             document.body.style.cursor = 'nwse-resize';
-            if (e.cancelable) e.preventDefault(); // Prevent accidental scroll on touch
+            if (e.cancelable) e.preventDefault();
         }
 
         function handleResizeMove(e) {
@@ -817,7 +1028,7 @@
 
             activeWindow.style.width = newWidth + 'px';
             activeWindow.style.height = newHeight + 'px';
-            if (e.cancelable) e.preventDefault(); // Prevent accidental scroll on touch
+            if (e.cancelable) e.preventDefault();
         }
 
         function handleEnd() {
@@ -850,15 +1061,20 @@
 
 
         // --- Initialize Window Positions ---
-        playerContainer.style.left = (window.innerWidth - playerContainer.offsetWidth) / 2 + 'px';
-        playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
+        // Save initial player position/size
+        playerLastX = (window.innerWidth - playerContainer.offsetWidth) / 2;
+        playerLastY = (window.innerHeight - playerContainer.offsetHeight) / 2;
+        playerLastWidth = playerContainer.offsetWidth;
+        playerLastHeight = playerContainer.offsetHeight;
+
+        playerContainer.style.left = playerLastX + 'px';
+        playerContainer.style.top = playerLastY + 'px';
         
         visualizerWindow.style.left = '20px';
         visualizerWindow.style.top = '20px';
         infoWindow.style.left = (window.innerWidth - infoWindow.offsetWidth) / 2 + 'px';
         infoWindow.style.top = (window.innerHeight - infoWindow.offsetHeight) / 2 + 'px';
 
-        // Set initial active window
         bringWindowToFront(playerContainer);
 
 
@@ -881,7 +1097,7 @@
                 const filename = clickedLi.dataset.filename;
                 audioPlayer.src = 'Audio/' + filename;
                 
-                setupAudioContext(); // Ensure context is ready
+                setupAudioContext(); 
                 if (audioContext.state === 'suspended') {
                     audioContext.resume();
                 }
@@ -895,21 +1111,18 @@
                 }
                 clickedLi.classList.add('active');
                 
-                visualizerWindow.style.display = 'flex';
-                visualizerActive = true;
-                startVisualizerLoop();
+                startVisualizer();
             }
         });
         
         audioPlayer.addEventListener('pause', () => {
-            visualizerActive = false;
+            stopVisualizer();
         });
         
         audioPlayer.addEventListener('play', () => {
             if (audioContext) {
                 audioContext.resume();
-                visualizerActive = true;
-                startVisualizerLoop();
+                startVisualizer();
             }
         });
 
@@ -939,31 +1152,75 @@
             bringWindowToFront(infoWindow);
         });
         
+        // General close buttons for all windows
         document.querySelectorAll('.close-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 const targetWindowId = e.target.dataset.target;
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
-                    windowToClose.style.display = 'none';
-                    if (targetWindowId === 'visualizer-window') {
-                        visualizerActive = false;
+                    if (targetWindowId === 'player-container') {
+                        // For the player, minimize instead of close
+                        playerContainer.style.display = 'none';
+                        minimizedPlayerIcon.style.display = 'flex';
+                        // Save current position/size before minimizing
+                        playerLastX = playerContainer.offsetLeft;
+                        playerLastY = playerContainer.offsetTop;
+                        playerLastWidth = playerContainer.offsetWidth;
+                        playerLastHeight = playerContainer.offsetHeight;
+                    } else {
+                        windowToClose.style.display = 'none';
+                        if (targetWindowId === 'visualizer-window') {
+                            stopVisualizer();
+                        }
                     }
                 }
             });
         });
 
-        toggleVisualizerButton.addEventListener('click', () => {
-            activeVisualizer = (activeVisualizer === 'particleWave') ? 'retroWaveform' : 'particleWave';
-            if (visualizerActive) { // Only restart if already playing
-                startVisualizerLoop();
+        // Minimize player button
+        minimizePlayerButton.addEventListener('click', () => {
+            playerContainer.style.display = 'none';
+            minimizedPlayerIcon.style.display = 'flex';
+            // Save current position/size before minimizing
+            playerLastX = playerContainer.offsetLeft;
+            playerLastY = playerContainer.offsetTop;
+            playerLastWidth = playerContainer.offsetWidth;
+            playerLastHeight = playerContainer.offsetHeight;
+        });
+
+        // Restore player from minimized icon
+        minimizedPlayerIcon.addEventListener('click', () => {
+            playerContainer.style.display = 'flex';
+            minimizedPlayerIcon.style.display = 'none';
+            bringWindowToFront(playerContainer);
+            // Restore last position/size
+            playerContainer.style.left = playerLastX + 'px';
+            playerContainer.style.top = playerLastY + 'px';
+            playerContainer.style.width = playerLastWidth + 'px';
+            playerContainer.style.height = playerLastHeight + 'px';
+        });
+
+        // Visualizer tab switching
+        visualizerTabs.addEventListener('click', (e) => {
+            const clickedTab = e.target.closest('.visualizer-tab');
+            if (clickedTab) {
+                document.querySelectorAll('.visualizer-tab').forEach(tab => tab.classList.remove('active'));
+                clickedTab.classList.add('active');
+                activeVisualizer = clickedTab.dataset.visualizer;
+                if (visualizerActive) {
+                    startVisualizer(); // Restart with new visualizer
+                }
             }
         });
+        // Set initial active tab
+        document.querySelector(`.visualizer-tab[data-visualizer="${activeVisualizer}"]`).classList.add('active');
+
 
         // --- Color Conversion Helper (Hex to HSL) ---
         function hexToHSL(H) {
             let r = 0, g = 0, b = 0;
-            if (H.length == 4) { r = "0x" + H[1] + H[1]; g = "0x" + H[2] + H[2]; b = "0x" + H[3] + H[3]; }
-            else if (H.length == 7) { r = "0x" + H[1] + H[2]; g = "0x" + H[3] + H[4]; b = "0x" + H[5] + H[6]; }
+            if (H.length == 4) { r = parseInt(H[1] + H[1], 16); g = parseInt(H[2] + H[2], 16); b = parseInt(H[3] + H[3], 16); }
+            else if (H.length == 7) { r = parseInt(H.substring(1, 3), 16); g = parseInt(H.substring(3, 5), 16); b = parseInt(H.substring(5, 7), 16); }
             r /= 255; g /= 255; b /= 255;
             let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin, h = 0, s = 0, l = 0;
             if (delta == 0) h = 0; else if (cmax == r) h = ((g - b) / delta) % 6;
@@ -974,6 +1231,40 @@
             s = +(s * 100).toFixed(1); l = +(l * 100).toFixed(1);
             return {h, s, l};
         }
+        // Helper to convert HSL back to a brighter HSL for visualizer, or just return original color
+        function hslToHex(hslColor) { // Expects "hsl(H, S%, L%)" or "#HEX"
+            let h, s, l;
+            if (hslColor.startsWith("#")) {
+                const hex = hslColor;
+                const r = parseInt(hex.slice(1, 3), 16) / 255;
+                const g = parseInt(hex.slice(3, 5), 16) / 255;
+                const b = parseInt(hex.slice(5, 7), 16) / 255;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                h = (max + min) / 2;
+                s = h;
+                l = h;
+                if (max == min) { h = 0; s = 0; } 
+                else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                        case g: h = (b - r) / d + 2; break;
+                        case b: h = (r - g) / d + 4; break;
+                    }
+                    h /= 6;
+                }
+                return {h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100)};
+            } else if (hslColor.startsWith("hsl")) {
+                const parts = hslColor.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/);
+                h = parseInt(parts[1]);
+                s = parseInt(parts[2]);
+                l = parseInt(parts[3]);
+                return {h, s, l};
+            }
+            return {h: 0, s: 0, l: 0}; // Default
+        }
+
 
         // --- Background Color Picker ---
         bgColorPicker.addEventListener('input', (e) => {
@@ -981,7 +1272,8 @@
             document.body.style.background = newColor;
             
             const hsl = hexToHSL(newColor);
-            visualizerColor = `hsl(${hsl.h}, 100%, 65%)`; // Adjust lightness for visualizer if needed
+            visualizerColor = `hsl(${hsl.h}, 100%, 65%)`; // Base visualizer color
+            secondaryColor = `hsl(${(hsl.h + 180) % 360}, 100%, 65%)`; // Complementary color for some visualizers
         });
 
         // --- Digital Clock ---
@@ -1003,6 +1295,8 @@
         const initialBgColor = bgColorPicker.value;
         const initialHsl = hexToHSL(initialBgColor);
         visualizerColor = `hsl(${initialHsl.h}, 100%, 65%)`;
+        secondaryColor = `hsl(${(initialHsl.h + 180) % 360}, 100%, 65%)`;
+
 
         // Load the provided image into a hidden img tag to ensure it's loaded for iPhone
         const lockScreenImage = new Image();
