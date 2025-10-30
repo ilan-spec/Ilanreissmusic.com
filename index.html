@@ -1029,7 +1029,8 @@
     <div id="visualizer-window" class="window">
          <div class="title-bar">
             <div id="visualizer-tabs">
-                <button class="visualizer-tab window-button" data-visualizer="nostalgiaWindows">Nostalgia</button>
+                <!-- NEW: Renamed visualizer -->
+                <button class="visualizer-tab window-button" data-visualizer="cosmicPulse">Cosmic Pulse</button>
                 <button class="visualizer-tab window-button" data-visualizer="aeroEnergy">Aero Energy</button>
                 <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
             </div>
@@ -1210,6 +1211,9 @@
 
         // --- Configuration & Elements ---
         
+        // NEW: Version log
+        console.log('Ilan Reiss Music Player v3.2 - New Visualizer & Media Session');
+        
         // This is the full list of files from your JS
         const audioFiles = [
             "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
@@ -1351,7 +1355,7 @@
         
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
-        let activeVisualizer = 'nostalgiaWindows'; 
+        let activeVisualizer = 'cosmicPulse'; // NEW: Default to new visualizer
 
         // --- Audio Context Setup ---
         let audioContext, analyser;
@@ -1508,11 +1512,6 @@
             
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
-            
-            // Use a darker fade for the nostalgia visualizer
-            const fadeAlpha = activeVisualizer === 'nostalgiaWindows' ? '0.05' : '0.1';
-            ctx.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             analyser.getByteFrequencyData(frequencyData);
             analyser.getByteTimeDomainData(timeDomainData);
@@ -1531,8 +1530,8 @@
             let highsAvg = (highs / (highRange[1] - highRange[0]) || 0) / 255; // Normalize to 0-1
 
             switch (activeVisualizer) {
-                case 'nostalgiaWindows':
-                    drawNostalgiaVisualizer(bassAvg, midsAvg, highsAvg);
+                case 'cosmicPulse': // NEW: Renamed
+                    drawCosmicPulseVisualizer(bassAvg, midsAvg, highsAvg);
                     break;
                 case 'aeroEnergy':
                     drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg);
@@ -1543,81 +1542,67 @@
             }
         }
         
-        // --- Visualizer Implementations (Keep from previous) ---
+        // --- Visualizer Implementations ---
         
-        // Nostalgia Windows Visualizer (Starfield Tunnel)
-        const stars = [];
-        const maxStars = 500; // Increased from 400
-        let starfieldRotation = 0;
-        let starfieldOrigin = { x: 0.5, y: 0.5, targetX: 0.5, targetY: 0.5 };
+        // NEW: Cosmic Pulse Visualizer
+        const particles = [];
+        const maxParticles = 300; 
 
-        class Star {
+        class CosmicParticle {
             constructor() {
-                this.x = (Math.random() - 0.5) * canvas.width;
-                this.y = (Math.random() - 0.5) * canvas.height;
-                this.z = Math.random() * canvas.width;
-                this.colorHue = 0;
+                this.reset();
             }
-            update(bass, mids, highs, centerX, centerY) {
-                const speed = 3 + bass * 30; // Increased speed and reactivity
-                this.z -= speed;
-                if (this.z <= 0) {
-                    this.z = canvas.width;
-                    this.x = (Math.random() - 0.5) * canvas.width;
-                    this.y = (Math.random() - 0.5) * canvas.height;
-                }
-                const rotX = Math.cos(starfieldRotation) * this.x - Math.sin(starfieldRotation) * this.y;
-                const rotY = Math.sin(starfieldRotation) * this.x + Math.cos(starfieldRotation) * this.y;
-                this.x = rotX; this.y = rotY;
-                this.colorHue = (hslToHex(visualizerColor).h + (this.z / canvas.width) * 360 + Date.now() * 0.01) % 360;
+            
+            reset(centerX, centerY) {
+                this.x = centerX || canvas.width / 2;
+                this.y = centerY || canvas.height / 2;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 2 + 1;
+                this.life = 1;
+                this.size = Math.random() * 2 + 1;
+                this.hue = 0;
             }
-            draw(ctx, centerX, centerY, bassAvg) { // Pass bassAvg
-                if (this.z <= 0) return;
-                const k = 128 / this.z;
-                const px = this.x * k + centerX;
-                const py = this.y * k + centerY;
-                if (px < 0 || px > canvas.width || py < 0 || py > canvas.height) {
-                    this.z = 0; return;
+
+            update(bass, mids, highs) {
+                this.x += Math.cos(this.angle) * this.speed * (1 + bass * 2);
+                this.y += Math.sin(this.angle) * this.speed * (1 + bass * 2);
+                this.life -= 0.005 + (mids * 0.005);
+                this.size = (Math.random() * 2 + 1) * (1 + bass * 2); // Pulse size
+                this.hue = (hslToHex(visualizerColor).h + (this.x / canvas.width) * 180) % 360;
+
+                if (this.life <= 0) {
+                    this.reset();
                 }
-                const size = (1 - this.z / canvas.width) * (2 + bassAvg * 5); // NEW: Pulse size with bass
-                ctx.fillStyle = `hsl(${this.colorHue}, 100%, ${70 + (1 - this.z / canvas.width) * 30}%)`;
+            }
+            
+            draw(ctx) {
+                ctx.fillStyle = `hsla(${this.hue}, 100%, ${60 + (this.life * 40)}%, ${this.life * 0.8})`;
+                ctx.shadowColor = `hsl(${this.hue}, 100%, 70%)`;
+                ctx.shadowBlur = 10;
                 ctx.beginPath();
-                ctx.arc(px, py, Math.max(0.5, size), 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, Math.max(0.5, this.size), 0, Math.PI * 2);
                 ctx.fill();
             }
         }
-        for (let i = 0; i < maxStars; i++) stars.push(new Star());
         
-        function drawNostalgiaVisualizer(bassAvg, midsAvg, highsAvg) {
-            starfieldRotation += (midsAvg - 0.1) * 0.01; // Increased rotation
-            starfieldOrigin.targetX = 0.5 + (Math.sin(Date.now() * 0.0005) * 0.2) * bassAvg;
-            starfieldOrigin.targetY = 0.5 + (Math.cos(Date.now() * 0.0005) * 0.2) * bassAvg;
-            starfieldOrigin.x += (starfieldOrigin.targetX - starfieldOrigin.x) * 0.05;
-            starfieldOrigin.y += (starfieldOrigin.targetY - starfieldOrigin.y) * 0.05;
-            const centerX = canvas.width * starfieldOrigin.x;
-            const centerY = canvas.height * starfieldOrigin.y;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+        function drawCosmicPulseVisualizer(bassAvg, midsAvg, highsAvg) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Slow fade
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            stars.forEach(star => {
-                star.update(bassAvg, midsAvg, highsAvg, centerX, centerY);
-                star.draw(ctx, 0, 0, bassAvg); // Pass bassAvg
+            ctx.shadowBlur = 0; // Reset shadow for particles
+
+            while (particles.length < maxParticles) {
+                particles.push(new CosmicParticle());
+            }
+
+            particles.forEach(p => {
+                p.update(bassAvg, midsAvg, highsAvg);
+                p.draw(ctx);
             });
-            ctx.restore();
-            const pulseSize = 10 + bassAvg * 50;
-            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulseSize);
-            gradient.addColorStop(0, `hsla(${hslToHex(visualizerColor).h}, 100%, 75%, 0.3)`);
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, pulseSize, 0, Math.PI * 2);
-            ctx.fill();
         }
 
         // Aero Energy Visualizer
         const aeroLines = [];
-        const maxAeroLines = 35; // Reduced for performance
+        const maxAeroLines = 35; 
         class AeroLine {
             constructor(x, y, color1, color2) {
                 this.x = x; this.y = y;
@@ -1660,6 +1645,9 @@
             }
         }
         function drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg) {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             if (aeroLines.length < maxAeroLines && Math.random() < 0.05 + (midsAvg) * 0.1) {
                 const startX = Math.random() * canvas.width;
                 const startY = Math.random() * canvas.height;
@@ -1719,7 +1707,6 @@
         let playerLastX, playerLastY, playerLastWidth, playerLastHeight;
         let djLastX, djLastY, djLastWidth, djLastHeight; // For DJ window
         
-        // NEW: Check for mobile at start
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
         document.querySelectorAll('.window').forEach(windowEl => {
@@ -1837,10 +1824,9 @@
         
         function setInitialDjPosition() {
             if (isMobile) return; // Don't set positions on mobile
-            // Read from CSS styles instead of offsetHeight
             const style = window.getComputedStyle(djAppWindow);
-            djLastWidth = parseFloat(style.width) || 900; // Match new max-width
-            djLastHeight = parseFloat(style.height) || 550; // Match new height
+            djLastWidth = parseFloat(style.width) || 900; 
+            djLastHeight = parseFloat(style.height) || 550;
             
             djLastX = (window.innerWidth - djLastWidth) / 2;
             djLastY = (window.innerHeight - djLastHeight) / 2;
@@ -1940,14 +1926,12 @@
             const bpmDisplay = document.getElementById(`${deckId}-bpm-display`); 
             const currentBpmDisplay = document.getElementById(`${deckId}-current-bpm`); 
             
-            // NEW: EQ Sliders
             const lowSlider = document.getElementById(`${deckId}-low`);
             const midSlider = document.getElementById(`${deckId}-mid`);
             const highSlider = document.getElementById(`${deckId}-high`);
             
-            // NEW: Get correct filter nodes
             let filters;
-            let gainNode = null; // NEW: Gain node for this deck
+            let gainNode = null; 
             
             const loadBtn = document.getElementById(`load-${deckId}`);
             const playBtn = document.getElementById(`${deckId}-play`);
@@ -1959,13 +1943,12 @@
             let isScrubbing = false; // For the bottom bar
             let isScrubbingPlatter = false; // For the new platter
             let lastScrubX = 0;
-            let baseBpm = null; // NEW: Store the track's base BPM
+            let baseBpm = null; 
 
             loadBtn.addEventListener('click', () => {
                 if (selectedDjTrack) {
-                    if (!audioContext) setupAudioContext(); // Ensure context exists
+                    if (!audioContext) setupAudioContext(); 
                     
-                    // NEW: Assign gain and filter nodes
                     gainNode = (deckId === 'deck-a') ? gainA : gainB;
                     filters = (deckId === 'deck-a') ? { low: filterALow, mid: filterAMid, high: filterAHigh } : { low: filterBLow, mid: filterBMid, high: filterBHigh };
                     
@@ -1982,19 +1965,16 @@
                         currentBpmDisplay.textContent = '-- BPM';
                     }
                     
-                    // Reset platter and BPM slider
                     bpmSlider.value = 1;
                     bpmDisplay.textContent = '100%'; 
                     audio.playbackRate = 1;
                     platter.style.transform = 'rotate(0deg)';
                     platter.style.animationPlayState = 'paused';
                     
-                    // NEW: Reset EQ
                     lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
                     if(filters) {
                         filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                     }
-                    // NEW: Reset Volume
                     if(gainNode) {
                         gainNode.gain.value = 1;
                         volumeSlider.value = 1;
@@ -2003,9 +1983,8 @@
             });
 
             playBtn.addEventListener('click', () => {
-                 if (!audioContext) setupAudioContext(); // Ensure context exists
+                 if (!audioContext) setupAudioContext(); 
                  
-                 // NEW: Assign nodes if they haven't been
                  if (!gainNode) gainNode = (deckId === 'deck-a') ? gainA : gainB;
                  if (!filters) filters = (deckId === 'deck-a') ? { low: filterALow, mid: filterAMid, high: filterAHigh } : { low: filterBLow, mid: filterBMid, high: filterBHigh };
                  
@@ -2033,19 +2012,16 @@
                     currentBpmDisplay.textContent = '-- BPM';
                 }
                 
-                // NEW: Reset EQ
                 lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
                 if(filters) {
                     filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                 }
-                // NEW: Reset Volume
                 if(gainNode) {
                     gainNode.gain.value = 1;
                     volumeSlider.value = 1;
                 }
             });
 
-            // NEW: Control Gain Node, not audio.volume
             volumeSlider.addEventListener('input', () => {
                 if (gainNode) gainNode.gain.value = volumeSlider.value;
             });
@@ -2061,7 +2037,6 @@
                 }
             });
             
-            // NEW: EQ Slider Listeners
             lowSlider.addEventListener('input', () => {
                 if(filters) filters.low.gain.value = lowSlider.value;
             });
@@ -2088,19 +2063,16 @@
                     currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
                 }
                 
-                // NEW: Reset EQ
                 lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
                 if(filters) {
                     filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                 }
-                // NEW: Reset Volume
                 if(gainNode) {
                     gainNode.gain.value = 1;
                     volumeSlider.value = 1;
                 }
             });
             
-            // --- Old Scrub Bar Logic ---
             const handleScrub = () => {
                 if (audio.duration) {
                     audio.currentTime = (scrubBar.value / 1000) * audio.duration;
@@ -2112,8 +2084,6 @@
             scrubBar.addEventListener('mouseup', () => isScrubbing = false);
             scrubBar.addEventListener('touchend', () => isScrubbing = false);
             
-            
-            // --- NEW: Platter Scrubbing Logic ---
             function platterStart(e) {
                 if (!audio.duration) return;
                 isScrubbingPlatter = true;
@@ -2138,16 +2108,13 @@
                 const deltaX = clientX - lastScrubX;
                 lastScrubX = clientX;
                 
-                // Scrub time
-                // Adjust sensitivity: 5 seconds per 300px drag
                 const scrubAmount = (deltaX / 300) * 5; 
                 let newTime = audio.currentTime + scrubAmount;
                 newTime = Math.max(0, Math.min(newTime, audio.duration));
                 audio.currentTime = newTime;
                 
-                // Manually rotate platter
                 const currentRotation = parseFloat(platter.style.transform.replace('rotate(', '').replace('deg)', '')) || 0;
-                const newRotation = currentRotation + deltaX * 2.0; // Rotation sensitivity
+                const newRotation = currentRotation + deltaX * 2.0; 
                 platter.style.transform = `rotate(${newRotation}deg)`;
                 
                 if (e.cancelable) e.preventDefault();
@@ -2194,14 +2161,26 @@
                 const currentActive = fileListElement.querySelector('.active');
                 if (currentActive) currentActive.classList.remove('active');
                 clickedLi.classList.add('active');
+                
+                // NEW: Update Media Session
+                updateMediaSession(filename.replace('.mp3', ''));
             }
         });
         
-        audioPlayer.addEventListener('pause', () => { /* stopVisualizer(); */ });
+        audioPlayer.addEventListener('pause', () => { 
+            // NEW: Update media session
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
+        });
         audioPlayer.addEventListener('play', () => {
             if (audioContext) {
                 audioContext.resume();
                 startVisualizer();
+            }
+            // NEW: Update media session
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
             }
         });
 
@@ -2212,25 +2191,65 @@
             );
             populateFileList(filteredList);
         });
+        
+        // NEW: Refactored next/prev logic
+        
+        function getTrackElement(direction) { // -1 for prev, 1 for next
+            const currentActive = fileListElement.querySelector('.active');
+            if (!currentActive) return fileListElement.querySelector('li'); // Return first
+            
+            let nextTrackLi = (direction === 1) ? currentActive.nextElementSibling : currentActive.previousElementSibling;
+            
+            if (!nextTrackLi) {
+                const currentFile = currentActive.dataset.filename;
+                const currentIndex = currentTracklist.findIndex(f => f.name === currentFile);
+                
+                if (direction === 1) { // Next
+                    const nextIndex = (currentIndex > -1 && currentIndex < currentTracklist.length - 1) ? currentIndex + 1 : 0;
+                    const nextFile = currentTracklist[nextIndex].name;
+                    nextTrackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextFile)}"]`);
+                } else { // Previous
+                    const prevIndex = (currentIndex > 0) ? currentIndex - 1 : currentTracklist.length - 1;
+                    const prevFile = currentTracklist[prevIndex].name;
+                    nextTrackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(prevFile)}"]`);
+                }
+            }
+            return nextTrackLi;
+        }
+        
+        function playNextTrack() {
+            const nextTrackLi = getTrackElement(1);
+            if (nextTrackLi) nextTrackLi.click();
+        }
+        
+        function playPreviousTrack() {
+            const prevTrackLi = getTrackElement(-1);
+            if (prevTrackLi) prevTrackLi.click();
+        }
 
         audioPlayer.addEventListener('ended', () => {
-            const currentActive = fileListElement.querySelector('.active');
-            if (currentActive) {
-                let nextTrackLi = currentActive.nextElementSibling;
-                if (!nextTrackLi) {
-                    const currentFile = currentActive.dataset.filename;
-                    const currentIndex = currentTracklist.findIndex(f => f.name === currentFile);
-                    if (currentIndex > -1 && currentIndex < currentTracklist.length - 1) {
-                        const nextFile = currentTracklist[currentIndex + 1].name;
-                        nextTrackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextFile)}"]`);
-                    } else {
-                        const firstFile = currentTracklist[0].name;
-                        nextTrackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(firstFile)}"]`);
-                    }
-                }
-                if (nextTrackLi) nextTrackLi.click();
-            }
+            playNextTrack(); // Use new helper
         });
+        
+        // NEW: Media Session API for lock screen controls
+        function updateMediaSession(trackName) {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: trackName,
+                    artist: 'Ilan Reiss',
+                    album: 'Ilan Reiss Music Player',
+                    artwork: [
+                        { src: 'cover.png', sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+
+                navigator.mediaSession.setActionHandler('play', () => audioPlayer.play());
+                navigator.mediaSession.setActionHandler('pause', () => audioPlayer.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousTrack());
+                navigator.mediaSession.setActionHandler('nexttrack', () => playNextTrack());
+            }
+        }
+
         
         infoButton.addEventListener('click', () => {
             infoWindow.style.display = 'flex';
@@ -2245,7 +2264,7 @@
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
                     if (targetWindowId === 'player-container') {
-                        if (!isMobile) { // Only save position on desktop
+                        if (!isMobile) { 
                             playerLastX = playerContainer.offsetLeft;
                             playerLastY = playerContainer.offsetTop;
                             playerLastWidth = playerContainer.offsetWidth;
@@ -2261,8 +2280,8 @@
                             djLastHeight = djAppWindow.offsetHeight;
                         }
                         djAppWindow.style.display = 'none';
-                        minimizedDjIcon.style.display = 'none'; // Hide minimized
-                        openDjAppIcon.style.display = 'flex'; // Show open icon
+                        minimizedDjIcon.style.display = 'none'; 
+                        openDjAppIcon.style.display = 'flex'; 
                     } else {
                         windowToClose.style.display = 'none';
                         if (targetWindowId === 'visualizer-window') {
@@ -2298,7 +2317,7 @@
         
         // DJ App Minimize/Restore
         openDjAppIcon.addEventListener('click', () => {
-            if (!isMobile) setInitialDjPosition(); // Set desktop position
+            if (!isMobile) setInitialDjPosition(); 
             djAppWindow.style.display = 'flex';
             openDjAppIcon.style.display = 'none'; 
             minimizedDjIcon.style.display = 'none'; 
