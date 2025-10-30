@@ -2,60 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- 
+      Viewport meta tag: 
+      - width=device-width: Sets the viewport width to the device's screen width.
+      - initial-scale=1.0: Sets the initial zoom level to 100%.
+      - user-scalable=no, maximum-scale=1.0: Prevents users from zooming, which is crucial for a full-screen app-like experience, especially on mobile.
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
     <title>Ilan Reiss Music Player</title>
     
     <!-- iOS & PWA Goodies -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Ilan Reiss Music">
+    <!-- Links to the 'cover.png' image for the app icon when added to the home screen -->
     <link rel="apple-touch-icon" href="cover.png"> 
 
-    <!-- Theme Color -->
+    <!-- Theme Color: Sets the color of the browser UI (like the status bar on mobile) -->
     <meta name="theme-color" content="#008080"> 
 
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <style>
+        /* Import the 'Inter' font from Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+        /* Global reset and base settings */
         * {
-            box-sizing: border-box;
+            box-sizing: border-box; /* Modern box model */
             margin: 0;
             padding: 0;
-            touch-action: pan-y; 
+            touch-action: pan-y; /* Allow vertical scrolling by default */
         }
 
         body {
             font-family: 'Inter', system-ui, sans-serif;
             color: #000;
             background: #008080;
-            overflow: hidden; 
-            height: 100vh;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none; 
+            overflow: hidden; /* Prevent body scrolling on desktop */
+            height: 100vh; /* Full viewport height */
+            user-select: none; /* Disable text selection */
+            -webkit-user-select: none; /* Safari compatibility */
+            touch-action: none; /* Disable all browser touch gestures (pinch-zoom, etc.) */
         }
 
+        /* --- Window System --- */
         .window {
             display: flex;
             flex-direction: column;
-            background: #c0c0c0;
+            background: #c0c0c0; /* Classic Windows grey */
+            /* 3D border effect */
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
             border-right: 2px solid #404040;
             border-bottom: 2px solid #404040;
-            box-shadow: 1px 1px 0 1px #000;
+            box-shadow: 1px 1px 0 1px #000; /* Drop shadow */
             position: absolute;
             min-width: 300px; 
             min-height: 200px; 
-            z-index: 10; 
+            z-index: 10; /* Default stacking order */
         }
  
+        /* Active (top) window is brought to the front */
         .window.active-window {
             z-index: 100; 
         }
         
+        /* Main player window specific styles */
         .player-container {
             width: 90%;
             max-width: 800px; 
@@ -65,24 +78,25 @@
             min-height: 550px; 
         }
  
+        /* Title bar for dragging */
         .title-bar {
             padding: 5px 8px;
             font-weight: 700;
             font-size: 1rem;
             color: #fff; 
-            background: linear-gradient(to right, #000080, #1084d0);
+            background: linear-gradient(to right, #000080, #1084d0); /* Windows blue gradient */
             cursor: move;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-shrink: 0;
-            touch-action: none; 
+            flex-shrink: 0; /* Prevent title bar from shrinking */
+            touch-action: none; /* Critical for touch-based dragging */
         }
         
         .title-bar-text {
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
+            text-overflow: ellipsis; /* ... if text is too long */
             flex-grow: 1;
             margin-right: 5px;
         }
@@ -93,6 +107,7 @@
             flex-shrink: 0;
         }
 
+        /* Standard 3D buttons (minimize, close, etc.) */
         .window-button {
             width: 18px;
             height: 18px;
@@ -109,8 +124,9 @@
             line-height: 16px;
             cursor: pointer;
             flex-shrink: 0;
-            touch-action: manipulation; 
+            touch-action: manipulation; /* Allow tapping without triggering parent drag */
         }
+        /* "Pressed" state for buttons */
         .window-button:active, .window-button.active {
             border-top: 1px solid #404040;
             border-left: 1px solid #404040;
@@ -118,73 +134,25 @@
             border-bottom: 1px solid #fff;
         }
 
+        /* --- Main Player Content --- */
         .content {
             padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 10px;
             flex-grow: 1;
-            overflow: hidden;
+            overflow: hidden; /* Important for layout */
             border-top: 1px solid #808080;
         }
         
-        .player-tabs {
-            display: flex;
-            gap: 3px;
-            flex-shrink: 0;
-            border-bottom: 1px solid #808080;
-            padding-bottom: 10px;
-            align-items: center;
-        }
-        .player-tab-button {
-            background: #c0c0c0;
-            border-top: 1px solid #fff;
-            border-left: 1px solid #fff;
-            border-right: 1px solid #404040;
-            border-bottom: 1px solid #404040;
-            padding: 5px 10px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            color: #000;
-            touch-action: manipulation;
-        }
-        .player-tab-button.active {
-            background: #e0e0e0;
-            border-bottom: 1px solid #e0e0e0; /* "connects" to content */
-            position: relative;
-            bottom: -1px;
-            font-weight: 900;
-        }
-        #info-button {
-            width: 25px;
-            height: 25px;
-            font-size: 14px;
-            line-height: 20px;
-            margin-left: auto; /* Pushes to the right */
-        }
-        #info-button:active {
-            border-top: 2px solid #404040;
-            border-left: 2px solid #404040;
-            border-right: 2px solid #fff;
-            border-bottom: 2px solid #fff;
-        }
-        
-        .player-page {
-            flex-grow: 1;
-            overflow: hidden;
-            gap: 10px; /* Gap for tracks page */
-        }
-        #player-page-tracks {
+        .content-inner {
             display: flex;
             flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+            overflow: hidden;
         }
-        #player-page-playlists {
-            display: none; /* Hidden by default */
-            flex-direction: row;
-            gap: 0; /* No gap, border handles it */
-        }
-
+        
         .search-sort-container {
             display: flex;
             gap: 5px;
@@ -192,6 +160,7 @@
             align-items: center;
         }
 
+        /* "Inset" text field style */
         #search-bar {
             flex-grow: 1; 
             padding: 8px 10px;
@@ -218,7 +187,8 @@
         #search-bar::placeholder {
             color: #808080;
         }
-
+        
+        /* Main file list area */
         .file-browser {
             background: #fff;
             border: 2px inset #808080;
@@ -228,26 +198,29 @@
             border-bottom-color: #fff;
             padding: 10px;
             flex-grow: 1; 
-            overflow-y: auto;
-            touch-action: pan-y; 
+            overflow-y: auto; /* Allow vertical scrolling */
+            touch-action: pan-y; /* Enable vertical scroll on touch */
         }
-
-        #file-list {
+        
+        /* Style for both track and mix lists */
+        #file-list, #mix-list {
             list-style-type: none;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Responsive grid */
             gap: 15px;
         }
+        
+        #mix-list {
+            display: none; /* Hidden by default */
+        }
 
-        #file-list li {
+        #file-list li, #mix-list li {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 10px 5px;
-            border-radius: 0;
             cursor: pointer;
-            transition: none;
             font-size: 0.85rem;
             font-weight: 500;
             text-align: center;
@@ -258,22 +231,21 @@
             -webkit-touch-callout: none; /* Disable context menu bubble on iOS */
         }
         
-        #file-list li:hover {
-            background: transparent;
+        #file-list li:hover, #mix-list li:hover {
+            background: transparent; /* Simple selection style */
         }
 
-        #file-list li .file-icon {
+        #file-list li .file-icon, #mix-list li .file-icon {
             font-size: 2.5rem;
             color: #000080;
             margin-bottom: 8px;
-            text-shadow: none;
         }
 
-        #file-list li.active .file-icon {
+        #file-list li.active .file-icon, #mix-list li.active .file-icon {
             color: #ffffff;
         }
 
-        #file-list li .file-name {
+        #file-list li .file-name, #mix-list li .file-name {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -282,54 +254,45 @@
             padding: 2px 4px;
         }
 
-        #file-list li.active {
+        /* "Selected" item style */
+        #file-list li.active, #mix-list li.active {
             background: #000080;
             color: #fff;
         }
         
-        #file-list li.active .file-name {
+        #file-list li.active .file-name, #mix-list li.active .file-name {
              color: #fff;
         }
-
+        
         .player-controls {
             flex-shrink: 0;
         }
         
-        /* NEW: Container for now-playing and add button */
-        .now-playing-container {
+        .player-bottom-buttons {
             display: flex;
+            justify-content: flex-start;
             align-items: center;
+            margin-top: 5px;
             gap: 10px;
-            margin-bottom: 10px;
         }
 
         #now-playing {
+            display: block;
             font-size: 1rem;
             font-weight: 600;
             color: #000;
+            margin-bottom: 10px;
             padding: 5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            flex-grow: 1; /* Take up available space */
-            margin-bottom: 0; /* Removed margin */
-        }
-        
-        /* NEW: Add current track button */
-        #add-current-track-button {
-            width: 25px;
-            height: 25px;
-            font-size: 14px;
-            font-weight: 900;
-            line-height: 20px;
-            flex-shrink: 0;
-            color: #000080;
         }
 
         #audio-player {
             width: 100%;
         }
 
+        /* --- Custom Scrollbar --- */
         ::-webkit-scrollbar {
             width: 16px;
             background: #c0c0c0;
@@ -345,6 +308,7 @@
             border-bottom: 1px solid #404040;
         }
         
+        /* Draggable resize handle */
         .resize-handle {
             position: absolute;
             bottom: 0;
@@ -362,15 +326,16 @@
             );
             cursor: nwse-resize;
             z-index: 100;
-            touch-action: none; 
+            touch-action: none; /* Critical for touch resize */
         }
         
+        /* --- Visualizer Window --- */
         #visualizer-window {
             width: 350px;
             height: 200px;
             top: 20px;
             left: 20px;
-            display: none;
+            display: none; /* Hidden by default */
         }
         
         #visualizer-canvas {
@@ -407,12 +372,14 @@
             position: relative;
             top: 1px;
         }
+        /* Override button style for tabs */
         .visualizer-tab.window-button {
              width: auto;
              height: auto;
              line-height: normal;
         }
 
+        /* --- Info Window --- */
         #info-window {
             width: 300px;
             height: 250px;
@@ -430,6 +397,39 @@
             margin-bottom: 8px;
         }
         
+        /* Buttons at the bottom of the main player */
+        #info-button, #open-playlists-button, #add-track-now-playing {
+            width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            font-family: "Arial Black", sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            color: #000080;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        #info-button:active, #open-playlists-button:active, #add-track-now-playing:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
+        #open-playlists-button {
+            font-size: 12px; /* Folder icon */
+        }
+        #add-track-now-playing {
+            font-size: 16px; /* Plus icon */
+            line-height: 22px;
+        }
+
+        /* --- Bottom Bar Elements --- */
         #digital-clock {
             position: fixed;
             bottom: 0;
@@ -470,6 +470,7 @@
             font-weight: 600;
         }
         
+        /* Inset color picker */
         #bg-color-picker {
             width: 40px;
             height: 25px;
@@ -481,7 +482,7 @@
             cursor: pointer;
             padding: 0;
         }
-        
+        /* Style for color picker internals */
         #bg-color-picker::-webkit-color-swatch-wrapper {
             padding: 0;
         }
@@ -489,7 +490,7 @@
             border: none;
         }
 
-        /* Minimized Player Icon */
+        /* Minimized icon "buttons" */
         #minimized-player-icon {
             width: 25px; 
             height: 25px; 
@@ -563,32 +564,26 @@
              border-bottom: 2px solid #fff;
          }
          
+         /* DJ window container */
          #dj-app-window {
              width: 80vw; 
              max-width: 900px; 
-             height: 580px; 
+             height: 550px; 
              min-width: 600px;
              min-height: 400px;
             display: none; 
         }
         
+        /* Main layout: [Deck A] [Library] [Deck B] */
         #dj-app-window .content {
-            flex-direction: column; 
+            flex-direction: row; 
             overflow: hidden;
             background: #808080; 
-        }
-        
-        .dj-decks-container {
-            display: flex;
-            flex-direction: row;
-            flex-grow: 1;
-            overflow: hidden;
-            gap: 10px; 
             padding-bottom: 10px; 
         }
         
         .deck-container {
-            flex: 1.5; 
+            flex: 1.5; /* Decks take up less space */
             display: flex;
             flex-direction: column;
             background: #c0c0c0;
@@ -602,7 +597,7 @@
         }
         
         #dj-library-container {
-            flex: 2; 
+            flex: 2; /* Library is wider */
             display: flex;
             flex-direction: column;
             background: #fff;
@@ -662,9 +657,10 @@
             text-align: right;
             padding: 2px;
             font-size: 0.85rem;
-            -moz-appearance: textfield; 
+            -moz-appearance: textfield; /* Firefox hide number arrows */
         }
         
+        /* Hide number input arrows in Chrome/Safari */
         .dj-track-bpm::-webkit-outer-spin-button,
         .dj-track-bpm::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -676,6 +672,7 @@
             background: #fff;
         }
         
+        /* Track display with spinning platter */
         .track-name-display {
             height: 40px;
             background: #fff;
@@ -692,11 +689,13 @@
             overflow: hidden; 
         }
         
+        /* Spinning animation */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
 
+        /* The draggable platter */
         .scrub-platter {
             width: 30px;
             height: 30px;
@@ -706,8 +705,8 @@
             flex-shrink: 0;
             position: relative;
             cursor: grab;
-            touch-action: none; 
-            animation: spin 2s linear infinite paused; 
+            touch-action: none; /* Disable scrolling when scrubbing */
+            animation: spin 2s linear infinite paused; /* Paused by default */
         }
         .scrub-platter:active {
             cursor: grabbing;
@@ -760,6 +759,7 @@
             height: 40px; 
         }
         
+        /* Main scrub bar (horizontal range input) */
         .scrub-bar {
             width: 100%;
             height: 20px;
@@ -773,10 +773,11 @@
         }
         
         .deck-controls .window-button {
-            width: 45px; 
+            width: 45px; /* Sized to fit new buttons */
             height: 30px;
         }
         
+        /* "Active" state for the Echo button */
         .deck-controls .echo-button.active {
             background: #000080;
             color: #fff;
@@ -785,7 +786,6 @@
             border-right: 1px solid #fff;
             border-bottom: 1px solid #fff;
         }
-
 
         /* --- EQ Controls --- */
         .eq-controls {
@@ -804,9 +804,10 @@
             font-weight: 600;
             font-size: 0.8rem; 
             gap: 5px;
-            flex-basis: 50px; 
+            flex-basis: 50px; /* Base width for 4 knobs */
             flex-grow: 1; 
         }
+        /* Horizontal slider "knobs" */
         .eq-slider { 
             -webkit-appearance: none;
             appearance: none;
@@ -821,6 +822,7 @@
             outline: none;
             cursor: pointer;
         }
+        /* 3D thumb for sliders */
         .eq-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
@@ -846,7 +848,7 @@
         }
 
         
-        /* --- Sliders Container --- */
+        /* --- Vertical Sliders Container --- */
         .deck-sliders {
             display: flex;
             justify-content: center;
@@ -878,10 +880,10 @@
             text-align: center;
         }
         
+        /* Vertical sliders (Volume, BPM) */
         .volume-slider, .bpm-slider {
             -webkit-appearance: none;
             appearance: none;
-            width: 80%;
             height: 15px;
             background: #808080;
             border-top: 1px solid #404040;
@@ -889,16 +891,17 @@
             border-right: 1px solid #fff;
             border-bottom: 1px solid #fff;
             outline: none;
-            writing-mode: vertical-lr; 
-            transform: rotate(180deg); 
+            writing-mode: vertical-lr; /* Make vertical */
+            transform: rotate(180deg); /* Point up */
             width: 20px; 
             height: 150px; 
         }
         
+        /* 3D thumb for vertical sliders */
         .volume-slider::-webkit-slider-thumb, .bpm-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 30px;
+            width: 30px; /* Wider thumb */
             height: 15px;
             background: #c0c0c0;
             border-top: 1px solid #fff;
@@ -919,51 +922,19 @@
             border-radius: 0;
         }
         
-        /* --- Crossfader --- */
-        #crossfader-container {
-            flex-shrink: 0;
-            padding: 5px 10px 10px 10px;
-            background: #c0c0c0;
-            border-top: 2px inset #808080;
-        }
-        #crossfader {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: 20px;
-            background: #808080;
-            border-top: 1px solid #404040;
-            border-left: 1px solid #404040;
-            border-right: 1px solid #fff;
-            border-bottom: 1px solid #fff;
-            outline: none;
-            cursor: pointer;
-        }
-        #crossfader::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 25px; 
-            height: 30px; 
-            background: #c0c0c0;
-            border-top: 1px solid #fff;
-            border-left: 1px solid #fff;
-            border-right: 1px solid #404040;
-            border-bottom: 1px solid #404040;
-            cursor: pointer;
-        }
-        #crossfader::-moz-range-thumb {
-            width: 25px; 
-            height: 30px; 
-            background: #c0c0c0;
-            border-top: 1px solid #fff;
-            border-left: 1px solid #fff;
-            border-right: 1px solid #404040;
-            border-bottom: 1px solid #404040;
-            cursor: pointer;
-            border-radius: 0;
-        }
         
-        /* --- Playlist UI (Now inside player) --- */
+        /* --- Playlist Window --- */
+        #playlist-window {
+            width: 500px;
+            height: 400px;
+            top: 50px;
+            left: 50px;
+            display: none;
+        }
+        #playlist-window .content {
+            flex-direction: row;
+            gap: 0;
+        }
         #playlist-list-container {
             width: 150px;
             flex-shrink: 0;
@@ -1063,24 +1034,7 @@
             margin-left: 10px;
         }
         
-        /* NEW: Shuffle button */
-        #playlist-shuffle-button {
-            width: 25px;
-            height: 25px;
-            font-size: 14px;
-            line-height: 20px;
-            margin-left: 10px;
-        }
-        #playlist-shuffle-button.active {
-            background: #000080;
-            color: #fff;
-            border-top: 1px solid #404040;
-            border-left: 1px solid #404040;
-            border-right: 1px solid #fff;
-            border-bottom: 1px solid #fff;
-        }
-        
-        /* --- Track Context Menu --- */
+        /* --- Track Context Menu (Right-click menu) --- */
         #track-context-menu {
             position: absolute;
             display: none;
@@ -1099,22 +1053,18 @@
         #track-context-menu li {
             padding: 8px 12px;
             cursor: pointer;
+            position: relative; /* For submenu positioning */
         }
         #track-context-menu li:hover {
             background: #000080;
             color: #fff;
         }
-        #track-context-menu li.separator {
-            height: 1px;
-            background: #808080;
-            padding: 0;
-            margin: 2px 0;
-        }
+        /* Submenu for adding to playlists */
         #add-to-playlist-submenu {
             position: absolute;
             display: none;
-            left: 100%;
-            top: 0;
+            left: 100%; /* Default position (right) */
+            top: -2px; 
             background: #c0c0c0;
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
@@ -1125,17 +1075,68 @@
         #add-to-playlist-menu:hover #add-to-playlist-submenu {
             display: block;
         }
+        
+        /* --- Custom Modal Styles (for alerts/confirms) --- */
+        .custom-modal-overlay {
+            display: none; 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.4); 
+            z-index: 2000; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .custom-modal-window {
+            background: #c0c0c0; 
+            border-top: 2px solid #fff; 
+            border-left: 2px solid #fff; 
+            border-right: 2px solid #404040; 
+            border-bottom: 2px solid #404040; 
+            box-shadow: 1px 1px 0 1px #000; 
+            min-width: 250px; 
+            max-width: 90%; 
+            padding: 0;
+        }
+        .custom-modal-titlebar {
+            padding: 5px 8px; 
+            font-weight: 700; 
+            color: #fff; 
+            background: linear-gradient(to right, #000080, #1084d0);
+        }
+        .custom-modal-message {
+            padding: 20px 15px; 
+            font-size: 0.9rem;
+            line-height: 1.4;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        .custom-modal-buttons {
+            display: flex; 
+            justify-content: center; 
+            padding: 0 10px 10px 10px;
+            gap: 10px;
+        }
+        .custom-modal-buttons .window-button {
+            width: 80px; 
+            height: 25px; 
+            line-height: 22px; 
+            font-size: 0.9rem;
+        }
 
 
-        /* --- Responsive Media Query --- */
+        /* --- Responsive Media Query (for mobile) --- */
         @media (max-width: 768px) {
             body {
-                overflow: auto; 
+                overflow: auto; /* Allow scrolling on mobile */
                 height: auto;
                 min-height: 100vh;
                 padding: 5px;
-                padding-bottom: 120px; 
+                padding-bottom: 120px; /* Space for bottom bars */
             }
+            /* Stack windows vertically */
             .window {
                 position: relative; 
                 width: 100% !important; 
@@ -1146,73 +1147,55 @@
                 margin-bottom: 10px;
                 box-shadow: 1px 1px 0 1px #000; 
             }
-            .resize-handle { display: none; } 
-            .title-bar { cursor: default; } 
+            .resize-handle { display: none; } /* No resizing on mobile */
+            .title-bar { cursor: default; } /* No dragging on mobile */
             
             .player-container {
                 min-height: 0; 
                 height: auto;
             }
-            
-            #now-playing {
-                /* Make it smaller to fit button */
-                font-size: 0.9rem;
-            }
 
             .file-browser {
-                min-height: 300px; 
-            }
-            
-            #player-page-playlists {
-                flex-direction: column;
-            }
-            #playlist-list-container {
-                width: 100%;
-                flex-basis: auto; 
-                border-right: none;
-                border-bottom: 2px solid #808080;
-                padding-right: 0;
-                padding-bottom: 10px;
-                height: 200px; 
-            }
-            #playlist-tracks-container {
-                padding-left: 0;
-                height: 250px; 
+                min-height: 300px; /* Ensure file list is usable */
             }
 
+            /* DJ App Mobile Layout: */
             #dj-app-window .content {
-                flex-direction: column; 
+                flex-direction: column; /* Stack vertically */
                 height: auto;
             }
-            .dj-decks-container {
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
             #dj-library-container {
-                order: 1; 
+                order: 1; /* Library first */
                 flex-basis: 100%; 
-                height: 250px;
+                height: 250px; /* Fixed height for library */
+            }
+            /* Container for the two decks */
+            .dj-decks-container {
+                display: flex;
+                flex-direction: row; /* Decks side-by-side */
+                flex-wrap: wrap;
+                order: 2; /* Decks after library */
+                width: 100%;
+                gap: 5px;
             }
             .deck-container {
-                order: 2; 
-                flex-basis: 50%; 
+                /* Decks take 50% width each */
+                flex-basis: calc(50% - 2.5px); 
+                flex-grow: 1;
                 min-width: 170px; 
                 height: auto; 
                 min-height: 0;
             }
-            #crossfader-container {
-                order: 3; 
-            }
 
             .deck-sliders {
-                flex-direction: row; 
+                flex-direction: row; /* Sliders side-by-side */
                 justify-content: space-around; 
                 flex-grow: 0;
                 padding: 10px 0;
             }
             
             .volume-slider, .bpm-slider {
-                height: 120px; 
+                height: 120px; /* Shorter vertical sliders */
             }
             
             .scrub-platter {
@@ -1227,6 +1210,23 @@
                 gap: 5px; 
             }
             
+            /* Playlist window mobile */
+            #playlist-window .content {
+                flex-direction: column;
+            }
+            #playlist-list-container {
+                width: 100%;
+                border-right: none;
+                border-bottom: 2px solid #808080;
+                padding-right: 0;
+                padding-bottom: 10px;
+                height: 200px; /* Fixed height for list */
+            }
+            #playlist-tracks-container {
+                padding-left: 0;
+                height: 250px; /* Fixed height for tracks */
+            }
+
             /* Stack bottom bar items */
             #color-picker-container {
                 position: fixed; 
@@ -1257,10 +1257,11 @@
         
         /* Narrower phones */
         @media (max-width: 380px) {
-             #file-list {
+             #file-list, #mix-list {
                 grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
                 gap: 10px;
             }
+            /* Stack EQ knobs */
             .eq-controls {
                 flex-direction: column;
                 gap: 15px;
@@ -1270,6 +1271,7 @@
                 width: 70%;
                 max-width: 200px;
             }
+            /* Stack Load button and BPM display */
             .load-info-container {
                 flex-direction: column;
                 align-items: stretch; 
@@ -1278,7 +1280,7 @@
                 min-width: 0; 
             }
             .deck-controls .window-button {
-                width: 38px; 
+                width: 38px; /* Smaller buttons */
                 font-size: 10px;
             }
         }
@@ -1287,6 +1289,7 @@
 </head>
 <body>
 
+    <!-- Main Player Window -->
     <div class="player-container window" id="player-container">
         <div class="title-bar">
             <span class="title-bar-text">🎵 Ilan Reiss Music Player</span>
@@ -1298,22 +1301,12 @@
         
         <div class="content">
             <div class="player-controls">
-                <!-- NEW: Container for now-playing and add button -->
-                <div class="now-playing-container">
-                    <span id="now-playing">Select a track to play</span>
-                    <button class="window-button" id="add-current-track-button" title="Add to Playlist">+</button>
-                </div>
+                <span id="now-playing">Select a track to play</span>
+                <!-- Standard HTML audio element -->
                 <audio id="audio-player" controls crossorigin="anonymous"></audio>
             </div>
             
-            <div class="player-tabs">
-                <button class="player-tab-button active" data-page="tracks">All Tracks</button>
-                <button class="player-tab-button" data-page="playlists">Playlists</button>
-                <button id="info-button" class="window-button">i</button>
-            </div>
-
-            <!-- Page 1: All Tracks -->
-            <div class="player-page" id="player-page-tracks" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; gap: 10px;">
+            <div class="content-inner">
                 <div class="search-sort-container">
                     <input type="text" id="search-bar" placeholder="Search tracks...">
                     <button id="sort-az" class="window-button sort-button">A-Z</button>
@@ -1321,40 +1314,37 @@
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
                 </div>
 
-                <div class="file-browser">
-                    <ul id="file-list"></ul>
-                </div>
-            </div>
-
-            <!-- Page 2: Playlists -->
-            <div class="player-page" id="player-page-playlists" style="display: none; flex-direction: row; flex-grow: 1; overflow: hidden; gap: 0;">
-                <div id="playlist-list-container">
-                    <div id="playlist-list-header">
-                        <span>My Playlists</span>
-                        <div id="playlist-buttons">
-                            <button class="window-button" id="new-playlist-button" title="New Playlist">+</button>
-                            <button class="window-button" id="rename-playlist-button" title="Rename Selected">R</button>
-                            <button class="window-button" id="delete-playlist-button" title="Delete Selected">-</button>
-                        </div>
+                <div class="file-browser" id="file-browser-main">
+                    <!-- Tab Navigation -->
+                    <div id="player-tabs" class="title-bar-buttons" style="margin-bottom: 5px; border-bottom: 2px solid #808080; padding-bottom: 5px;">
+                        <button class="visualizer-tab window-button active" data-tab="tracks">All Tracks</button>
+                        <button class="visualizer-tab window-button" data-tab="mixes">Mixes</button>
                     </div>
-                    <ul id="playlist-list"></ul>
+                    
+                    <!-- Track List -->
+                    <ul id="file-list" class="tab-content active" data-tab-content="tracks">
+                        <!-- Tracks populated by JS -->
+                    </ul>
+                    
+                    <!-- Mixes List -->
+                    <ul id="mix-list" class="tab-content" data-tab-content="mixes">
+                        <!-- Mixes populated by JS -->
+                    </ul>
                 </div>
-                <div id="playlist-tracks-container">
-                    <div id="playlist-tracks-header">
-                        <span id="playlist-tracks-title">Tracks</span>
-                        <!-- NEW: Shuffle Button -->
-                        <button class="window-button" id="playlist-shuffle-button" title="Toggle Shuffle">
-                            <i class="fas fa-random"></i>
-                        </button>
-                    </div>
-                    <ul id="playlist-tracks"></ul>
-                </div>
+                
+                 <div class="player-bottom-buttons">
+                     <button id="info-button" class="window-button">i</button>
+                     <button id="open-playlists-button" class="window-button" title="Open Playlists">
+                         <i class="fas fa-folder"></i>
+                     </button>
+                     <button id="add-track-now-playing" class="window-button" title="Add Current Track to Playlist">+</button>
+                 </div>
             </div>
-            
         </div>
         <div class="resize-handle"></div>
     </div>
     
+    <!-- Visualizer Window -->
     <div id="visualizer-window" class="window">
          <div class="title-bar">
             <div id="visualizer-tabs">
@@ -1372,6 +1362,7 @@
         <div class="resize-handle"></div>
     </div>
     
+    <!-- Info Window -->
     <div id="info-window" class="window">
          <div class="title-bar">
             <span class="title-bar-text">ℹ️ Ilan Reiss Music Player Info</span>
@@ -1381,11 +1372,43 @@
         </div>
         <div class="content">
             <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
-            <p>Version 3.0 (Studio)</p>
+            <p>Version 3.5 (Mix Tab Parity)</p> <!-- Updated Version -->
             <br>
             <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
-            <p><em>(You can edit this text in the ilanreissmusic.com.html file)</em></p>
+            <p><em>(You can edit this text in the index.html file)</em></p>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+
+    <!-- Playlist Window -->
+    <div id="playlist-window" class="window">
+         <div class="title-bar">
+            <span class="title-bar-text">📁 Playlists</span>
+            <div class="title-bar-buttons">
+                <button class="window-button close-button" data-target="playlist-window">X</button>
+            </div>
+        </div>
+        <div class="content">
+            <!-- Left panel: List of playlists -->
+            <div id="playlist-list-container">
+                <div id="playlist-list-header">
+                    <span>My Playlists</span>
+                    <div id="playlist-buttons">
+                        <button class="window-button" id="new-playlist-button" title="New Playlist">+</button>
+                        <button class="window-button" id="rename-playlist-button" title="Rename Selected">R</button>
+                        <button class="window-button" id="delete-playlist-button" title="Delete Selected">-</button>
+                    </div>
+                </div>
+                <ul id="playlist-list"></ul>
+            </div>
+            <!-- Right panel: Tracks in selected playlist -->
+            <div id="playlist-tracks-container">
+                <div id="playlist-tracks-header">
+                    <span id="playlist-tracks-title">Tracks</span>
+                </div>
+                <ul id="playlist-tracks"></ul>
+            </div>
         </div>
         <div class="resize-handle"></div>
     </div>
@@ -1400,131 +1423,129 @@
             </div>
         </div>
         <div class="content">
-            <div class="dj-decks-container">
-                <!-- Deck A -->
-                <div class="deck-container" id="deck-a">
-                    <div class="track-name-display" id="deck-a-display">
-                        <div class="scrub-platter" id="deck-a-platter">
-                            <div class="platter-spindle"></div>
-                        </div>
-                        <span class="track-name-text" id="deck-a-track-name">DECK A</span>
+            <!-- Deck A -->
+            <div class="deck-container" id="deck-a">
+                <div class="track-name-display" id="deck-a-display">
+                    <div class="scrub-platter" id="deck-a-platter">
+                        <div class="platter-spindle"></div>
                     </div>
-                    <div class="load-info-container">
-                        <button class="window-button load-button" id="load-deck-a">LOAD</button>
-                        <span class="current-bpm-display" id="deck-a-current-bpm">-- BPM</span>
-                    </div>
-                    <input type="range" class="scrub-bar" id="deck-a-scrub" value="0" min="0" max="1000">
-                    <div class="deck-controls">
-                        <button class="window-button" id="deck-a-play">PLAY</button>
-                        <button class="window-button" id="deck-a-pause">PAUSE</button>
-                        <button class="window-button" id="deck-a-cue">CUE</button>
-                        <button class="window-button echo-button" id="deck-a-echo" title="Toggle Echo">ECHO</button>
-                    </div>
-                    <div class="eq-controls">
-                        <div class="eq-dial">
-                            <label for="deck-a-low">LOW</label>
-                            <input type="range" id="deck-a-low" class="eq-slider" min="-30" max="0" value="0" step="1">
-                        </div>
-                        <div class="eq-dial">
-                            <label for="deck-a-mid">MID</label>
-                            <input type="range" id="deck-a-mid" class="eq-slider" min="-30" max="0" value="0" step="1">
-                        </div>
-                        <div class="eq-dial">
-                            <label for="deck-a-high">HI</label>
-                            <input type="range" id="deck-a-high" class="eq-slider" min="-30" max="0" value="0" step="1">
-                        </div>
-                        <div class="eq-dial">
-                            <label for="deck-a-filter">FILTER</label>
-                            <input type="range" id="deck-a-filter" class="eq-slider" min="0" max="100" value="100" step="1">
-                        </div>
-                    </div>
-                    <div class="deck-sliders">
-                        <div class="volume-slider-container">
-                            <label for="deck-a-volume">VOL</label>
-                            <input type="range" class="volume-slider" id="deck-a-volume" value="1" min="0" max="1" step="0.01">
-                        </div>
-                        <div class="bpm-slider-container">
-                            <div class="bpm-label-group">
-                                <label for="deck-a-bpm">BPM</label>
-                                <span class="bpm-display" id="deck-a-bpm-display">100%</span>
-                            </div>
-                            <input type="range" class="bpm-slider" id="deck-a-bpm" value="1" min="0.5" max="1.5" step="0.001">
-                        </div>
-                    </div>
-                    <audio id="deck-a-audio" crossorigin="anonymous"></audio>
+                    <span class="track-name-text" id="deck-a-track-name">DECK A</span>
                 </div>
-                
-                <!-- Library -->
-                <div id="dj-library-container">
-                    <div id="dj-library-header">
-                        <button class="window-button sort-button" id="sort-bpm" style="width: 100%;">Sort by BPM</button>
-                    </div>
-                    <ul id="dj-library-list">
-                    </ul>
+                <div class="load-info-container">
+                    <button class="window-button load-button" id="load-deck-a">LOAD</button>
+                    <span class="current-bpm-display" id="deck-a-current-bpm">-- BPM</span>
                 </div>
-
-                <!-- Deck B -->
-                <div class="deck-container" id="deck-b">
-                    <div class="track-name-display" id="deck-b-display">
-                        <div class="scrub-platter" id="deck-b-platter">
-                            <div class="platter-spindle"></div>
-                        </div>
-                        <span class="track-name-text" id="deck-b-track-name">DECK B</span>
-                    </div>
-                    <div class="load-info-container">
-                        <button class="window-button load-button" id="load-deck-b">LOAD</button>
-                        <span class="current-bpm-display" id="deck-b-current-bpm">-- BPM</span>
-                    </div>
-                    <input type="range" class="scrub-bar" id="deck-b-scrub" value="0" min="0" max="1000">
-                    <div class="deck-controls">
-                        <button class="window-button" id="deck-b-play">PLAY</button>
-                        <button class="window-button" id="deck-b-pause">PAUSE</button>
-                        <button class="window-button" id="deck-b-cue">CUE</button>
-                        <button class="window-button echo-button" id="deck-b-echo" title="Toggle Echo">ECHO</button>
-                    </div>
-                    <div class="eq-controls">
-                        <div class="eq-dial">
-                            <label for="deck-b-low">LOW</label>
-                            <input type="range" id="deck-b-low" class="eq-slider" min="-30" max="0" value="0" step="1">
-                        </div>
-                        <div class="eq-dial">
-                            <label for="deck-b-mid">MID</label>
-                            <input type="range" id="deck-b-mid" class="eq-slider" min="-30" max="0" value="0" step="1">
-                        </div>
-                        <div class="eq-dial">
-                            <label for="deck-b-high">HI</label>
-                            <input type="range" id="deck-b-high" class="eq-slider" min="-30" max="0" value="0" step="1">
-                        </div>
-                        <div class="eq-dial">
-                            <label for="deck-b-filter">FILTER</label>
-                            <input type="range" id="deck-b-filter" class="eq-slider" min="0" max="100" value="100" step="1">
-                        </div>
-                    </div>
-                    <div class="deck-sliders">
-                        <div class="volume-slider-container">
-                            <label for="deck-b-volume">VOL</label>
-                            <input type="range" class="volume-slider" id="deck-b-volume" value="1" min="0" max="1" step="0.01">
-                        </div>
-                        <div class="bpm-slider-container">
-                            <div class="bpm-label-group">
-                                <label for="deck-b-bpm">BPM</label>
-                                <span class="bpm-display" id="deck-b-bpm-display">100%</span>
-                            </div>
-                            <input type="range" class="bpm-slider" id="deck-b-bpm" value="1" min="0.5" max="1.5" step="0.001">
-                        </div>
-                    </div>
-                    <audio id="deck-b-audio" crossorigin="anonymous"></audio>
+                <input type="range" class="scrub-bar" id="deck-a-scrub" value="0" min="0" max="1000">
+                <div class="deck-controls">
+                    <button class="window-button" id="deck-a-play">PLAY</button>
+                    <button class="window-button" id="deck-a-pause">PAUSE</button>
+                    <button class="window-button" id="deck-a-cue">CUE</button>
+                    <button class="window-button echo-button" id="deck-a-echo" title="Toggle Echo">ECHO</button>
                 </div>
+                <div class="eq-controls">
+                    <div class="eq-dial">
+                        <label for="deck-a-low">LOW</label>
+                        <input type="range" id="deck-a-low" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-a-mid">MID</label>
+                        <input type="range" id="deck-a-mid" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-a-high">HI</label>
+                        <input type="range" id="deck-a-high" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-a-filter">FILTER</label>
+                        <input type="range" id="deck-a-filter" class="eq-slider" min="0" max="100" value="100" step="1">
+                    </div>
+                </div>
+                <div class="deck-sliders">
+                    <div class="volume-slider-container">
+                        <label for="deck-a-volume">VOL</label>
+                        <input type="range" class="volume-slider" id="deck-a-volume" value="1" min="0" max="1" step="0.01">
+                    </div>
+                    <div class="bpm-slider-container">
+                        <div class="bpm-label-group">
+                            <label for="deck-a-bpm">BPM</label>
+                            <span class="bpm-display" id="deck-a-bpm-display">100%</span>
+                        </div>
+                        <input type="range" class="bpm-slider" id="deck-a-bpm" value="1" min="0.5" max="1.5" step="0.001">
+                    </div>
+                </div>
+                <audio id="deck-a-audio" crossorigin="anonymous"></audio>
             </div>
-            <div id="crossfader-container">
-                <input type="range" id="crossfader" value="0.5" min="0" max="1" step="0.01">
+            
+            <!-- Library -->
+            <div id="dj-library-container">
+                <div id="dj-library-header">
+                    <button class="window-button sort-button" id="sort-bpm" style="width: 100%;">Sort by BPM</button>
+                </div>
+                <ul id="dj-library-list">
+                    <!-- Tracks populated by JS -->
+                </ul>
+            </div>
+
+            <!-- Deck B -->
+            <div class="deck-container" id="deck-b">
+                <div class="track-name-display" id="deck-b-display">
+                    <div class="scrub-platter" id="deck-b-platter">
+                        <div class="platter-spindle"></div>
+                    </div>
+                    <span class="track-name-text" id="deck-b-track-name">DECK B</span>
+                </div>
+                <div class="load-info-container">
+                    <button class="window-button load-button" id="load-deck-b">LOAD</button>
+                    <span class="current-bpm-display" id="deck-b-current-bpm">-- BPM</span>
+                </div>
+                <input type="range" class="scrub-bar" id="deck-b-scrub" value="0" min="0" max="1000">
+                <div class="deck-controls">
+                    <button class="window-button" id="deck-b-play">PLAY</button>
+                    <button class="window-button" id="deck-b-pause">PAUSE</button>
+                    <button class="window-button" id="deck-b-cue">CUE</button>
+                    <button class="window-button echo-button" id="deck-b-echo" title="Toggle Echo">ECHO</button>
+                </div>
+                <div class="eq-controls">
+                    <div class="eq-dial">
+                        <label for="deck-b-low">LOW</label>
+                        <input type="range" id="deck-b-low" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-b-mid">MID</label>
+                        <input type="range" id="deck-b-mid" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-b-high">HI</label>
+                        <input type="range" id="deck-b-high" class="eq-slider" min="-30" max="0" value="0" step="1">
+                    </div>
+                    <div class="eq-dial">
+                        <label for="deck-b-filter">FILTER</label>
+                        <input type="range" id="deck-b-filter" class="eq-slider" min="0" max="100" value="100" step="1">
+                    </div>
+                </div>
+                <div class="deck-sliders">
+                    <div class="volume-slider-container">
+                        <label for="deck-b-volume">VOL</label>
+                        <input type="range" class="volume-slider" id="deck-b-volume" value="1" min="0" max="1" step="0.01">
+                    </div>
+                    <div class="bpm-slider-container">
+                        <div class="bpm-label-group">
+                            <label for="deck-b-bpm">BPM</label>
+                            <span class="bpm-display" id="deck-b-bpm-display">100%</span>
+                        </div>
+                        <input type="range" class="bpm-slider" id="deck-b-bpm" value="1" min="0.5" max="1.5" step="0.001">
+                    </div>
+                </div>
+                <audio id="deck-b-audio" crossorigin="anonymous"></audio>
             </div>
         </div>
         <div class="resize-handle"></div>
     </div>
     
+    <!-- Bottom Bar: Clock -->
     <div id="digital-clock"></div>
 
+    <!-- Bottom Bar: Color Picker & Minimized Icons -->
     <div id="color-picker-container">
         <label for="bg-color-picker">BG:</label>
         <input type="color" id="bg-color-picker" value="#008080">
@@ -1540,25 +1561,84 @@
         </div>
     </div>
  
+    <!-- Context Menu (hidden) -->
     <div id="track-context-menu">
         <ul>
             <li id="add-to-playlist-menu">
                 Add to Playlist <i class="fas fa-chevron-right" style="float: right; font-size: 0.8em; margin-top: 4px;"></i>
                 <ul id="add-to-playlist-submenu">
-                    <!-- Playlists will be populated by JS -->
+                    <!-- Playlists populated by JS -->
                 </ul>
             </li>
         </ul>
     </div>
     
+    <!-- Custom Alert Modal (hidden) -->
+    <div id="custom-alert-modal" class="custom-modal-overlay">
+        <div class="custom-modal-window">
+            <div class="custom-modal-titlebar">Alert</div>
+            <div id="custom-alert-message" class="custom-modal-message"></div>
+            <div class="custom-modal-buttons">
+                <button id="custom-alert-ok" class="window-button">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Confirm Modal (hidden) -->
+    <div id="custom-confirm-modal" class="custom-modal-overlay">
+        <div class="custom-modal-window">
+            <div class="custom-modal-titlebar">Confirm</div>
+            <div id="custom-confirm-message" class="custom-modal-message"></div>
+            <div class="custom-modal-buttons">
+                <button id="custom-confirm-ok" class="window-button">OK</button>
+                <button id="custom-confirm-cancel" class="window-button">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        
+        console.log('Ilan Reiss Music Player v3.5 - Mix Tab Parity'); // Updated version
+        
+        // --- Custom Modal Functions (for alerts/confirms) ---
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+        const customAlertOk = document.getElementById('custom-alert-ok');
+        
+        function customAlert(message) {
+            customAlertMessage.textContent = message;
+            customAlertModal.style.display = 'flex';
+            customAlertOk.onclick = () => {
+                customAlertModal.style.display = 'none';
+            };
+        }
+        
+        const customConfirmModal = document.getElementById('custom-confirm-modal');
+        const customConfirmMessage = document.getElementById('custom-confirm-message');
+        const customConfirmOk = document.getElementById('custom-confirm-ok');
+        const customConfirmCancel = document.getElementById('custom-confirm-cancel');
 
+        function customConfirm(message) {
+            return new Promise((resolve) => {
+                customConfirmMessage.textContent = message;
+                customConfirmModal.style.display = 'flex';
+                
+                customConfirmOk.onclick = () => {
+                    customConfirmModal.style.display = 'none';
+                    resolve(true);
+                };
+                customConfirmCancel.onclick = () => {
+                    customConfirmModal.style.display = 'none';
+                    resolve(false);
+                };
+            });
+        }
+        
         // --- Configuration & Elements ---
         
-        console.log('Ilan Reiss Music Player v4.2 - Playlist Playback');
-        
+        // List of all track .mp3 files
         const audioFiles = [
             "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
             "a break.mp3", "all me.mp3", "another one.mp3", "asher organ.mp3",
@@ -1601,6 +1681,20 @@
             "what am i doing.mp3", "what is this.mp3", "z style.mp3"
         ];
         
+        // List of all mix .mp3 files
+        const mixFiles = [
+            "1moremintue mix.mp3", "2am mix.mp3", "11minute mix.mp3", 
+            "30 mins top chees mix.mp3", "APL Mix.mp3", "babylon mix.mp3",
+            "back mix.mp3", "beauti mix.mp3", "best mix.mp3", 
+            "bolden gull mix.mp3", "brudda mix.mp3", "cloud nine mix.mp3",
+            "for video mix.mp3", "in da jungle mix.mp3", "like me mix.mp3",
+            "mix with wires.mp3", "motr mix.mp3", "nightmare mix.mp3",
+            "no ice mix.mp3", "otw mix.mp3", "party 126 mix.mp3", 
+            "point of interest mix.mp3", "portland o mix.mp3", 
+            "screetch alt mix mixer.mp3", "turntit mix.mp3", "undeny mix.mp3"
+        ];
+        
+        // BPM data for all tracks
         const bpmMap = new Map([
             ["last of day.mp3", 126.07], ["surfin.mp3", 92.99], ["a break.mp3", 178.03],
             ["flip.mp3", 134.02], ["soundbath.mp3", 134.97], ["serup.mp3", 137.00],
@@ -1653,27 +1747,39 @@
             ["bad one.mp3", 136.02], ["asher organ.mp3", 133.00], ["making progress.mp3", 134.00]
         ]);
 
+        // Create objects for tracks, assigning BPM or a default
         const audioFileObjects = audioFiles.map(file => ({
             name: file,
             bpm: bpmMap.get(file) || 120.00 
         }));
         
-        let currentTracklist = [...audioFileObjects]; 
-        let currentDjTracklist = [...audioFileObjects]; 
+        // Create objects for mixes (no BPM)
+        const mixFileObjects = mixFiles.map(file => ({
+            name: file,
+            bpm: 0 // BPM not applicable for mixes
+        }));
+        
+        let currentTracklist = [...audioFileObjects]; // For main player
+        let currentMixlist = [...mixFileObjects]; // For mixes tab
+        let currentDjTracklist = [...audioFileObjects]; // For DJ library
         let selectedDjTrack = null; 
         let djSortAscending = true; 
+        let currentMainPlayerTab = 'tracks'; // State for main player tabs
 
-        // Main Player elements
+        // --- Element References ---
+        // Main Player
         const audioPlayer = document.getElementById('audio-player');
         const fileListElement = document.getElementById('file-list');
+        const mixListElement = document.getElementById('mix-list'); // Mixes list
+        const playerTabs = document.querySelectorAll('#player-tabs .visualizer-tab'); // Player tabs
+        const playerTabContents = document.querySelectorAll('.tab-content'); // Player tab content
         const nowPlayingElement = document.getElementById('now-playing');
-        const addCurrentTrackButton = document.getElementById('add-current-track-button'); // NEW
         const searchBar = document.getElementById('search-bar');
         const sortAzButton = document.getElementById('sort-az');
         const sortZaButton = document.getElementById('sort-za');
         const bitcrushToggle = document.getElementById('bitcrush-toggle');
         
-        // Window elements
+        // Windows
         const allWindows = document.querySelectorAll('.window');
         const playerContainer = document.getElementById('player-container');
         const visualizerWindow = document.getElementById('visualizer-window');
@@ -1685,54 +1791,41 @@
         const minimizePlayerButton = document.getElementById('minimize-player-button');
         const minimizedPlayerIcon = document.getElementById('minimized-player-icon');
         
-        // DJ App elements
+        // DJ App
         const djAppWindow = document.getElementById('dj-app-window');
         const openDjAppIcon = document.getElementById('open-dj-app-icon');
         const minimizeDjButton = document.getElementById('minimize-dj-button');
         const minimizedDjIcon = document.getElementById('minimized-dj-icon');
         const djLibraryList = document.getElementById('dj-library-list');
         const sortBpmButton = document.getElementById('sort-bpm');
-        const crossfader = document.getElementById('crossfader'); 
         
-        // Visualizer elements
+        // Visualizer
         const canvas = document.getElementById('visualizer-canvas');
         const ctx = canvas.getContext('2d');
         
-        // Player Tab/Page Elements
-        const playerTabs = document.querySelectorAll('.player-tab-button');
-        const playerPages = document.querySelectorAll('.player-page');
-        const playerPageTracks = document.getElementById('player-page-tracks');
-        const playerPagePlaylists = document.getElementById('player-page-playlists');
-        
-        // Playlist Elements
+        // Playlists
+        const playlistWindow = document.getElementById('playlist-window');
+        const openPlaylistsButton = document.getElementById('open-playlists-button');
+        const addTrackNowPlayingButton = document.getElementById('add-track-now-playing');
         const playlistList = document.getElementById('playlist-list');
         const playlistTracks = document.getElementById('playlist-tracks');
         const playlistTracksTitle = document.getElementById('playlist-tracks-title');
-        const playlistShuffleButton = document.getElementById('playlist-shuffle-button'); // NEW
         const newPlaylistButton = document.getElementById('new-playlist-button');
         const renamePlaylistButton = document.getElementById('rename-playlist-button');
         const deletePlaylistButton = document.getElementById('delete-playlist-button');
         
-        // Context Menu Elements
+        // Context Menu
         const contextMenu = document.getElementById('track-context-menu');
         const contextMenuPlaylistList = document.getElementById('add-to-playlist-submenu');
         
+        // State variables
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
         let activeVisualizer = 'cosmicPulse'; 
-        
-        // Playlist state
         let playlists = [];
         let selectedPlaylistId = null;
         let contextMenuTrack = null;
         let contextMenuLongPressTimer = null;
-        
-        // NEW: Playlist playback state
-        let currentPlaylistMode = {
-            active: false,
-            playlistId: null,
-            currentIndex: -1
-        };
 
         // --- Audio Context Setup ---
         let audioContext, analyser;
@@ -1743,16 +1836,14 @@
         let visualizerActive = false;
         let animationFrameId;
 
+        // Audio nodes for all sources
         let sourceMain = null, sourceDeckA = null, sourceDeckB = null;
         let gainA, gainB, gainMain;
         let filterALow, filterAMid, filterAHigh, filterBLow, filterBMid, filterBHigh;
+        let filterAFilter, filterBFilter; // DJ Low-pass filters
+        let delayA, feedbackA, wetMixA; // Deck A Echo
+        let delayB, feedbackB, wetMixB; // Deck B Echo
         
-        let filterAFilter, filterBFilter; 
-        let crossfadeA, crossfadeB; 
-        let delayA, feedbackA, wetMixA; 
-        let delayB, feedbackB, wetMixB; 
-        
-
         function setupAudioContext() {
             if (audioContext) return;
             
@@ -1761,19 +1852,17 @@
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
             
+            // Create sources from HTML audio elements
             sourceMain = audioContext.createMediaElementSource(audioPlayer);
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
+            // Gain nodes for volume control
             gainA = audioContext.createGain();
             gainB = audioContext.createGain();
             gainMain = audioContext.createGain();
             
-            crossfadeA = audioContext.createGain();
-            crossfadeB = audioContext.createGain();
-            crossfadeA.gain.value = Math.cos(0.5 * Math.PI * 0.5);
-            crossfadeB.gain.value = Math.cos((1.0 - 0.5) * Math.PI * 0.5);
-            
+            // --- EQ Filters (BiquadFilter) ---
             filterALow = audioContext.createBiquadFilter();
             filterAMid = audioContext.createBiquadFilter();
             filterAHigh = audioContext.createBiquadFilter();
@@ -1781,17 +1870,20 @@
             filterBMid = audioContext.createBiquadFilter();
             filterBHigh = audioContext.createBiquadFilter();
             
+            // Deck A EQ
             filterALow.type = 'lowshelf'; filterALow.frequency.value = 300; filterALow.gain.value = 0;
             filterAMid.type = 'peaking'; filterAMid.frequency.value = 1200; filterAMid.Q.value = 1.0; filterAMid.gain.value = 0;
             filterAHigh.type = 'highshelf'; filterAHigh.frequency.value = 4000; filterAHigh.gain.value = 0;
             
+            // Deck B EQ
             filterBLow.type = 'lowshelf'; filterBLow.frequency.value = 300; filterBLow.gain.value = 0;
             filterBMid.type = 'peaking'; filterBMid.frequency.value = 1200; filterBMid.Q.value = 1.0; filterBMid.gain.value = 0;
             filterBHigh.type = 'highshelf'; filterBHigh.frequency.value = 4000; filterBHigh.gain.value = 0;
 
+            // --- DJ FX: Low-pass Filters ---
             filterAFilter = audioContext.createBiquadFilter();
             filterAFilter.type = 'lowpass';
-            filterAFilter.frequency.value = 20000; 
+            filterAFilter.frequency.value = 20000; // Start wide open
             filterAFilter.Q.value = 1.0;
             
             filterBFilter = audioContext.createBiquadFilter();
@@ -1799,46 +1891,58 @@
             filterBFilter.frequency.value = 20000; 
             filterBFilter.Q.value = 1.0;
             
+            // --- DJ FX: Echo/Delay Chain ---
+            // Deck A Echo
             delayA = audioContext.createDelay(1.0); 
             feedbackA = audioContext.createGain();
-            wetMixA = audioContext.createGain();
+            wetMixA = audioContext.createGain(); // This controls the echo volume
             delayA.delayTime.value = 0.4; 
-            feedbackA.gain.value = 0.4; 
-            wetMixA.gain.value = 0.0; 
+            feedbackA.gain.value = 0.4; // Feedback amount
+            wetMixA.gain.value = 0.0; // Start off (dry)
             
+            // Deck B Echo
             delayB = audioContext.createDelay(1.0);
             feedbackB = audioContext.createGain();
             wetMixB = audioContext.createGain();
             delayB.delayTime.value = 0.4;
             feedbackB.gain.value = 0.4;
-            wetMixB.gain.value = 0.0;
+            wetMixB.gain.value = 0.0; // Start off (dry)
             
+            // --- Connect Deck A (EQ -> Filter -> Split for Echo) ---
             sourceDeckA.connect(filterALow);
             filterALow.connect(filterAMid);
             filterAMid.connect(filterAHigh);
-            filterAHigh.connect(filterAFilter); 
-            filterAFilter.connect(gainA);      
-            gainA.connect(crossfadeA);         
+            filterAHigh.connect(filterAFilter); // EQ goes into Filter
             
+            // DRY Path: Filter -> Gain -> Analyser
+            filterAFilter.connect(gainA);      
+            gainA.connect(analyser);
+            
+            // WET (Echo) Path: Filter -> Delay -> Feedback Loop -> Wet Mix -> Analyser
+            filterAFilter.connect(delayA); 
+            delayA.connect(feedbackA);         
+            feedbackA.connect(delayA); // Feedback loop
+            delayA.connect(wetMixA);           
+            wetMixA.connect(analyser); // Echo signal goes to analyser
+            
+            // --- Connect Deck B (EQ -> Filter -> Split for Echo) ---
             sourceDeckB.connect(filterBLow);
             filterBLow.connect(filterBMid);
             filterBMid.connect(filterBHigh);
-            filterBHigh.connect(filterBFilter); 
+            filterBHigh.connect(filterBFilter);
+            
+            // DRY Path
             filterBFilter.connect(gainB);       
-            gainB.connect(crossfadeB);          
+            gainB.connect(analyser);
             
-            gainA.connect(delayA);             
-            delayA.connect(feedbackA);         
-            feedbackA.connect(delayA);         
-            delayA.connect(wetMixA);           
-            wetMixA.connect(crossfadeA);       
-            
-            gainB.connect(delayB);
+            // WET (Echo) Path
+            filterBFilter.connect(delayB);
             delayB.connect(feedbackB);
             feedbackB.connect(delayB);
             delayB.connect(wetMixB);
-            wetMixB.connect(crossfadeB);
+            wetMixB.connect(analyser);
 
+            // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
             const steps = Math.pow(2, 8);
             const curve = new Float32Array(65536);
@@ -1848,19 +1952,21 @@
             }
             bitCrusherNode.curve = curve;
             
+            // Analyser connects to destination (speakers)
             analyser.connect(audioContext.destination);
             
+            // Setup data arrays for visualizer
             bufferLength = analyser.frequencyBinCount;
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
 
+            // --- Connect Main Player ---
             sourceMain.connect(gainMain); 
-            gainMain.connect(analyser);
-            
-            crossfadeA.connect(analyser); 
-            crossfadeB.connect(analyser); 
+            // The bitcrusher logic will handle connecting gainMain to the right place
+            toggleBitcrusher(true); // Run once on setup to establish connection
         }
 
+        // Toggle bitcrusher on/off
         function toggleBitcrusher(forceReconnect = false) {
             if (!analyser) return; 
             
@@ -1868,28 +1974,31 @@
                 isBitcrushActive = !isBitcrushActive;
             }
 
-            analyser.disconnect(); 
+            // Disconnect main player's gain node
+            try { gainMain.disconnect(); } catch(e) {}
             
             if (isBitcrushActive) {
-                analyser.connect(bitCrusherNode);
-                bitCrusherNode.connect(audioContext.destination);
+                // Route: Main Gain -> Bitcrusher -> Analyser
+                gainMain.connect(bitCrusherNode);
+                bitCrusherNode.connect(analyser);
                 bitcrushToggle.classList.add('active');
             } else {
-                try { bitCrusherNode.disconnect(audioContext.destination); } catch(e) {}
-                analyser.connect(audioContext.destination);
+                // Route: Main Gain -> Analyser
+                try { bitCrusherNode.disconnect(analyser); } catch(e) {}
+                gainMain.connect(analyser);
                 bitcrushToggle.classList.remove('active');
             }
         }
 
+        // --- Visualizer Logic ---
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
                 cancelAnimationFrame(animationFrameId); 
             }
-            if (audioContext) audioContext.resume(); 
+            if (audioContext) audioContext.resume(); // Resume context if suspended
             visualizerActive = true;
             visualizerWindow.style.display = 'flex';
             drawVisualizer();
-            saveWindowStates(); 
         }
 
         function stopVisualizer() {
@@ -1899,17 +2008,22 @@
             }
         }
 
+        // Pause visualizer if tab is hidden
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopVisualizer();
             } else {
-                if (!audioPlayer.paused || !document.getElementById('deck-a-audio').paused || !document.getElementById('deck-b-audio').paused) {
+                const anyAudioPlaying = !audioPlayer.paused || 
+                                      (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
+                                      (document.getElementById('deck-b-audio') && !document.getElementById('deck-b-audio').paused);
+                if (anyAudioPlaying) {
                     startVisualizer();
                 }
             }
         });
 
 
+        // Main visualizer animation loop
         function drawVisualizer() {
             if (!visualizerActive) {
                 return;
@@ -1920,9 +2034,11 @@
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
 
+            // Get audio data
             analyser.getByteFrequencyData(frequencyData);
             analyser.getByteTimeDomainData(timeDomainData);
             
+            // Calculate average frequency levels
             let bass = 0, mids = 0, highs = 0;
             const bassRange = [0, Math.floor(bufferLength * 0.05)]; 
             const midRange = [Math.floor(bufferLength * 0.05), Math.floor(bufferLength * 0.2)]; 
@@ -1936,6 +2052,7 @@
             let midsAvg = (mids / (midRange[1] - midRange[0]) || 0) / 255; 
             let highsAvg = (highs / (highRange[1] - highRange[0]) || 0) / 255; 
 
+            // Call the active visualizer function
             switch (activeVisualizer) {
                 case 'cosmicPulse': 
                     drawCosmicPulseVisualizer(bassAvg, midsAvg, highsAvg);
@@ -1951,9 +2068,9 @@
         
         // --- Visualizer Implementations ---
         
+        // 1. Cosmic Pulse (Particles)
         const particles = [];
         const maxParticles = 300; 
-
         class CosmicParticle {
             constructor(centerX, centerY) {
                 this.reset(centerX, centerY);
@@ -1963,20 +2080,21 @@
                 this.x = centerX || canvas.width / 2;
                 this.y = centerY || canvas.height / 2;
                 this.angle = Math.random() * Math.PI * 2;
-                this.speed = Math.random() * 2 + 0.5; 
+                this.speed = Math.random() * 2 + 0.5; // Base speed
                 this.life = 1;
                 this.size = Math.random() * 2 + 1;
                 this.hue = 0;
             }
 
             update(bass, mids, highs) {
-                const currentSpeed = this.speed * (1 + bass * 5); 
+                const currentSpeed = this.speed * (1 + bass * 5); // Speed reacts to bass
                 this.x += Math.cos(this.angle) * currentSpeed;
                 this.y += Math.sin(this.angle) * currentSpeed;
-                this.life -= 0.01 + (mids * 0.01); 
-                this.size = (Math.random() * 2 + 1) * (1 + bass * 2); 
+                this.life -= 0.01 + (mids * 0.01); // Fade out
+                this.size = (Math.random() * 2 + 1) * (1 + bass * 2); // Size reacts to bass
                 this.hue = (hslToHex(visualizerColor).h + (this.x / canvas.width) * 180) % 360;
 
+                // Reset particle if it fades or if bass hits hard
                 if (this.life <= 0 || (bass > 0.6 && Math.random() > 0.9)) {
                     this.reset();
                 }
@@ -1993,7 +2111,7 @@
         }
         
         function drawCosmicPulseVisualizer(bassAvg, midsAvg, highsAvg) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Fade background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.shadowBlur = 0; 
 
@@ -2007,6 +2125,7 @@
             });
         }
 
+        // 2. Aero Energy (Lines)
         const aeroLines = [];
         const maxAeroLines = 35; 
         class AeroLine {
@@ -2051,7 +2170,7 @@
             }
         }
         function drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Fade background
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             if (aeroLines.length < maxAeroLines && Math.random() < 0.05 + (midsAvg) * 0.1) {
@@ -2068,6 +2187,7 @@
             }
         }
 
+        // 3. Retro Waveform
         function drawRetroWaveformVisualizer(timeDomainData) {
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -2077,12 +2197,14 @@
             const sliceWidth = canvas.width * 1.0 / bufferLength;
             let x = 0;
             for(let i = 0; i < bufferLength; i++) {
-                const v = timeDomainData[i] / 128.0;
-                const y = v * canvas.height / 2;
+                const v = timeDomainData[i] / 128.0; // 0-255 -> 0-2
+                const y = v * canvas.height / 2; // 0-2 -> 0-canvas.height
                 if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 x += sliceWidth;
             }
             ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
+            
+            // Faux reflection
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
             gradient.addColorStop(0, visualizerColor);
             gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
@@ -2101,7 +2223,7 @@
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         }
 
-        // --- Window Management ---
+        // --- Window Management (Drag, Resize, Focus) ---
 
         let activeWindow = null;
         let isDragging = false;
@@ -2110,24 +2232,28 @@
         let resizeStartX, resizeStartY;
         let initialWidth, initialHeight;
         
+        // Check if on a mobile device (based on media query)
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
+        // Bring window to front on click/touch
         allWindows.forEach(windowEl => {
             windowEl.addEventListener('mousedown', () => bringWindowToFront(windowEl));
             windowEl.addEventListener('touchstart', () => bringWindowToFront(windowEl), { passive: true });
         });
 
         function bringWindowToFront(windowEl) {
-            if (isMobile) return; 
-            document.querySelectorAll('.window').forEach(win => {
+            if (isMobile) return; // No window focusing on mobile
+            allWindows.forEach(win => {
                 win.classList.remove('active-window');
             });
             windowEl.classList.add('active-window');
         }
 
+        // Start dragging
         function handleDragStart(e, windowEl) {
             if (isMobile) return; 
-            if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab') || e.target.closest('input, button, ul, .player-tabs')) return; 
+            // Don't drag if clicking a button or interactive element
+            if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab') || e.target.closest('input, button, ul, canvas, .eq-slider, .volume-slider, .bpm-slider, .scrub-bar, .scrub-platter')) return;
             isDragging = true;
             activeWindow = windowEl;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -2138,19 +2264,21 @@
             if (e.cancelable) e.preventDefault();
         }
 
+        // Move window
         function handleDragMove(e) {
             if (isMobile || !isDragging || !activeWindow) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             let newX = clientX - dragOffsetX;
             let newY = clientY - dragOffsetY;
+            // Constrain to viewport
             newX = Math.max(0, Math.min(newX, window.innerWidth - activeWindow.offsetWidth));
             newY = Math.max(0, Math.min(newY, window.innerHeight - activeWindow.offsetHeight));
             activeWindow.style.left = newX + 'px';
             activeWindow.style.top = newY + 'px';
-            if (e.cancelable) e.preventDefault();
         }
 
+        // Start resizing
         function handleResizeStart(e, windowEl) {
             if (isMobile) return; 
             isResizing = true;
@@ -2163,12 +2291,14 @@
             if (e.cancelable) e.preventDefault();
         }
 
+        // Resize window
         function handleResizeMove(e) {
             if (isMobile || !isResizing || !activeWindow) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             let newWidth = initialWidth + (clientX - resizeStartX);
             let newHeight = initialHeight + (clientY - resizeStartY);
+            // Constrain to min-width/height
             const style = window.getComputedStyle(activeWindow);
             const minW = parseFloat(style.minWidth) || 250;
             const minH = parseFloat(style.minHeight) || 150;
@@ -2176,21 +2306,33 @@
             newHeight = Math.max(minH, newHeight);
             activeWindow.style.width = newWidth + 'px';
             activeWindow.style.height = newHeight + 'px';
-            
-            saveWindowStates(); 
         }
 
+        // End drag/resize
         function handleEnd() {
             if (isMobile) return;
-            if (isDragging || isResizing) {
-                saveWindowStates(); 
-            }
             isDragging = false;
             isResizing = false;
             activeWindow = null;
             document.body.style.cursor = 'default';
         }
+        
+        // Set initial window positions on desktop
+        if (!isMobile) {
+            playerContainer.style.left = (window.innerWidth - playerContainer.offsetWidth) / 2 + 'px';
+            playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
+            djAppWindow.style.left = (window.innerWidth - 900) / 2 + 'px'; 
+            djAppWindow.style.top = (window.innerHeight - 550) / 2 + 'px'; 
+            visualizerWindow.style.left = '20px';
+            visualizerWindow.style.top = '20px';
+            infoWindow.style.left = '100px';
+            infoWindow.style.top = '150px';
+            playlistWindow.style.left = '50px';
+            playlistWindow.style.top = '50px';
+            bringWindowToFront(playerContainer);
+        }
 
+        // Attach drag/resize listeners
         allWindows.forEach(windowEl => {
             const titleBar = windowEl.querySelector('.title-bar');
             const resizeHandle = windowEl.querySelector('.resize-handle');
@@ -2212,103 +2354,39 @@
             document.addEventListener('mouseup', handleEnd);
             document.addEventListener('touchend', handleEnd);
         }
-        
-        // --- Window State Persistence ---
-        function saveWindowStates() {
-            if (isMobile) return; 
-            const states = {};
-            allWindows.forEach(win => {
-                states[win.id] = {
-                    left: win.style.left,
-                    top: win.style.top,
-                    width: win.style.width,
-                    height: win.style.height,
-                    display: win.style.display
-                };
-            });
-            const settings = {
-                windows: states,
-                bgColor: bgColorPicker.value
-            };
-            localStorage.setItem('ilanPlayerSettings', JSON.stringify(settings));
-        }
-        
-        function loadWindowStates() {
-            const settingsStr = localStorage.getItem('ilanPlayerSettings');
-            if (!settingsStr) {
-                if (!isMobile) {
-                    playerContainer.style.left = (window.innerWidth - playerContainer.offsetWidth) / 2 + 'px';
-                    playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
-                    djAppWindow.style.left = (window.innerWidth - djAppWindow.offsetWidth) / 2 + 'px';
-                    djAppWindow.style.top = (window.innerHeight - djAppWindow.offsetHeight) / 2 + 'px';
-                    visualizerWindow.style.left = '20px';
-                    visualizerWindow.style.top = '20px';
-                    infoWindow.style.left = '100px';
-                    infoWindow.style.top = '150px';
-                    bringWindowToFront(playerContainer);
-                }
-                return;
-            }
-            
-            const settings = JSON.parse(settingsStr);
-            
-            if (settings.windows && !isMobile) {
-                allWindows.forEach(win => {
-                    const state = settings.windows[win.id];
-                    if (state) {
-                        win.style.left = state.left;
-                        win.style.top = state.top;
-                        win.style.width = state.width;
-                        win.style.height = state.height;
-                        win.style.display = state.display;
-                    }
-                });
-                
-                minimizedPlayerIcon.style.display = (playerContainer.style.display === 'none') ? 'flex' : 'none';
-                minimizedDjIcon.style.display = (djAppWindow.style.display === 'none') ? 'flex' : 'none';
-                openDjAppIcon.style.display = (djAppWindow.style.display === 'none') ? 'flex' : 'none';
-                if (minimizedDjIcon.style.display === 'flex') openDjAppIcon.style.display = 'none';
 
-            }
+        // --- Main Player: Populate Lists & Tabs ---
+        
+        // Function to create a list item for tracks/mixes
+        function createPlayerListItem(fileObj, isMix) {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <i class="fas ${isMix ? 'fa-record-vinyl' : 'fa-music'} file-icon"></i>
+                <span class="file-name">${fileObj.name.replace('.mp3', '')}</span>
+            `;
+            li.dataset.filename = fileObj.name;
+            li.dataset.isMix = isMix; // Store type
             
-            if (settings.bgColor) {
-                bgColorPicker.value = settings.bgColor;
-                document.body.style.background = settings.bgColor;
-                const hsl = hexToHSL(settings.bgColor);
-                visualizerColor = `hsl(${hsl.h}, 100%, 65%)`;
-                secondaryColor = `hsl(${(hsl.h + 180) % 360}, 100%, 65%)`;
-            }
-        }
-        
-        // --- Player Tab Logic ---
-        playerTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                playerTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
+            // Add click listener to play
+            li.addEventListener('click', () => {
+                const filename = li.dataset.filename;
+                const path = li.dataset.isMix === 'true' ? 'mixes/' : 'Audio/';
+                audioPlayer.src = path + filename;
                 
-                const page = tab.dataset.page;
+                if (!audioContext) setupAudioContext(); 
                 
-                playerPages.forEach(p => p.style.display = 'none');
-                if (page === 'tracks') {
-                    playerPageTracks.style.display = 'flex';
-                } else if (page === 'playlists') {
-                    playerPagePlaylists.style.display = 'flex';
-                }
+                audioPlayer.play();
+                nowPlayingElement.textContent = li.querySelector('.file-name').textContent;
+                
+                // Set active style
+                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+                li.classList.add('active');
+                
+                updateMediaSession(filename.replace('.mp3', ''), isMix); // Update lock screen
             });
-        });
-        
 
-        // --- Populate & Sort File List (Main Player) ---
-        function populateFileList(files) {
-            fileListElement.innerHTML = ''; 
-            files.forEach(fileObj => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <i class="fas fa-music file-icon"></i>
-                    <span class="file-name">${fileObj.name.replace('.mp3', '')}</span>
-                `;
-                li.dataset.filename = fileObj.name;
-                
+            // Context menu listeners (only for tracks, not mixes)
+            if (!isMix) {
                 li.addEventListener('contextmenu', (e) => {
                     e.preventDefault();
                     showContextMenu(e, fileObj.name);
@@ -2317,28 +2395,94 @@
                     contextMenuLongPressTimer = setTimeout(() => {
                         e.preventDefault();
                         showContextMenu(e, fileObj.name);
-                    }, 500); 
+                    }, 500); // 500ms long press
                 }, { passive: true });
                 li.addEventListener('touchend', () => {
                     clearTimeout(contextMenuLongPressTimer);
                 });
-                
-                fileListElement.appendChild(li);
+            }
+            return li;
+        }
+
+        // Populate "All Tracks" list
+        function populateFileList(files) {
+            fileListElement.innerHTML = ''; 
+            files.forEach(fileObj => {
+                fileListElement.appendChild(createPlayerListItem(fileObj, false));
             });
         }
-        populateFileList(currentTracklist);
+        populateFileList(currentTracklist); // Initial population
 
+        // Populate "Mixes" list
+        function populateMixList(files) {
+            mixListElement.innerHTML = '';
+            files.forEach(fileObj => {
+                mixListElement.appendChild(createPlayerListItem(fileObj, true));
+            });
+        }
+        populateMixList(currentMixlist); // Initial population
+        
+        // Handle switching between "Tracks" and "Mixes" tabs
+        playerTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                playerTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                currentMainPlayerTab = tab.dataset.tab;
+                
+                playerTabContents.forEach(content => {
+                    if (content.dataset.tabContent === currentMainPlayerTab) {
+                        content.style.display = 'grid'; // Both are grids
+                        content.classList.add('active');
+                    } else {
+                        content.style.display = 'none';
+                        content.classList.remove('active');
+                    }
+                });
+                
+                // Show/hide search/sort based on tab
+                const searchSort = document.querySelector('.search-sort-container');
+                searchSort.style.display = 'flex'; // Show for both
+            });
+        });
+
+        // --- Main Player: Search & Sort ---
         sortAzButton.addEventListener('click', () => {
-            currentTracklist.sort((a, b) => a.name.localeCompare(b.name));
-            populateFileList(currentTracklist);
+            if (currentMainPlayerTab === 'tracks') {
+                currentTracklist.sort((a, b) => a.name.localeCompare(b.name));
+                populateFileList(currentTracklist);
+            } else {
+                currentMixlist.sort((a, b) => a.name.localeCompare(b.name));
+                populateMixList(currentMixlist);
+            }
         });
 
         sortZaButton.addEventListener('click', () => {
-            currentTracklist.sort((a, b) => b.name.localeCompare(a.name));
-            populateFileList(currentTracklist);
+            if (currentMainPlayerTab === 'tracks') {
+                currentTracklist.sort((a, b) => b.name.localeCompare(a.name));
+                populateFileList(currentTracklist);
+            } else {
+                currentMixlist.sort((a, b) => b.name.localeCompare(a.name));
+                populateMixList(currentMixlist);
+            }
         });
         
-        // --- DJ App Logic ---
+        searchBar.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            if (currentMainPlayerTab === 'tracks') {
+                const filteredList = currentTracklist.filter(fileObj => 
+                    fileObj.name.toLowerCase().replace('.mp3', '').includes(searchTerm)
+                );
+                populateFileList(filteredList);
+            } else {
+                const filteredList = currentMixlist.filter(fileObj => 
+                    fileObj.name.toLowerCase().replace('.mp3', '').includes(searchTerm)
+                );
+                populateMixList(filteredList);
+            }
+        });
+
+        // --- DJ App: Library & Deck Setup ---
         function populateDjLibrary(files) {
             djLibraryList.innerHTML = '';
             files.forEach(fileObj => {
@@ -2348,6 +2492,7 @@
                     <input type="number" class="dj-track-bpm" value="${fileObj.bpm.toFixed(0)}" data-filename="${fileObj.name}">
                 `;
                 
+                // Select track on click
                 li.addEventListener('click', (e) => {
                     if (e.target.tagName === 'INPUT') return; 
                     const current = djLibraryList.querySelector('.selected');
@@ -2356,6 +2501,7 @@
                     selectedDjTrack = fileObj.name;
                 });
                 
+                // Allow manual BPM editing
                 const bpmInput = li.querySelector('.dj-track-bpm');
                 bpmInput.addEventListener('input', (e) => {
                     const newBpm = parseInt(e.target.value, 10);
@@ -2372,6 +2518,7 @@
         }
         populateDjLibrary(currentDjTracklist); 
         
+        // Sort DJ library by BPM
         sortBpmButton.addEventListener('click', () => {
             if (djSortAscending) {
                 currentDjTracklist.sort((a, b) => a.bpm - b.bpm);
@@ -2384,7 +2531,9 @@
             populateDjLibrary(currentDjTracklist);
         });
 
+        // Function to set up all controls for a single deck
         function setupDeck(deckId) {
+            // Get all elements for this deck
             const audio = document.getElementById(`${deckId}-audio`);
             const trackNameText = document.getElementById(`${deckId}-track-name`);
             const platter = document.getElementById(`${deckId}-platter`);
@@ -2398,8 +2547,6 @@
             const filterSlider = document.getElementById(`${deckId}-filter`); 
             const echoButton = document.getElementById(`${deckId}-echo`); 
             
-            let deckNodes; 
-            
             const loadBtn = document.getElementById(`load-${deckId}`);
             const playBtn = document.getElementById(`${deckId}-play`);
             const pauseBtn = document.getElementById(`${deckId}-pause`);
@@ -2407,27 +2554,32 @@
             const scrubBar = document.getElementById(`${deckId}-scrub`);
             const volumeSlider = document.getElementById(`${deckId}-volume`);
 
+            // State for this deck
+            let deckNodes; 
             let isScrubbing = false; 
             let isScrubbingPlatter = false; 
             let lastScrubX = 0;
             let baseBpm = null; 
 
+            // LOAD button
             loadBtn.addEventListener('click', () => {
                 if (selectedDjTrack) {
                     if (!audioContext) setupAudioContext(); 
                     
+                    // Assign the correct audio nodes for this deck
                     deckNodes = (deckId === 'deck-a') ? {
                         gain: gainA, filters: { low: filterALow, mid: filterAMid, high: filterAHigh },
-                        filter: filterAFilter, echo: { wet: wetMixA, button: echoButton }
+                        filter: filterAFilter, echo: { wet: wetMixA }
                     } : {
                         gain: gainB, filters: { low: filterBLow, mid: filterBMid, high: filterBHigh },
-                        filter: filterBFilter, echo: { wet: wetMixB, button: echoButton }
+                        filter: filterBFilter, echo: { wet: wetMixB }
                     };
                     
-                    audio.src = 'Audio/' + selectedDjTrack;
+                    audio.src = 'Audio/' + selectedDjTrack; // Load from 'Audio' folder
                     trackNameText.textContent = selectedDjTrack.replace('.mp3', ''); 
                     audio.load();
                     
+                    // Set base BPM
                     const trackData = audioFileObjects.find(f => f.name === selectedDjTrack);
                     if (trackData) {
                         baseBpm = trackData.bpm;
@@ -2437,49 +2589,55 @@
                         currentBpmDisplay.textContent = '-- BPM';
                     }
                     
+                    // Reset all controls
                     bpmSlider.value = 1; bpmDisplay.textContent = '100%'; 
                     audio.playbackRate = 1;
                     platter.style.transform = 'rotate(0deg)';
                     platter.style.animationPlayState = 'paused';
                     
                     lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
-                    filterSlider.value = 100; 
+                    filterSlider.value = 100;
                     echoButton.classList.remove('active'); 
                     
+                    // Reset audio node values
                     if(deckNodes) {
                         deckNodes.filters.low.gain.value = 0; 
                         deckNodes.filters.mid.gain.value = 0; 
                         deckNodes.filters.high.gain.value = 0;
                         deckNodes.filter.frequency.value = 20000; 
                         deckNodes.echo.wet.gain.value = 0.0; 
-                        deckNodes.gain.gain.value = 1;
+                        deckNodes.gain.gain.value = 1; // Full volume
                         volumeSlider.value = 1;
                     }
                 }
             });
 
+            // PLAY button
             playBtn.addEventListener('click', () => {
                  if (!audioContext) setupAudioContext(); 
                  
+                 // Ensure nodes are assigned (if not loaded first)
                  if (!deckNodes) { 
                      deckNodes = (deckId === 'deck-a') ? {
                         gain: gainA, filters: { low: filterALow, mid: filterAMid, high: filterAHigh },
-                        filter: filterAFilter, echo: { wet: wetMixA, button: echoButton }
+                        filter: filterAFilter, echo: { wet: wetMixA }
                     } : {
                         gain: gainB, filters: { low: filterBLow, mid: filterBMid, high: filterBHigh },
-                        filter: filterBFilter, echo: { wet: wetMixB, button: echoButton }
+                        filter: filterBFilter, echo: { wet: wetMixB }
                     };
                  }
                  
-                 startVisualizer(); 
+                 startVisualizer(); // Start visualizer on play
                  audio.play();
-                 platter.style.animationPlayState = 'running';
+                 platter.style.animationPlayState = 'running'; // Spin platter
             });
+            // PAUSE button
             pauseBtn.addEventListener('click', () => {
                 audio.pause();
-                platter.style.animationPlayState = 'paused';
+                platter.style.animationPlayState = 'paused'; // Stop platter
             });
             
+            // CUE button (reset to 0 and pause)
             cueBtn.addEventListener('click', () => {
                 audio.currentTime = 0;
                 audio.pause();
@@ -2491,25 +2649,28 @@
                 
                 if (baseBpm) currentBpmDisplay.textContent = baseBpm.toFixed(0) + ' BPM';
                 
+                // Reset all FX
                 lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
                 filterSlider.value = 100;
-                echoButton.classList.remove('active');
+                echoButton.classList.remove('active'); 
                 
                 if(deckNodes) {
                     deckNodes.filters.low.gain.value = 0; 
                     deckNodes.filters.mid.gain.value = 0; 
                     deckNodes.filters.high.gain.value = 0;
-                    deckNodes.filter.frequency.value = 20000;
-                    deckNodes.echo.wet.gain.value = 0.0;
+                    deckNodes.filter.frequency.value = 20000; 
+                    deckNodes.echo.wet.gain.value = 0.0; 
                     deckNodes.gain.gain.value = 1;
                     volumeSlider.value = 1;
                 }
             });
 
+            // Volume slider
             volumeSlider.addEventListener('input', () => {
                 if (deckNodes) deckNodes.gain.gain.value = volumeSlider.value;
             });
             
+            // BPM slider
             bpmSlider.addEventListener('input', () => {
                 const rate = parseFloat(bpmSlider.value);
                 audio.playbackRate = rate;
@@ -2521,6 +2682,7 @@
                 }
             });
             
+            // EQ sliders
             lowSlider.addEventListener('input', () => {
                 if(deckNodes) deckNodes.filters.low.gain.value = lowSlider.value;
             });
@@ -2531,8 +2693,10 @@
                 if(deckNodes) deckNodes.filters.high.gain.value = highSlider.value;
             });
             
+            // Filter slider
             filterSlider.addEventListener('input', () => {
                 if(deckNodes) {
+                    // Convert linear 0-100 to logarithmic freq (200Hz to 20000Hz)
                     const minv = Math.log(200);
                     const maxv = Math.log(20000);
                     const scale = (maxv - minv) / 100;
@@ -2541,24 +2705,28 @@
                 }
             });
             
+            // Echo button
             echoButton.addEventListener('click', () => {
                 if (deckNodes) {
                     const isActive = echoButton.classList.toggle('active');
-                    deckNodes.echo.wet.gain.value = isActive ? 0.4 : 0.0;
+                    deckNodes.echo.wet.gain.value = isActive ? 0.4 : 0.0; // Toggle echo on/off
                 }
             });
 
+            // Update scrub bar as song plays
             audio.addEventListener('timeupdate', () => {
                 if (!isScrubbing && !isScrubbingPlatter && audio.duration) {
                     scrubBar.value = (audio.currentTime / audio.duration) * 1000;
                 }
             });
             
+            // Reset platter on song end
             audio.addEventListener('ended', () => {
                 platter.style.animationPlayState = 'paused';
                 platter.style.transform = 'rotate(0deg)';
             });
             
+            // --- Scrub Bar Logic ---
             const handleScrub = () => {
                 if (audio.duration) {
                     audio.currentTime = (scrubBar.value / 1000) * audio.duration;
@@ -2570,6 +2738,7 @@
             scrubBar.addEventListener('mouseup', () => isScrubbing = false);
             scrubBar.addEventListener('touchend', () => isScrubbing = false);
             
+            // --- Platter Scrubbing Logic ---
             function platterStart(e) {
                 if (!audio.duration) return;
                 isScrubbingPlatter = true;
@@ -2579,6 +2748,7 @@
                 audio.pause();
                 platter.style.animationPlayState = 'paused';
                 
+                // Add global listeners to track drag anywhere on screen
                 document.addEventListener('mousemove', platterMove);
                 document.addEventListener('touchmove', platterMove, { passive: false });
                 document.addEventListener('mouseup', platterEnd);
@@ -2594,11 +2764,13 @@
                 const deltaX = clientX - lastScrubX;
                 lastScrubX = clientX;
                 
-                const scrubAmount = (deltaX / 300) * 5; 
+                // Scrub audio time based on drag distance
+                const scrubAmount = (deltaX / 300) * 5; // Sensitivity
                 let newTime = audio.currentTime + scrubAmount;
                 newTime = Math.max(0, Math.min(newTime, audio.duration));
                 audio.currentTime = newTime;
                 
+                // Manually rotate platter
                 const currentRotation = parseFloat(platter.style.transform.replace('rotate(', '').replace('deg)', '')) || 0;
                 const newRotation = currentRotation + deltaX * 2.0; 
                 platter.style.transform = `rotate(${newRotation}deg)`;
@@ -2612,6 +2784,7 @@
                 platter.style.cursor = 'grab';
                 if (!isMobile) document.body.style.cursor = 'default';
                 
+                // Remove global listeners
                 document.removeEventListener('mousemove', platterMove);
                 document.removeEventListener('touchmove', platterMove);
                 document.removeEventListener('mouseup', platterEnd);
@@ -2625,57 +2798,15 @@
         setupDeck('deck-a');
         setupDeck('deck-b');
         
-        crossfader.addEventListener('input', () => {
-            if (!crossfadeA || !crossfadeB) return;
-            const val = parseFloat(crossfader.value); 
-            
-            crossfadeA.gain.value = Math.cos(val * Math.PI * 0.5);
-            crossfadeB.gain.value = Math.cos((1.0 - val) * Math.PI * 0.5);
-        });
-
-
         // --- Main Player Event Listeners ---
         
+        // Bitcrusher toggle
         bitcrushToggle.addEventListener('click', () => {
             if (!audioContext) setupAudioContext();
             toggleBitcrusher();
         });
 
-        fileListElement.addEventListener('click', (event) => {
-            const clickedLi = event.target.closest('li');
-            if (clickedLi) {
-                // NEW: Reset playlist mode when playing from main list
-                currentPlaylistMode.active = false;
-                
-                const filename = clickedLi.dataset.filename;
-                audioPlayer.src = 'Audio/' + filename;
-                
-                if (!audioContext) setupAudioContext(); 
-                
-                audioPlayer.play();
-                nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
-                
-                const currentActive = fileListElement.querySelector('.active');
-                if (currentActive) currentActive.classList.remove('active');
-                clickedLi.classList.add('active');
-                
-                updateMediaSession(filename.replace('.mp3', ''));
-            }
-        });
-        
-        // NEW: Add current track button listener
-        addCurrentTrackButton.addEventListener('click', (e) => {
-            if (!audioPlayer.src) return;
-            
-            // Extract filename from the full src URL
-            const urlParts = audioPlayer.src.split('/');
-            const filename = decodeURIComponent(urlParts[urlParts.length - 1]);
-            
-            if (filename) {
-                showContextMenu(e, filename);
-            }
-        });
-        
+        // Audio player event listeners for visualizer and media session
         audioPlayer.addEventListener('pause', () => { 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'paused';
@@ -2691,32 +2822,25 @@
             }
         });
 
-        searchBar.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredList = currentTracklist.filter(fileObj => 
-                fileObj.name.toLowerCase().replace('.mp3', '').includes(searchTerm)
-            );
-            populateFileList(filteredList);
-        });
         
-        function getTrackElement(direction) { 
-            const currentActive = fileListElement.querySelector('.active');
-            if (!currentActive) return fileListElement.querySelector('li'); 
+        // --- Lock Screen Controls Logic (Media Session API) ---
+        
+        // Find the next/previous track element in the *currently visible* list
+        function getTrackElement(direction) { // -1 for prev, 1 for next
+            const activeList = document.querySelector('.tab-content.active');
+            if (!activeList) return null;
+            
+            const currentActive = activeList.querySelector('li.active');
+            if (!currentActive) return activeList.querySelector('li'); // Get first
             
             let nextTrackLi = (direction === 1) ? currentActive.nextElementSibling : currentActive.previousElementSibling;
             
+            // Wrap around list
             if (!nextTrackLi) {
-                const currentFile = currentActive.dataset.filename;
-                const currentIndex = currentTracklist.findIndex(f => f.name === currentFile);
-                
-                if (direction === 1) { 
-                    const nextIndex = (currentIndex > -1 && currentIndex < currentTracklist.length - 1) ? currentIndex + 1 : 0;
-                    const nextFile = currentTracklist[nextIndex].name;
-                    nextTrackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextFile)}"]`);
-                } else { 
-                    const prevIndex = (currentIndex > 0) ? currentIndex - 1 : currentTracklist.length - 1;
-                    const prevFile = currentTracklist[prevIndex].name;
-                    nextTrackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(prevFile)}"]`);
+                if (direction === 1) {
+                    nextTrackLi = activeList.querySelector('li:first-child');
+                } else {
+                    nextTrackLi = activeList.querySelector('li:last-child');
                 }
             }
             return nextTrackLi;
@@ -2724,7 +2848,7 @@
         
         function playNextTrack() {
             const nextTrackLi = getTrackElement(1);
-            if (nextTrackLi) nextTrackLi.click();
+            if (nextTrackLi) nextTrackLi.click(); // Simulate click
         }
         
         function playPreviousTrack() {
@@ -2732,98 +2856,39 @@
             if (prevTrackLi) prevTrackLi.click();
         }
 
-        // NEW: Updated onended logic for playlist mode
+        // Auto-play next track
         audioPlayer.addEventListener('ended', () => {
-            if (currentPlaylistMode.active) {
-                const playlist = playlists.find(p => p.id === currentPlaylistMode.playlistId);
-                if (!playlist || playlist.tracks.length === 0) {
-                    currentPlaylistMode.active = false;
-                    return; // Stop playback
-                }
-
-                let nextIndex;
-                if (playlist.shuffle) {
-                    // Shuffle mode
-                    nextIndex = Math.floor(Math.random() * playlist.tracks.length);
-                } else {
-                    // In-order mode
-                    nextIndex = currentPlaylistMode.currentIndex + 1;
-                    if (nextIndex >= playlist.tracks.length) {
-                        nextIndex = 0; // Loop
-                    }
-                }
-                
-                currentPlaylistMode.currentIndex = nextIndex;
-                const nextTrackName = playlist.tracks[nextIndex];
-                
-                // Find and click the track in the main list
-                const trackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextTrackName)}"]`);
-                if (trackLi) {
-                    // Click it, but keep playlist mode active
-                    currentPlaylistMode.active = false; // Temporarily disable to prevent click from resetting
-                    trackLi.click();
-                    currentPlaylistMode.active = true; // Re-enable
-                    currentPlaylistMode.currentIndex = nextIndex; // Re-set index
-                }
-                
-            } else {
-                // Original logic: play next from "All Tracks"
-                playNextTrack(); 
-            }
+            playNextTrack(); 
         });
         
-        function updateMediaSession(trackName) {
+        // Update lock screen info
+        function updateMediaSession(trackName, isMix) {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: trackName,
                     artist: 'Ilan Reiss',
-                    album: 'Ilan Reiss Music Player',
+                    album: isMix ? 'Mixes' : 'Ilan Reiss Music Player',
                     artwork: [
                         { src: 'cover.png', sizes: '512x512', type: 'image/png' }
                     ]
                 });
 
+                // Set handlers
                 navigator.mediaSession.setActionHandler('play', () => audioPlayer.play());
                 navigator.mediaSession.setActionHandler('pause', () => audioPlayer.pause());
                 navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousTrack());
-                navigator.mediaSession.setActionHandler('nexttrack', () => {
-                    // NEW: Make next/prev respect playlist mode
-                    if (currentPlaylistMode.active) {
-                        const playlist = playlists.find(p => p.id === currentPlaylistMode.playlistId);
-                        if (!playlist) { playNextTrack(); return; }
-                        
-                        let nextIndex;
-                        if (playlist.shuffle) {
-                            nextIndex = Math.floor(Math.random() * playlist.tracks.length);
-                        } else {
-                            nextIndex = currentPlaylistMode.currentIndex + 1;
-                            if (nextIndex >= playlist.tracks.length) nextIndex = 0;
-                        }
-                        
-                        currentPlaylistMode.currentIndex = nextIndex;
-                        const nextTrackName = playlist.tracks[nextIndex];
-                        const trackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(nextTrackName)}"]`);
-                        if (trackLi) {
-                            currentPlaylistMode.active = false; 
-                            trackLi.click();
-                            currentPlaylistMode.active = true; 
-                            currentPlaylistMode.currentIndex = nextIndex;
-                        }
-                    } else {
-                        playNextTrack();
-                    }
-                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => playNextTrack());
             }
         }
 
         
+        // Info button
         infoButton.addEventListener('click', () => {
             infoWindow.style.display = 'flex';
             if (!isMobile) bringWindowToFront(infoWindow);
-            saveWindowStates();
         });
         
-        // --- Window Button Listeners ---
+        // --- Window Button Listeners (Close, Minimize, Restore) ---
         
         document.querySelectorAll('.close-button').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -2834,27 +2899,24 @@
                     if (targetWindowId === 'player-container') {
                         minimizedPlayerIcon.style.display = 'flex';
                     } else if (targetWindowId === 'dj-app-window') {
-                        minimizedDjIcon.style.display = 'flex'; 
-                        openDjAppIcon.style.display = 'flex'; 
+                        minimizedDjIcon.style.display = 'none'; // Hide minimized icon
+                        openDjAppIcon.style.display = 'flex'; // Show open icon
                     } else if (targetWindowId === 'visualizer-window') {
                         stopVisualizer();
                     }
                 }
-                saveWindowStates();
             });
         });
 
         minimizePlayerButton.addEventListener('click', () => {
             playerContainer.style.display = 'none';
             minimizedPlayerIcon.style.display = 'flex';
-            saveWindowStates();
         });
 
         minimizedPlayerIcon.addEventListener('click', () => {
             playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
             if (!isMobile) bringWindowToFront(playerContainer);
-            saveWindowStates();
         });
         
         openDjAppIcon.addEventListener('click', () => {
@@ -2862,14 +2924,12 @@
             openDjAppIcon.style.display = 'none'; 
             minimizedDjIcon.style.display = 'none'; 
             if (!isMobile) bringWindowToFront(djAppWindow);
-            saveWindowStates();
         });
         
         minimizeDjButton.addEventListener('click', () => {
             djAppWindow.style.display = 'none';
             minimizedDjIcon.style.display = 'flex'; 
             openDjAppIcon.style.display = 'none'; 
-            saveWindowStates();
         });
         
         minimizedDjIcon.addEventListener('click', () => {
@@ -2877,21 +2937,21 @@
             minimizedDjIcon.style.display = 'none'; 
             openDjAppIcon.style.display = 'none'; 
             if (!isMobile) bringWindowToFront(djAppWindow);
-            saveWindowStates();
         });
 
+        // Visualizer tab switching
         visualizerTabs.addEventListener('click', (e) => {
             const clickedTab = e.target.closest('.visualizer-tab');
             if (clickedTab) {
                 document.querySelectorAll('.visualizer-tab').forEach(tab => tab.classList.remove('active'));
                 clickedTab.classList.add('active');
                 activeVisualizer = clickedTab.dataset.visualizer;
-                if (visualizerActive) startVisualizer();
+                if (visualizerActive) startVisualizer(); // Restart with new visualizer
             }
         });
         document.querySelector(`.visualizer-tab[data-visualizer="${activeVisualizer}"]`).classList.add('active');
 
-        // --- Color Conversion Helper ---
+        // --- Color Conversion Helper (Hex to HSL) ---
         function hexToHSL(H) {
             let r = 0, g = 0, b = 0;
             if (H.length == 4) { r = parseInt(H[1] + H[1], 16); g = parseInt(H[2] + H[2], 16); b = parseInt(H[3] + H[3], 16); }
@@ -2911,10 +2971,10 @@
         bgColorPicker.addEventListener('input', (e) => {
             const newColor = e.target.value;
             document.body.style.background = newColor;
+            // Update visualizer colors based on background
             const hsl = hexToHSL(newColor);
             visualizerColor = `hsl(${hsl.h}, 100%, 65%)`;
             secondaryColor = `hsl(${(hsl.h + 180) % 360}, 100%, 65%)`;
-            saveWindowStates(); 
         });
 
         // --- Digital Clock ---
@@ -2924,7 +2984,7 @@
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
-            hours = hours ? hours : 12;
+            hours = hours ? hours : 12; // 0 o'clock is 12
             digitalClock.textContent = `${hours}:${minutes} ${ampm}`;
         }
         setInterval(updateClock, 1000);
@@ -2932,6 +2992,7 @@
         
         // --- Playlist & Context Menu Logic ---
         
+        // Load playlists from localStorage
         function loadPlaylists() {
             const playlistsStr = localStorage.getItem('ilanPlaylists');
             if (playlistsStr) {
@@ -2940,10 +3001,12 @@
             renderPlaylistList();
         }
         
+        // Save playlists to localStorage
         function savePlaylists() {
             localStorage.setItem('ilanPlaylists', JSON.stringify(playlists));
         }
         
+        // Redraw the list of playlists
         function renderPlaylistList() {
             playlistList.innerHTML = '';
             playlists.forEach(playlist => {
@@ -2953,6 +3016,7 @@
                 if (playlist.id === selectedPlaylistId) {
                     li.classList.add('selected');
                 }
+                // Click to select playlist
                 li.addEventListener('click', () => {
                     selectedPlaylistId = playlist.id;
                     renderPlaylistList(); 
@@ -2962,43 +3026,37 @@
             });
         }
         
+        // Redraw the tracks inside the selected playlist
         function renderPlaylistTracks(playlistId) {
             const playlist = playlists.find(p => p.id === playlistId);
             if (!playlist) {
                 playlistTracks.innerHTML = '';
                 playlistTracksTitle.textContent = 'Tracks';
-                playlistShuffleButton.classList.remove('active');
                 return;
             }
             
             playlistTracksTitle.textContent = `Tracks in "${playlist.name}"`;
-            playlistShuffleButton.classList.toggle('active', !!playlist.shuffle); // NEW
             playlistTracks.innerHTML = '';
             
-            playlist.tracks.forEach((trackName, index) => { // NEW: Added index
+            if (playlist.tracks.length === 0) {
+                 playlistTracks.innerHTML = '<li style="color: #808080; font-style: italic; padding: 10px 5px;">This playlist is empty.</li>';
+                 return;
+            }
+            
+            playlist.tracks.forEach(trackName => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <span class="playlist-track-name">${trackName.replace('.mp3', '')}</span>
                     <button class="window-button playlist-track-remove" data-track="${trackName}">X</button>
                 `;
                 
+                // Click track name to play it
                 li.querySelector('.playlist-track-name').addEventListener('click', () => {
-                    // NEW: Set playlist mode
-                    currentPlaylistMode.active = true;
-                    currentPlaylistMode.playlistId = playlist.id;
-                    currentPlaylistMode.currentIndex = index;
-                
                     const trackLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(trackName)}"]`);
-                    if (trackLi) {
-                        // Click main list item, but *don't* reset playlist mode
-                        currentPlaylistMode.active = false; // Temporarily disable
-                        trackLi.click();
-                        currentPlaylistMode.active = true; // Re-enable
-                        currentPlaylistMode.playlistId = playlist.id; // Re-set
-                        currentPlaylistMode.currentIndex = index; // Re-set
-                    }
+                    if (trackLi) trackLi.click();
                 });
                 
+                // Click 'X' to remove from playlist
                 li.querySelector('.playlist-track-remove').addEventListener('click', (e) => {
                     e.stopPropagation();
                     removeTrackFromPlaylist(playlistId, trackName);
@@ -3013,18 +3071,24 @@
             if (playlist) {
                 playlist.tracks = playlist.tracks.filter(t => t !== trackName);
                 savePlaylists();
-                renderPlaylistTracks(playlistId); 
+                renderPlaylistTracks(playlistId); // Refresh view
             }
         }
         
+        // Open playlist window
+        openPlaylistsButton.addEventListener('click', () => {
+            playlistWindow.style.display = 'flex';
+            if (!isMobile) bringWindowToFront(playlistWindow);
+        });
+        
+        // New playlist
         newPlaylistButton.addEventListener('click', () => {
             const name = prompt("Enter new playlist name:", "New Playlist");
             if (name && name.trim()) {
                 const newPlaylist = {
                     id: `pid-${Date.now()}`,
                     name: name.trim(),
-                    tracks: [],
-                    shuffle: false // NEW
+                    tracks: []
                 };
                 playlists.push(newPlaylist);
                 savePlaylists();
@@ -3032,9 +3096,10 @@
             }
         });
         
+        // Rename playlist
         renamePlaylistButton.addEventListener('click', () => {
             if (!selectedPlaylistId) {
-                alert("Please select a playlist to rename."); 
+                customAlert("Please select a playlist to rename."); 
                 return;
             }
             const playlist = playlists.find(p => p.id === selectedPlaylistId);
@@ -3051,12 +3116,18 @@
             }
         });
         
-        deletePlaylistButton.addEventListener('click', () => {
+        // Delete playlist
+        deletePlaylistButton.addEventListener('click', async () => { 
             if (!selectedPlaylistId) {
-                alert("Please select a playlist to delete.");
+                customAlert("Please select a playlist to delete.");
                 return;
             }
-            if (confirm(`Are you sure you want to delete this playlist?`)) {
+            
+            const playlist = playlists.find(p => p.id === selectedPlaylistId);
+            if (!playlist) return;
+            
+            // Use custom confirm modal
+            if (await customConfirm(`Are you sure you want to delete the playlist "${playlist.name}"?`)) { 
                 playlists = playlists.filter(p => p.id !== selectedPlaylistId);
                 selectedPlaylistId = null;
                 savePlaylists();
@@ -3065,20 +3136,26 @@
             }
         });
         
-        // NEW: Shuffle button listener
-        playlistShuffleButton.addEventListener('click', () => {
-            if (!selectedPlaylistId) return;
-            const playlist = playlists.find(p => p.id === selectedPlaylistId);
-            if (playlist) {
-                playlist.shuffle = !playlist.shuffle;
-                playlistShuffleButton.classList.toggle('active', playlist.shuffle);
-                savePlaylists();
+        // '+' button (add currently playing)
+        addTrackNowPlayingButton.addEventListener('click', (e) => {
+            if (currentMainPlayerTab !== 'tracks') {
+                customAlert("You can only add tracks to a playlist, not mixes.");
+                return;
+            }
+            const currentActive = fileListElement.querySelector('.active');
+            if (currentActive) {
+                const filename = currentActive.dataset.filename;
+                showContextMenu(e, filename);
+            } else {
+                customAlert("Play a track first to add it to a playlist.");
             }
         });
         
+        // Show context menu (right-click or long press)
         function showContextMenu(e, trackName) {
             contextMenuTrack = trackName;
             
+            // Populate submenu with playlist names
             contextMenuPlaylistList.innerHTML = '';
             if (playlists.length === 0) {
                 const li = document.createElement('li');
@@ -3091,7 +3168,9 @@
                     const li = document.createElement('li');
                     li.textContent = playlist.name;
                     li.dataset.id = playlist.id;
-                    li.addEventListener('click', () => {
+                    // Click to add song
+                    li.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Stop click from closing menu
                         addTrackToPlaylist(playlist.id, contextMenuTrack);
                         hideContextMenu();
                     });
@@ -3103,11 +3182,35 @@
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             
             contextMenu.style.display = 'block';
+            
+            // Set position *before* measuring
+            contextMenu.style.left = `${clientX}px`;
+            contextMenu.style.top = `${clientY}px`;
+            
+            // Reposition to fit on screen
             const menuWidth = contextMenu.offsetWidth;
             const menuHeight = contextMenu.offsetHeight;
-            const posX = (clientX + menuWidth > window.innerWidth) ? window.innerWidth - menuWidth - 5 : clientX;
-            const posY = (clientY + menuHeight > window.innerHeight) ? window.innerHeight - menuHeight - 5 : clientY;
+            const submenu = contextMenu.querySelector('#add-to-playlist-submenu');
+            const submenuWidth = submenu.offsetWidth || 150; 
             
+            let posX = clientX;
+            let posY = clientY;
+
+            // Flip submenu to left if it overflows right
+            if (clientX + menuWidth + submenuWidth > window.innerWidth) {
+                 submenu.style.left = '-100%'; 
+            } else {
+                 submenu.style.left = '100%'; 
+            }
+            
+            // Constrain main menu to viewport
+            if (clientX + menuWidth > window.innerWidth) {
+                 posX = window.innerWidth - menuWidth - 5;
+            }
+            if (clientY + menuHeight > window.innerHeight) {
+                posY = window.innerHeight - menuHeight - 5;
+            }
+
             contextMenu.style.left = `${posX}px`;
             contextMenu.style.top = `${posY}px`;
         }
@@ -3119,15 +3222,23 @@
         
         function addTrackToPlaylist(playlistId, trackName) {
             const playlist = playlists.find(p => p.id === playlistId);
-            if (playlist && !playlist.tracks.includes(trackName)) {
-                playlist.tracks.push(trackName);
-                savePlaylists();
-                if (playlistId === selectedPlaylistId) {
-                    renderPlaylistTracks(playlistId);
+            if (playlist) {
+                // Add only if not already in list
+                if (!playlist.tracks.includes(trackName)) {
+                    playlist.tracks.push(trackName);
+                    savePlaylists();
+                    console.log(`Added "${trackName}" to "${playlist.name}"`);
+                    // Refresh view if it's the open playlist
+                    if (playlistId === selectedPlaylistId) {
+                        renderPlaylistTracks(playlistId);
+                    }
+                } else {
+                    console.warn(`Track "${trackName}" is already in "${playlist.name}"`);
                 }
             }
         }
         
+        // Global click to hide context menu
         document.addEventListener('click', (e) => {
             if (!contextMenu.contains(e.target)) {
                 hideContextMenu();
@@ -3141,14 +3252,15 @@
 
 
         // --- Final Setup ---
-        loadWindowStates(); 
-        loadPlaylists();    
+        loadPlaylists(); // Load saved playlists on start
         
+        // Initial visualizer color sync
         const initialBgColor = bgColorPicker.value;
         const initialHsl = hexToHSL(initialBgColor);
         visualizerColor = `hsl(${initialHsl.h}, 100%, 65%)`;
         secondaryColor = `hsl(${(initialHsl.h + 180) % 360}, 100%, 65%)`;
 
+        // Preload cover image for lock screen
         const lockScreenImage = new Image();
         lockScreenImage.src = "cover.png"; 
         lockScreenImage.style.display = 'none';
