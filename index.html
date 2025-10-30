@@ -1125,7 +1125,8 @@
                             <label for="deck-a-bpm">BPM</label>
                             <span class="bpm-display" id="deck-a-bpm-display">100%</span>
                         </div>
-                        <input type="range" class="bpm-slider" id="deck-a-bpm" value="1" min="0.5" max="1.5" step="0.01">
+                        <!-- NEW: Finer step value -->
+                        <input type="range" class="bpm-slider" id="deck-a-bpm" value="1" min="0.5" max="1.5" step="0.001">
                     </div>
                 </div>
                 <audio id="deck-a-audio" crossorigin="anonymous"></audio>
@@ -1175,7 +1176,8 @@
                             <label for="deck-b-bpm">BPM</label>
                             <span class="bpm-display" id="deck-b-bpm-display">100%</span>
                         </div>
-                        <input type="range" class="bpm-slider" id="deck-b-bpm" value="1" min="0.5" max="1.5" step="0.01">
+                        <!-- NEW: Finer step value -->
+                        <input type="range" class="bpm-slider" id="deck-b-bpm" value="1" min="0.5" max="1.5" step="0.001">
                     </div>
                 </div>
                 <audio id="deck-b-audio" crossorigin="anonymous"></audio>
@@ -1365,6 +1367,9 @@
         let sourceDeckA = null;
         let sourceDeckB = null;
         
+        // NEW: Gain nodes for independent deck volume
+        let gainA, gainB, gainMain;
+        
         // NEW: EQ Filter Nodes
         let filterALow, filterAMid, filterAHigh;
         let filterBLow, filterBMid, filterBHigh;
@@ -1381,6 +1386,11 @@
             sourceMain = audioContext.createMediaElementSource(audioPlayer);
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
+            
+            // NEW: Create Gain Nodes
+            gainA = audioContext.createGain();
+            gainB = audioContext.createGain();
+            gainMain = audioContext.createGain();
             
             // NEW: Create 6 filter nodes
             filterALow = audioContext.createBiquadFilter();
@@ -1403,11 +1413,13 @@
             // Chain the filters for each deck
             sourceDeckA.connect(filterALow);
             filterALow.connect(filterAMid);
-            filterAMid.connect(filterAHigh); // End of Deck A chain
+            filterAMid.connect(filterAHigh);
+            filterAHigh.connect(gainA); // NEW: Connect to Gain A
             
             sourceDeckB.connect(filterBLow);
             filterBLow.connect(filterBMid);
-            filterBMid.connect(filterBHigh); // End of Deck B chain
+            filterBMid.connect(filterBHigh);
+            filterBHigh.connect(gainB); // NEW: Connect to Gain B
             
             // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
@@ -1426,35 +1438,11 @@
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
 
-            // Connect main player as default (will be overridden)
-            sourceMain.connect(analyser);
-        }
-
-        // NEW: Function to set the active audio source for the visualizer
-        function setActiveAudioSource(sourceType) { // 'main', 'deckA', or 'deckB'
-            if (!audioContext) setupAudioContext();
-            
-            // Disconnect all inputs from the analyser
-            try { sourceMain.disconnect(analyser); } catch(e) {}
-            try { filterAHigh.disconnect(analyser); } catch(e) {}
-            try { filterBHigh.disconnect(analyser); } catch(e) {}
-            
-            let activeSource;
-            if (sourceType === 'main') {
-                activeSource = sourceMain;
-            } else if (sourceType === 'deckA') {
-                activeSource = filterAHigh; // End of Deck A's chain
-            } else if (sourceType === 'deckB') {
-                activeSource = filterBHigh; // End of Deck B's chain
-            }
-            
-            // Connect the correct source to the analyser
-            if (activeSource) {
-                activeSource.connect(analyser);
-            }
-            
-            // Re-apply bitcrusher routing
-            toggleBitcrusher(true); // Pass true to force re-connection
+            // NEW: Connect all 3 sources to the analyser hub
+            sourceMain.connect(gainMain);
+            gainMain.connect(analyser);
+            gainA.connect(analyser);
+            gainB.connect(analyser);
         }
 
         // NEW: Modified to handle re-connection
@@ -1959,7 +1947,7 @@
             
             // NEW: Get correct filter nodes
             let filters;
-            // We set filters *after* setupAudioContext is called
+            let gainNode = null; // NEW: Gain node for this deck
             
             const loadBtn = document.getElementById(`load-${deckId}`);
             const playBtn = document.getElementById(`${deckId}-play`);
@@ -1972,19 +1960,14 @@
             let isScrubbingPlatter = false; // For the new platter
             let lastScrubX = 0;
             let baseBpm = null; // NEW: Store the track's base BPM
-            
-            function assignFilters() {
-                 if (deckId === 'deck-a') {
-                    filters = { low: filterALow, mid: filterAMid, high: filterAHigh };
-                } else { // deck-b
-                    filters = { low: filterBLow, mid: filterBMid, high: filterBHigh };
-                }
-            }
 
             loadBtn.addEventListener('click', () => {
                 if (selectedDjTrack) {
                     if (!audioContext) setupAudioContext(); // Ensure context exists
-                    assignFilters(); // Now we can assign filters
+                    
+                    // NEW: Assign gain and filter nodes
+                    gainNode = (deckId === 'deck-a') ? gainA : gainB;
+                    filters = (deckId === 'deck-a') ? { low: filterALow, mid: filterAMid, high: filterAHigh } : { low: filterBLow, mid: filterBMid, high: filterBHigh };
                     
                     audio.src = 'Audio/' + selectedDjTrack;
                     trackNameText.textContent = selectedDjTrack.replace('.mp3', ''); 
@@ -2011,17 +1994,21 @@
                     if(filters) {
                         filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                     }
+                    // NEW: Reset Volume
+                    if(gainNode) {
+                        gainNode.gain.value = 1;
+                        volumeSlider.value = 1;
+                    }
                 }
             });
 
             playBtn.addEventListener('click', () => {
                  if (!audioContext) setupAudioContext(); // Ensure context exists
-                 assignFilters();
-                 if (deckId === 'deck-a') {
-                    setActiveAudioSource('deckA');
-                 } else {
-                    setActiveAudioSource('deckB');
-                 }
+                 
+                 // NEW: Assign nodes if they haven't been
+                 if (!gainNode) gainNode = (deckId === 'deck-a') ? gainA : gainB;
+                 if (!filters) filters = (deckId === 'deck-a') ? { low: filterALow, mid: filterAMid, high: filterAHigh } : { low: filterBLow, mid: filterBMid, high: filterBHigh };
+                 
                  startVisualizer(); 
                  audio.play();
                  platter.style.animationPlayState = 'running';
@@ -2051,10 +2038,16 @@
                 if(filters) {
                     filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
                 }
+                // NEW: Reset Volume
+                if(gainNode) {
+                    gainNode.gain.value = 1;
+                    volumeSlider.value = 1;
+                }
             });
 
+            // NEW: Control Gain Node, not audio.volume
             volumeSlider.addEventListener('input', () => {
-                audio.volume = volumeSlider.value;
+                if (gainNode) gainNode.gain.value = volumeSlider.value;
             });
             
             bpmSlider.addEventListener('input', () => {
@@ -2099,6 +2092,11 @@
                 lowSlider.value = 0; midSlider.value = 0; highSlider.value = 0;
                 if(filters) {
                     filters.low.gain.value = 0; filters.mid.gain.value = 0; filters.high.gain.value = 0;
+                }
+                // NEW: Reset Volume
+                if(gainNode) {
+                    gainNode.gain.value = 1;
+                    volumeSlider.value = 1;
                 }
             });
             
@@ -2189,7 +2187,6 @@
                 audioPlayer.src = 'Audio/' + filename;
                 
                 if (!audioContext) setupAudioContext(); 
-                setActiveAudioSource('main'); // NEW: Set main player as source
                 
                 audioPlayer.play();
                 nowPlayingElement.textContent = clickedLi.querySelector('.file-name').textContent;
@@ -2203,7 +2200,6 @@
         audioPlayer.addEventListener('pause', () => { /* stopVisualizer(); */ });
         audioPlayer.addEventListener('play', () => {
             if (audioContext) {
-                setActiveAudioSource('main'); // NEW: Ensure source is set on play
                 audioContext.resume();
                 startVisualizer();
             }
