@@ -1126,6 +1126,276 @@
             font-size: 0.9rem;
         }
 
+        /* --- Solitaire Icon Styles --- */
+        #open-solitaire-icon {
+            width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: 1px 1px 0 1px #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #000080;
+            margin-left: 10px;
+        }
+        #open-solitaire-icon:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
+        
+        #minimized-solitaire-icon {
+             width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: 1px 1px 0 1px #000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #000080;
+            margin-left: 10px;
+        }
+        #minimized-solitaire-icon:active {
+             border-top: 2px solid #404040;
+             border-left: 2px solid #404040;
+             border-right: 2px solid #fff;
+             border-bottom: 2px solid #fff;
+         }
+
+        /* --- Solitaire Game Styles --- */
+        #solitaire-window {
+            width: 620px;
+            height: 500px;
+            min-width: 480px;
+            min-height: 400px;
+        }
+        
+        #solitaire-content {
+            background: #006400; /* Green felt */
+            padding: 10px;
+            overflow: hidden;
+        }
+        
+        #solitaire-menu {
+            flex-shrink: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px inset #808080;
+            margin-bottom: 10px;
+        }
+        
+        #solitaire-menu #solitaire-new-game {
+            width: 100px;
+            height: 25px;
+            font-size: 0.9rem;
+            line-height: 22px;
+        }
+        
+        #solitaire-game-board {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto; /* Allow scrolling if tableau gets too long */
+            touch-action: pan-y;
+            padding: 5px;
+        }
+        
+        #solitaire-top-panel, #solitaire-tableau {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+        
+        #solitaire-tableau {
+            justify-content: space-between;
+        }
+
+        .solitaire-stack {
+            width: 70px;
+            height: 100px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 5px;
+            background-color: rgba(0, 0, 0, 0.2);
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .solitaire-stack.empty-tableau::before {
+            content: "K";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: 40px;
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+        
+        .foundation-stack::before {
+            content: "A";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: 40px;
+            color: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+        
+        #solitaire-stock::before {
+            content: "⟳"; /* Reset symbol */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-size: 40px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .solitaire-spacer {
+            width: 20px;
+            flex-shrink: 0;
+        }
+        
+        .tableau-stack {
+            border: none;
+            background: none;
+            height: auto;
+            min-height: 100px;
+        }
+
+        .solitaire-card {
+            width: 70px;
+            height: 100px;
+            background-color: #fff;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+            font-size: 16px;
+            font-weight: 700;
+            box-sizing: border-box;
+        }
+        
+        .solitaire-card.red {
+            color: #d00000;
+        }
+        .solitaire-card.black {
+            color: #000000;
+        }
+        
+        .solitaire-card .card-top, .solitaire-card .card-bottom {
+            line-height: 1;
+        }
+        
+        .solitaire-card .card-top {
+            text-align: left;
+        }
+        
+        .solitaire-card .card-suit {
+            font-size: 28px;
+            text-align: center;
+            line-height: 1;
+        }
+        
+        .solitaire-card .card-bottom {
+            text-align: right;
+            transform: rotate(180deg);
+        }
+
+        .solitaire-card.facedown {
+            background-color: #000080;
+            background-image: linear-gradient(135deg, #000080 25%, #1084d0 25%, #1084d0 50%, #000080 50%, #000080 75%, #1084d0 75%, #1084d0 100%);
+            background-size: 20px 20px;
+            color: transparent;
+            padding: 0;
+        }
+        
+        .solitaire-card.facedown .card-top, .solitaire-card.facedown .card-suit, .solitaire-card.facedown .card-bottom {
+            display: none;
+        }
+        
+        .solitaire-card.dragging {
+            z-index: 1001; /* Above other windows */
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+            cursor: grabbing;
+            /* Detach from parent for stacking context */
+            position: fixed; 
+        }
+
+        #solitaire-stock .solitaire-card {
+            cursor: pointer;
+        }
+        
+        #solitaire-stock .solitaire-card:not(:first-child) {
+            /* Make stock pile look like one card */
+            display: none; 
+        }
+
+        .tableau-stack .solitaire-card {
+            position: relative; /* Stack vertically */
+            top: auto;
+            left: auto;
+        }
+        
+        /* Overlap face-up cards */
+        .tableau-stack .solitaire-card:not(.facedown) + .solitaire-card:not(.facedown) {
+            margin-top: -75px; 
+        }
+        
+        /* Overlap face-down cards */
+        .tableau-stack .solitaire-card.facedown + .solitaire-card.facedown {
+            margin-top: -90px;
+        }
+        
+        /* Overlap face-up on face-down */
+         .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
+            margin-top: -90px;
+        }
+        
+        /* Ghost card for dragging multiple */
+        .drag-ghost-stack {
+            position: fixed;
+            z-index: 1001;
+            pointer-events: none;
+        }
+        .drag-ghost-stack .solitaire-card {
+            position: relative;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+        }
+         .drag-ghost-stack .solitaire-card + .solitaire-card {
+            margin-top: -75px;
+        }
+
 
         /* --- Responsive Media Query (for mobile) --- */
         @media (max-width: 768px) {
@@ -1226,6 +1496,46 @@
                 padding-left: 0;
                 height: 250px; /* Fixed height for tracks */
             }
+            
+            /* Solitaire mobile */
+            #solitaire-window {
+                min-height: 0;
+            }
+            #solitaire-game-board {
+                /* Scale down cards on small screens */
+                --card-width: 60px;
+                --card-height: 86px;
+                gap: 10px;
+            }
+            
+            .solitaire-stack {
+                width: var(--card-width);
+                height: var(--card-height);
+            }
+            .solitaire-card {
+                width: var(--card-width);
+                height: var(--card-height);
+                font-size: 14px;
+                padding: 3px;
+            }
+            .solitaire-card .card-suit {
+                font-size: 20px;
+            }
+            #solitaire-top-panel, #solitaire-tableau {
+                gap: 5px;
+            }
+             .solitaire-spacer {
+                width: 5px;
+            }
+            .tableau-stack .solitaire-card:not(.facedown) + .solitaire-card:not(.facedown) {
+                margin-top: -65px; 
+            }
+            .tableau-stack .solitaire-card.facedown + .solitaire-card.facedown {
+                margin-top: -78px;
+            }
+             .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
+                margin-top: -78px;
+            }
 
             /* Stack bottom bar items */
             #color-picker-container {
@@ -1256,7 +1566,7 @@
         }
         
         /* Narrower phones */
-        @media (max-width: 380px) {
+        @media (max-width: 420px) {
              #file-list, #mix-list {
                 grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
                 gap: 10px;
@@ -1283,6 +1593,33 @@
                 width: 38px; /* Smaller buttons */
                 font-size: 10px;
             }
+            
+            /* Solitaire even smaller */
+            #solitaire-game-board {
+                --card-width: 42px;
+                --card-height: 60px;
+                gap: 5px;
+            }
+             #solitaire-top-panel, #solitaire-tableau {
+                gap: 4px;
+            }
+            .solitaire-card {
+                font-size: 10px;
+                padding: 2px;
+                border-radius: 3px;
+            }
+            .solitaire-card .card-suit {
+                font-size: 14px;
+            }
+            .tableau-stack .solitaire-card:not(.facedown) + .solitaire-card:not(.facedown) {
+                margin-top: -48px; 
+            }
+            .tableau-stack .solitaire-card.facedown + .solitaire-card.facedown {
+                margin-top: -55px;
+            }
+             .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
+                margin-top: -55px;
+            }
         }
 
     </style>
@@ -1303,7 +1640,8 @@
             <div class="player-controls">
                 <span id="now-playing">Select a track to play</span>
                 <!-- Standard HTML audio element -->
-                <audio id="audio-player" controls crossorigin="anonymous"></audio>
+                <!-- Added 'playsinline' for iOS background audio compatibility -->
+                <audio id="audio-player" controls crossorigin="anonymous" playsinline></audio>
             </div>
             
             <div class="content-inner">
@@ -1473,7 +1811,8 @@
                         <input type="range" class="bpm-slider" id="deck-a-bpm" value="1" min="0.5" max="1.5" step="0.001">
                     </div>
                 </div>
-                <audio id="deck-a-audio" crossorigin="anonymous"></audio>
+                <!-- Added 'playsinline' for iOS background audio compatibility -->
+                <audio id="deck-a-audio" crossorigin="anonymous" playsinline></audio>
             </div>
             
             <!-- Library -->
@@ -1536,7 +1875,47 @@
                         <input type="range" class="bpm-slider" id="deck-b-bpm" value="1" min="0.5" max="1.5" step="0.001">
                     </div>
                 </div>
-                <audio id="deck-b-audio" crossorigin="anonymous"></audio>
+                <!-- Added 'playsinline' for iOS background audio compatibility -->
+                <audio id="deck-b-audio" crossorigin="anonymous" playsinline></audio>
+            </div>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+    
+    <!-- Solitaire Window (NEW) -->
+    <div id="solitaire-window" class="window" style="display: none;">
+        <div class="title-bar">
+            <span class="title-bar-text">♦️ Solitaire</span>
+            <div class="title-bar-buttons">
+                <button class="window-button" id="minimize-solitaire-button">_</button>
+                <button class="window-button close-button" data-target="solitaire-window">X</button>
+            </div>
+        </div>
+        <div class="content" id="solitaire-content">
+            <div id="solitaire-menu">
+                <button id="solitaire-new-game" class="window-button">New Game</button>
+            </div>
+            <div id="solitaire-game-board">
+                <!-- Top section: Stock, Waste, Foundations -->
+                <div id="solitaire-top-panel">
+                    <div class="solitaire-stack" id="solitaire-stock"></div>
+                    <div class="solitaire-stack" id="solitaire-waste"></div>
+                    <div class="solitaire-spacer"></div>
+                    <div class="solitaire-stack foundation-stack" id="foundation-0" data-suit="spades"></div>
+                    <div class="solitaire-stack foundation-stack" id="foundation-1" data-suit="hearts"></div>
+                    <div class="solitaire-stack foundation-stack" id="foundation-2" data-suit="clubs"></div>
+                    <div class="solitaire-stack foundation-stack" id="foundation-3" data-suit="diamonds"></div>
+                </div>
+                <!-- Bottom section: Tableau -->
+                <div id="solitaire-tableau">
+                    <div class="solitaire-stack tableau-stack" id="tableau-0"></div>
+                    <div class="solitaire-stack tableau-stack" id="tableau-1"></div>
+                    <div class="solitaire-stack tableau-stack" id="tableau-2"></div>
+                    <div class="solitaire-stack tableau-stack" id="tableau-3"></div>
+                    <div class="solitaire-stack tableau-stack" id="tableau-4"></div>
+                    <div class="solitaire-stack tableau-stack" id="tableau-5"></div>
+                    <div class="solitaire-stack tableau-stack" id="tableau-6"></div>
+                </div>
             </div>
         </div>
         <div class="resize-handle"></div>
@@ -1558,6 +1937,13 @@
         </div>
         <div id="minimized-dj-icon" title="Restore DJ App">
             <i class="fas fa-compact-disc"></i> 
+        </div>
+        <!-- NEW Solitaire Icons -->
+        <div id="open-solitaire-icon" title="Open Solitaire">
+            <i class="fas fa-diamond"></i> 
+        </div>
+        <div id="minimized-solitaire-icon" title="Restore Solitaire">
+            <i class="fas fa-diamond"></i> 
         </div>
     </div>
  
@@ -1596,11 +1982,16 @@
         </div>
     </div>
     
+    <!-- Ghost stack for dragging multiple cards (NEW) -->
+    <div id="drag-ghost-stack" class="drag-ghost-stack" style="display: none;"></div>
+
+    <!-- Silent audio element for background playback fix (NEW) -->
+    <audio id="silent-audio-loop" loop playsinline src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        console.log('Ilan Reiss Music Player v3.5 - Mix Tab Parity'); // Updated version
+        console.log('Ilan Reiss Music Player v3.6 - Solitaire Update'); // Updated version
         
         // --- Custom Modal Functions (for alerts/confirms) ---
         const customAlertModal = document.getElementById('custom-alert-modal');
@@ -1818,6 +2209,13 @@
         const contextMenu = document.getElementById('track-context-menu');
         const contextMenuPlaylistList = document.getElementById('add-to-playlist-submenu');
         
+        // Solitaire (NEW)
+        const solitaireWindow = document.getElementById('solitaire-window');
+        const openSolitaireIcon = document.getElementById('open-solitaire-icon');
+        const minimizeSolitaireButton = document.getElementById('minimize-solitaire-button');
+        const minimizedSolitaireIcon = document.getElementById('minimized-solitaire-icon');
+        const newGameButton = document.getElementById('solitaire-new-game');
+        
         // State variables
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
@@ -1844,10 +2242,34 @@
         let delayA, feedbackA, wetMixA; // Deck A Echo
         let delayB, feedbackB, wetMixB; // Deck B Echo
         
+        // NEW: Get silent audio element for background playback fix
+        const silentAudio = document.getElementById('silent-audio-loop');
+        let hasPlayedOnce = false; // Flag to only start silent audio once
+
+        // NEW: Function to start silent audio loop
+        function tryStartSilentAudio() {
+            if (!hasPlayedOnce && silentAudio.paused) {
+                silentAudio.play().then(() => {
+                    hasPlayedOnce = true;
+                    console.log("Silent audio loop started for background playback.");
+                }).catch(e => {
+                    // This often fails on first load without user gesture, which is fine.
+                    // The main audio play() will trigger it again.
+                    console.warn("Silent audio play failed (will retry):", e.message);
+                });
+            }
+        }
+        
         function setupAudioContext() {
             if (audioContext) return;
             
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (e) {
+                customAlert("AudioContext is not supported in this browser.");
+                return;
+            }
+            
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
@@ -2253,7 +2675,7 @@
         function handleDragStart(e, windowEl) {
             if (isMobile) return; 
             // Don't drag if clicking a button or interactive element
-            if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab') || e.target.closest('input, button, ul, canvas, .eq-slider, .volume-slider, .bpm-slider, .scrub-bar, .scrub-platter')) return;
+            if (e.target.classList.contains('window-button') || e.target.classList.contains('visualizer-tab') || e.target.closest('input, button, ul, canvas, .eq-slider, .volume-slider, .bpm-slider, .scrub-bar, .scrub-platter, .solitaire-card, #solitaire-stock')) return;
             isDragging = true;
             activeWindow = windowEl;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -2329,6 +2751,10 @@
             infoWindow.style.top = '150px';
             playlistWindow.style.left = '50px';
             playlistWindow.style.top = '50px';
+            // NEW: Solitaire window position
+            solitaireWindow.style.left = (window.innerWidth - 620) / 2 + 50 + 'px';
+            solitaireWindow.style.top = (window.innerHeight - 500) / 2 - 50 + 'px';
+
             bringWindowToFront(playerContainer);
         }
 
@@ -2371,11 +2797,18 @@
             li.addEventListener('click', () => {
                 const filename = li.dataset.filename;
                 const path = li.dataset.isMix === 'true' ? 'mixes/' : 'Audio/';
+                
+                // Stop other audio sources
+                document.getElementById('deck-a-audio').pause();
+                document.getElementById('deck-b-audio').pause();
+                
                 audioPlayer.src = path + filename;
                 
                 if (!audioContext) setupAudioContext(); 
                 
                 audioPlayer.play();
+                tryStartSilentAudio(); // NEW: Try to start silent audio
+                
                 nowPlayingElement.textContent = li.querySelector('.file-name').textContent;
                 
                 // Set active style
@@ -2566,6 +2999,11 @@
                 if (selectedDjTrack) {
                     if (!audioContext) setupAudioContext(); 
                     
+                    // Stop other audio
+                    audioPlayer.pause();
+                    const otherDeckId = (deckId === 'deck-a') ? 'deck-b' : 'deck-a';
+                    // document.getElementById(`${otherDeckId}-audio`).pause(); // Keep other deck playing
+                    
                     // Assign the correct audio nodes for this deck
                     deckNodes = (deckId === 'deck-a') ? {
                         gain: gainA, filters: { low: filterALow, mid: filterAMid, high: filterAHigh },
@@ -2616,6 +3054,9 @@
             playBtn.addEventListener('click', () => {
                  if (!audioContext) setupAudioContext(); 
                  
+                 // Stop main player
+                 audioPlayer.pause();
+                 
                  // Ensure nodes are assigned (if not loaded first)
                  if (!deckNodes) { 
                      deckNodes = (deckId === 'deck-a') ? {
@@ -2629,6 +3070,7 @@
                  
                  startVisualizer(); // Start visualizer on play
                  audio.play();
+                 tryStartSilentAudio(); // NEW: Try to start silent audio
                  platter.style.animationPlayState = 'running'; // Spin platter
             });
             // PAUSE button
@@ -2820,6 +3262,7 @@
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
             }
+            tryStartSilentAudio(); // NEW: Try to start silent audio
         });
 
         
@@ -2903,11 +3346,15 @@
                         openDjAppIcon.style.display = 'flex'; // Show open icon
                     } else if (targetWindowId === 'visualizer-window') {
                         stopVisualizer();
+                    } else if (targetWindowId === 'solitaire-window') { // NEW
+                        minimizedSolitaireIcon.style.display = 'none';
+                        openSolitaireIcon.style.display = 'flex';
                     }
                 }
             });
         });
 
+        // Player Minimize/Restore
         minimizePlayerButton.addEventListener('click', () => {
             playerContainer.style.display = 'none';
             minimizedPlayerIcon.style.display = 'flex';
@@ -2919,6 +3366,7 @@
             if (!isMobile) bringWindowToFront(playerContainer);
         });
         
+        // DJ App Minimize/Restore
         openDjAppIcon.addEventListener('click', () => {
             djAppWindow.style.display = 'flex';
             openDjAppIcon.style.display = 'none'; 
@@ -2938,6 +3386,28 @@
             openDjAppIcon.style.display = 'none'; 
             if (!isMobile) bringWindowToFront(djAppWindow);
         });
+        
+        // Solitaire Minimize/Restore (NEW)
+        openSolitaireIcon.addEventListener('click', () => {
+            solitaireWindow.style.display = 'flex';
+            openSolitaireIcon.style.display = 'none';
+            minimizedSolitaireIcon.style.display = 'none';
+            if (!isMobile) bringWindowToFront(solitaireWindow);
+        });
+
+        minimizeSolitaireButton.addEventListener('click', () => {
+            solitaireWindow.style.display = 'none';
+            minimizedSolitaireIcon.style.display = 'flex';
+            openSolitaireIcon.style.display = 'none';
+        });
+
+        minimizedSolitaireIcon.addEventListener('click', () => {
+            solitaireWindow.style.display = 'flex';
+            minimizedSolitaireIcon.style.display = 'none';
+            openSolitaireIcon.style.display = 'none';
+            if (!isMobile) bringWindowToFront(solitaireWindow);
+        });
+
 
         // Visualizer tab switching
         visualizerTabs.addEventListener('click', (e) => {
@@ -3251,6 +3721,423 @@
         }, { passive: true });
 
 
+        // --- START SOLITAIRE LOGIC ---
+        
+        const SUITS = ["♠", "♥", "♣", "♦"];
+        const RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+        const RANK_VALUES = { "A": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, "J": 11, "Q": 12, "K": 13 };
+
+        let deck, stock, waste, foundations, tableau;
+        let dragState = {
+            isDragging: false,
+            cards: [], // Array of card objects
+            dragGhost: document.getElementById('drag-ghost-stack'),
+            originalParent: null,
+            originalStackData: null,
+            offsetX: 0,
+            offsetY: 0
+        };
+
+        // Create a single card object
+        function createCard(suit, rank) {
+            const color = (suit === "♥" || suit === "♦") ? "red" : "black";
+            const value = RANK_VALUES[rank];
+            const cardData = {
+                suit,
+                rank,
+                value,
+                color,
+                isFaceUp: false,
+                element: null,
+                stack: null // Reference to its data stack (e.g., stock, tableau[0])
+            };
+            
+            // Create DOM element
+            const cardEl = document.createElement('div');
+            cardEl.className = 'solitaire-card facedown';
+            cardEl.dataset.rank = rank;
+            cardEl.dataset.suit = suit;
+            cardEl.innerHTML = `
+                <div class="card-top">${rank}<br>${suit}</div>
+                <div class="card-suit">${suit}</div>
+                <div class="card-bottom">${rank}<br>${suit}</div>
+            `;
+            
+            // Associate data and element
+            cardData.element = cardEl;
+            cardEl.cardData = cardData;
+            
+            // Add listeners
+            cardEl.addEventListener('mousedown', onCardDragStart);
+            cardEl.addEventListener('touchstart', onCardDragStart, { passive: false });
+            cardEl.addEventListener('dblclick', onCardDoubleClick);
+
+            return cardData;
+        }
+        
+        // Flip a card
+        function flipCard(card) {
+            if (card.isFaceUp) return;
+            card.isFaceUp = true;
+            card.element.classList.remove('facedown');
+            card.element.classList.add(card.color);
+        }
+
+        // Shuffle an array
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Initialize a new game
+        function initSolitaireGame() {
+            // 1. Clear board
+            document.getElementById('solitaire-stock').innerHTML = '';
+            document.getElementById('solitaire-waste').innerHTML = '';
+            document.querySelectorAll('.foundation-stack').forEach(f => f.innerHTML = '');
+            document.querySelectorAll('.tableau-stack').forEach(t => {
+                t.innerHTML = '';
+                t.classList.add('empty-tableau');
+            });
+            
+            // 2. Create data structures
+            deck = [];
+            stock = [];
+            waste = [];
+            foundations = [[], [], [], []];
+            tableau = [[], [], [], [], [], [], []];
+            
+            // 3. Create deck
+            for (const suit of SUITS) {
+                for (const rank of RANKS) {
+                    deck.push(createCard(suit, rank));
+                }
+            }
+            
+            // 4. Shuffle
+            shuffle(deck);
+            
+            // 5. Deal Tableau
+            for (let i = 0; i < 7; i++) {
+                const tableauStackEl = document.getElementById(`tableau-${i}`);
+                tableauStackEl.classList.remove('empty-tableau');
+                for (let j = 0; j <= i; j++) {
+                    const card = deck.pop();
+                    tableau[i].push(card);
+                    card.stack = tableau[i];
+                    tableauStackEl.appendChild(card.element);
+                    
+                    if (j === i) {
+                        flipCard(card); // Flip last card
+                    }
+                }
+            }
+            
+            // 6. Put remaining cards in stock
+            const stockEl = document.getElementById('solitaire-stock');
+            stock = [...deck];
+            deck = [];
+            stock.forEach(card => {
+                card.isFaceUp = false;
+                card.element.classList.add('facedown');
+                card.element.classList.remove('red', 'black');
+                card.stack = stock;
+                stockEl.appendChild(card.element);
+            });
+            
+            // 7. Add click listener to stock
+            stockEl.onclick = dealFromStock;
+        }
+        
+        // Deal from stock to waste
+        function dealFromStock() {
+            if (stock.length > 0) {
+                const card = stock.pop();
+                flipCard(card);
+                waste.push(card);
+                card.stack = waste;
+                document.getElementById('solitaire-waste').appendChild(card.element);
+            } else {
+                // Reset stock from waste
+                if (waste.length === 0) return;
+                
+                stock = waste.reverse();
+                waste = [];
+                const stockEl = document.getElementById('solitaire-stock');
+                stock.forEach(card => {
+                    card.isFaceUp = false;
+                    card.element.classList.add('facedown');
+                    card.element.classList.remove('red', 'black');
+                    card.stack = stock;
+                    stockEl.appendChild(card.element);
+                });
+            }
+        }
+        
+        // --- Solitaire Drag and Drop Logic ---
+        
+        function onCardDragStart(e) {
+            const cardEl = e.currentTarget;
+            if (!cardEl.cardData) return;
+            
+            let cardData = cardEl.cardData;
+            
+            // Case 1: Clicked on facedown card in tableau
+            if (!cardData.isFaceUp) {
+                const stack = cardData.stack;
+                // Only flip if it's the *last* card in its tableau stack
+                if (Array.isArray(stack) && stack[stack.length - 1] === cardData) {
+                    flipCard(cardData);
+                }
+                return; // Don't drag facedown cards
+            }
+            
+            // Case 2: Clicked on faceup card
+            if (dragState.isDragging) return;
+            
+            e.preventDefault(); // Prevent text selection, etc.
+            
+            dragState.isDragging = true;
+            dragState.originalParent = cardEl.parentElement;
+            dragState.originalStackData = cardData.stack;
+            
+            // Find all cards to drag (the clicked card + all below it in tableau)
+            const stack = cardData.stack;
+            if (Array.isArray(stack) && stack.includes(cardData)) {
+                const cardIndex = stack.indexOf(cardData);
+                dragState.cards = stack.slice(cardIndex);
+            } else {
+                dragState.cards = [cardData];
+            }
+
+            // Create a "ghost" stack for dragging
+            dragState.dragGhost.innerHTML = '';
+            dragState.cards.forEach(card => {
+                dragState.dragGhost.appendChild(card.element);
+            });
+            dragState.dragGhost.style.display = 'block';
+
+            // Get initial pointer position
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const bounds = cardEl.getBoundingClientRect();
+            
+            dragState.offsetX = clientX - bounds.left;
+            dragState.offsetY = clientY - bounds.top;
+
+            // Position ghost
+            dragState.dragGhost.style.left = `${clientX - dragState.offsetX}px`;
+            dragState.dragGhost.style.top = `${clientY - dragState.offsetY}px`;
+            
+            // Add move/end listeners
+            document.addEventListener('mousemove', onCardDragMove);
+            document.addEventListener('touchmove', onCardDragMove, { passive: false });
+            document.addEventListener('mouseup', onCardDragEnd);
+            document.addEventListener('touchend', onCardDragEnd);
+        }
+
+        function onCardDragMove(e) {
+            if (!dragState.isDragging) return;
+            
+            e.preventDefault();
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            dragState.dragGhost.style.left = `${clientX - dragState.offsetX}px`;
+            dragState.dragGhost.style.top = `${clientY - dragState.offsetY}px`;
+        }
+
+        function onCardDragEnd(e) {
+            if (!dragState.isDragging) return;
+            dragState.isDragging = false;
+            
+            // Hide ghost and remove listeners
+            dragState.dragGhost.style.display = 'none';
+            document.removeEventListener('mousemove', onCardDragMove);
+            document.removeEventListener('touchmove', onCardDragMove);
+            document.removeEventListener('mouseup', onCardDragEnd);
+            document.removeEventListener('touchend', onCardDragEnd);
+
+            // Find drop target
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            
+            const dropTargetEl = document.elementFromPoint(clientX, clientY);
+            if (!dropTargetEl) {
+                returnCardsToOrigin();
+                return;
+            }
+            
+            const cardToMove = dragState.cards[0];
+            const targetStackEl = dropTargetEl.closest('.solitaire-stack');
+            
+            let targetStackData = null;
+            if (targetStackEl) {
+                if (targetStackEl.classList.contains('foundation-stack')) {
+                    const index = parseInt(targetStackEl.id.split('-')[1]);
+                    targetStackData = foundations[index];
+                } else if (targetStackEl.classList.contains('tableau-stack')) {
+                    const index = parseInt(targetStackEl.id.split('-')[1]);
+                    targetStackData = tableau[index];
+                } else if (targetStackEl.cardData) {
+                    // Dropped on another card
+                    targetStackData = targetStackEl.cardData.stack;
+                }
+            }
+
+            // Check if move is valid
+            if (isValidMove(cardToMove, targetStackData)) {
+                // --- Valid Move ---
+                // 1. Remove cards from original stack
+                const numToMove = dragState.cards.length;
+                dragState.originalStackData.splice(-numToMove, numToMove);
+                
+                // 2. Add cards to new stack and DOM
+                const newParentEl = document.getElementById(getStackElId(targetStackData));
+                newParentEl.classList.remove('empty-tableau');
+                
+                dragState.cards.forEach(card => {
+                    targetStackData.push(card);
+                    card.stack = targetStackData;
+                    newParentEl.appendChild(card.element);
+                });
+                
+                // 3. Flip over new card in old stack (if applicable)
+                if (dragState.originalStackData.length > 0 && 
+                    dragState.originalParent.classList.contains('tableau-stack')) {
+                    const lastCard = dragState.originalStackData[dragState.originalStackData.length - 1];
+                    flipCard(lastCard);
+                }
+                
+                // 4. Add empty tableau placeholder
+                if (dragState.originalStackData.length === 0 &&
+                    dragState.originalParent.classList.contains('tableau-stack')) {
+                    dragState.originalParent.classList.add('empty-tableau');
+                }
+                
+                // 5. Check for win
+                checkWinCondition();
+                
+            } else {
+                // --- Invalid Move ---
+                returnCardsToOrigin();
+            }
+            
+            // Clear drag state
+            dragState.cards = [];
+            dragState.originalParent = null;
+            dragState.originalStackData = null;
+        }
+        
+        // Helper to put cards back
+        function returnCardsToOrigin() {
+            dragState.cards.forEach(card => {
+                dragState.originalParent.appendChild(card.element);
+            });
+        }
+        
+        // Helper to get element ID from stack data
+        function getStackElId(stackData) {
+            for (let i = 0; i < 4; i++) if (foundations[i] === stackData) return `foundation-${i}`;
+            for (let i = 0; i < 7; i++) if (tableau[i] === stackData) return `tableau-${i}`;
+            if (waste === stackData) return 'solitaire-waste';
+            if (stock === stackData) return 'solitaire-stock';
+            return null;
+        }
+
+        // Check if a move is valid
+        function isValidMove(cardToMove, targetStackData) {
+            if (!targetStackData) return false;
+            
+            // Get top card of target stack
+            const topCard = targetStackData.length > 0 ? targetStackData[targetStackData.length - 1] : null;
+
+            // Rule 1: Moving to Foundation
+            if (foundations.includes(targetStackData)) {
+                // Can only move one card at a time to foundation
+                if (dragState.cards.length > 1) return false;
+                
+                if (topCard) {
+                    // Must be same suit, and rank + 1
+                    return cardToMove.suit === topCard.suit && cardToMove.value === topCard.value + 1;
+                } else {
+                    // Must be an Ace
+                    return cardToMove.rank === "A";
+                }
+            }
+            
+            // Rule 2: Moving to Tableau
+            if (tableau.includes(targetStackData)) {
+                if (topCard) {
+                    // Must be opposite color, and rank - 1
+                    return cardToMove.color !== topCard.color && cardToMove.value === topCard.value - 1;
+                } else {
+                    // Must be a King
+                    return cardToMove.rank === "K";
+                }
+            }
+            
+            return false;
+        }
+
+        // --- Solitaire Double Click Logic ---
+        function onCardDoubleClick(e) {
+            const cardEl = e.currentTarget;
+            if (!cardEl.cardData || !cardEl.cardData.isFaceUp) return;
+            
+            const card = cardEl.cardData;
+            
+            // Can't auto-move from tableau stack if not the last card
+            const stack = card.stack;
+            if (Array.isArray(stack) && stack[stack.length - 1] !== card) {
+                return;
+            }
+            
+            // Try to move to any foundation
+            for (let i = 0; i < foundations.length; i++) {
+                if (isValidMove(card, foundations[i])) {
+                    // Found a valid foundation move
+                    
+                    // 1. Remove from old stack
+                    card.stack.pop();
+                    
+                    // 2. Add to new stack
+                    foundations[i].push(card);
+                    card.stack = foundations[i];
+                    document.getElementById(`foundation-${i}`).appendChild(card.element);
+                    
+                    // 3. Flip card in old stack
+                    if (Array.isArray(dragState.originalStackData) && dragState.originalStackData.length > 0) {
+                         const lastCard = dragState.originalStackData[dragState.originalStackData.length - 1];
+                         flipCard(lastCard);
+                    }
+                    
+                    checkWinCondition();
+                    return; // Done
+                }
+            }
+        }
+        
+        // --- Solitaire Win Condition ---
+        function checkWinCondition() {
+            const totalCards = foundations.reduce((sum, stack) => sum + stack.length, 0);
+            if (totalCards === 52) {
+                customAlert("Congratulations, You Win!");
+                // Optionally, start new game
+                // initSolitaireGame();
+            }
+        }
+        
+        // Add listener for New Game button
+        newGameButton.addEventListener('click', initSolitaireGame);
+        
+        // --- END SOLITAIRE LOGIC ---
+
+
+        
         // --- Final Setup ---
         loadPlaylists(); // Load saved playlists on start
         
@@ -3265,8 +4152,10 @@
         lockScreenImage.src = "cover.png"; 
         lockScreenImage.style.display = 'none';
         document.body.appendChild(lockScreenImage);
+        
+        // Init Solitaire
+        initSolitaireGame();
     });
 </script>
 </body>
 </html>
-
