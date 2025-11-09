@@ -2380,17 +2380,8 @@
             }
             bitCrusherNode.curve = curve;
             
-            // NOTE: Do NOT connect the analyser to audioContext.destination.
-            // Leaving the analyser unconnected to destination ensures the
-            // HTMLAudioElement (`audioPlayer`) remains the native output for
-            // playback. When effects are enabled we'll route the affected
-            // audio through the AudioContext explicitly which may be
-            // suspended on iOS when the device is locked.
-            // analyser.connect(audioContext.destination);
-
-            // Also connect the main media element source to the analyser for
-            // visualization only (analyser not connected to destination).
-            try { sourceMain.connect(analyser); } catch (e) { /* ignore if already connected */ }
+            // Analyser connects to destination (speakers)
+            analyser.connect(audioContext.destination);
             
             // Setup data arrays for visualizer
             bufferLength = analyser.frequencyBinCount;
@@ -2398,48 +2389,31 @@
             timeDomainData = new Uint8Array(bufferLength);
 
             // --- Connect Main Player ---
-            // Connect main source to its gain node, but DO NOT connect gainMain
-            // to the AudioContext destination by default. This allows the
-            // HTMLAudioElement to remain the native output so iOS will keep
-            // playback when the device locks. Effects (bitcrusher) will be
-            // connected to audioContext.destination only when enabled.
-            try { sourceMain.connect(gainMain); } catch (e) { /* ignore if already connected */ }
-
-            // Ensure analyser has the element source for visualization
-            try { sourceMain.connect(analyser); } catch (e) { /* ignore */ }
-
+            sourceMain.connect(gainMain); 
             // The bitcrusher logic will handle connecting gainMain to the right place
-            toggleBitcrusher(true); // Run once on setup to establish connection state
+            toggleBitcrusher(true); // Run once on setup to establish connection
         }
 
         // Toggle bitcrusher on/off
         function toggleBitcrusher(forceReconnect = false) {
-            if (!analyser) return;
-
-            // If forceReconnect is false, toggle the active state. If true,
-            // keep the current isBitcrushActive value but (re)apply connections.
+            if (!analyser) return; 
+            
             if (!forceReconnect) {
                 isBitcrushActive = !isBitcrushActive;
             }
 
-            // Always disconnect previous routing for gainMain and bitCrusherNode
-            try { gainMain.disconnect(); } catch (e) {}
-            try { bitCrusherNode.disconnect(); } catch (e) {}
-
+            // Disconnect main player's gain node
+            try { gainMain.disconnect(); } catch(e) {}
+            
             if (isBitcrushActive) {
-                // Route: Main Gain -> Bitcrusher -> audioContext.destination
-                // This explicitly routes audio through the WebAudio graph so
-                // effects are applied. Note: routing through the AudioContext
-                // can cause background playback to stop on some iOS devices
-                // when the screen is locked.
-                try { gainMain.connect(bitCrusherNode); } catch (e) {}
-                try { bitCrusherNode.connect(audioContext.destination); } catch (e) {}
+                // Route: Main Gain -> Bitcrusher -> Analyser
+                gainMain.connect(bitCrusherNode);
+                bitCrusherNode.connect(analyser);
                 bitcrushToggle.classList.add('active');
             } else {
-                // When effects are off, do NOT connect gainMain to the
-                // AudioContext destination. Leave the HTMLAudioElement as the
-                // native output so iOS keeps audio in the background when
-                // the device is locked.
+                // Route: Main Gain -> Analyser
+                try { bitCrusherNode.disconnect(analyser); } catch(e) {}
+                gainMain.connect(analyser);
                 bitcrushToggle.classList.remove('active');
             }
         }
