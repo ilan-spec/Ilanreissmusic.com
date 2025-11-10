@@ -1685,9 +1685,10 @@
     <!-- Visualizer Window -->
     <div id="visualizer-window" class="window">
          <div class="title-bar">
+            <!-- UPDATED VISUALIZER TABS -->
             <div id="visualizer-tabs">
-                <button class="visualizer-tab window-button" data-visualizer="cosmicPulse">Cosmic Pulse</button>
-                <button class="visualizer-tab window-button" data-visualizer="aeroEnergy">Aero Energy</button>
+                <button class="visualizer-tab window-button" data-visualizer="rain">Rain</button>
+                <button class="visualizer-tab window-button" data-visualizer="starfield">Starfield</button>
                 <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
             </div>
             <div class="title-bar-buttons">
@@ -1710,7 +1711,7 @@
         </div>
         <div class="content">
             <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
-            <p>Version 3.5 (Mix Tab Parity)</p> <!-- Updated Version -->
+            <p>Version 3.6 (Visualizer Update)</p> <!-- Updated Version -->
             <br>
             <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
@@ -1991,7 +1992,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-        console.log('Ilan Reiss Music Player v3.6 - Solitaire Update'); // Updated version
+        console.log('Ilan Reiss Music Player v3.7 - New Visualizers'); // Updated version
         
         // --- Custom Modal Functions (for alerts/confirms) ---
         const customAlertModal = document.getElementById('custom-alert-modal');
@@ -2030,6 +2031,7 @@
         // --- Configuration & Elements ---
         
         // List of all track .mp3 files
+        // UPDATED: Added new tracks from the image
         const audioFiles = [
             "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
             "a break.mp3", "all me.mp3", "another one.mp3", "asher organ.mp3",
@@ -2069,13 +2071,12 @@
             "this again.mp3", "threw together.mp3", "throw it up.mp3",
             "thursday.mp3", "trios.mp3", "trump-pets.mp3", "un house.mp3",
             "w issy.mp3", "watch it go.mp3", "week from today.mp3",
-            "what am i doing.mp3", "what is this.mp3", "z style.mp3"
-            ,
-            // Added WAV tracks
-            "repo.wav", "someone small less lazy mix.wav", "someone small lazy mix.wav",
-            "liars.wav", "adjusted.wav", "grand.wav", "interluded.wav", "winds.wav",
-            "wholesale.wav", "eyes.wav", "come back to this.wav", "cool down.wav",
-            "house dub.wav"
+            "what am i doing.mp3", "what is this.mp3", "z style.mp3",
+            // NEW TRACKS ADDED 
+            "house dub.mp3", "wholesale.mp3", "eyes.mp3", "cool down.mp3",
+            "come back to this.mp3", "winds.mp3", "interluded.mp3", "adjusted.mp3",
+            "repo.mp3", "liars.mp3", "someone small less lazy mix.mp3",
+            "someone small lazy mix.mp3", "grand.mp3"
         ];
         
         // List of all mix .mp3 files
@@ -2141,7 +2142,13 @@
             ["grizzlies ART.mp3", 95.00], ["ff.mp3", 78.50], ["ass with potench.mp3", 123.02],
             ["808 beat sample.mp3", 134.02], ["z style.mp3", 94.00], ["Reiss_Soundscape_edit.mp3", 100.84],
             ["practice.mp3", 94.01], ["w issy.mp3", 89.01], ["show trash.mp3", 153.96],
-            ["bad one.mp3", 136.02], ["asher organ.mp3", 133.00], ["making progress.mp3", 134.00]
+            ["bad one.mp3", 136.02], ["asher organ.mp3", 133.00], ["making progress.mp3", 134.00],
+            // NEW BPM ENTRIES (default 120)
+            ["house dub.mp3", 120.00], ["wholesale.mp3", 120.00], ["eyes.mp3", 120.00],
+            ["cool down.mp3", 120.00], ["come back to this.mp3", 120.00], ["winds.mp3", 120.00],
+            ["interluded.mp3", 120.00], ["adjusted.mp3", 120.00], ["repo.mp3", 120.00],
+            ["liars.mp3", 120.00], ["someone small less lazy mix.mp3", 120.00],
+            ["someone small lazy mix.mp3", 120.00], ["grand.mp3", 120.00]
         ]);
 
         // Create objects for tracks, assigning BPM or a default
@@ -2225,7 +2232,7 @@
         // State variables
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
-        let activeVisualizer = 'cosmicPulse'; 
+        let activeVisualizer = 'rain'; // UPDATED: Default visualizer
         let playlists = [];
         let selectedPlaylistId = null;
         let contextMenuTrack = null;
@@ -2481,12 +2488,13 @@
             let highsAvg = (highs / (highRange[1] - highRange[0]) || 0) / 255; 
 
             // Call the active visualizer function
+            // UPDATED: New switch cases
             switch (activeVisualizer) {
-                case 'cosmicPulse': 
-                    drawCosmicPulseVisualizer(bassAvg, midsAvg, highsAvg);
+                case 'rain': 
+                    drawRainVisualizer(bassAvg, midsAvg, highsAvg);
                     break;
-                case 'aeroEnergy':
-                    drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg);
+                case 'starfield':
+                    drawStarfieldVisualizer(bassAvg, midsAvg, highsAvg);
                     break;
                 case 'retroWaveform':
                     drawRetroWaveformVisualizer(timeDomainData);
@@ -2495,124 +2503,112 @@
         }
         
         // --- Visualizer Implementations ---
-        
-        // 1. Cosmic Pulse (Particles)
-        const particles = [];
-        const maxParticles = 300; 
-        class CosmicParticle {
-            constructor(centerX, centerY) {
-                this.reset(centerX, centerY);
-            }
-            
-            reset(centerX, centerY) {
-                this.x = centerX || canvas.width / 2;
-                this.y = centerY || canvas.height / 2;
-                this.angle = Math.random() * Math.PI * 2;
-                this.speed = Math.random() * 2 + 0.5; // Base speed
-                this.life = 1;
-                this.size = Math.random() * 2 + 1;
-                this.hue = 0;
-            }
 
-            update(bass, mids, highs) {
-                const currentSpeed = this.speed * (1 + bass * 5); // Speed reacts to bass
-                this.x += Math.cos(this.angle) * currentSpeed;
-                this.y += Math.sin(this.angle) * currentSpeed;
-                this.life -= 0.01 + (mids * 0.01); // Fade out
-                this.size = (Math.random() * 2 + 1) * (1 + bass * 2); // Size reacts to bass
-                this.hue = (hslToHex(visualizerColor).h + (this.x / canvas.width) * 180) % 360;
+        // 1. Rain (NEW)
+        const rainDrops = [];
+        const maxRainDrops = 300;
 
-                // Reset particle if it fades or if bass hits hard
-                if (this.life <= 0 || (bass > 0.6 && Math.random() > 0.9)) {
-                    this.reset();
+        function drawRainVisualizer(bassAvg, midsAvg, highsAvg) {
+            ctx.fillStyle = 'rgba(0, 0, 10, 0.15)'; // Fade background
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.shadowBlur = 0;
+
+            // Add new drops based on bass
+            const newDrops = (bassAvg * 20);
+            for (let i = 0; i < newDrops; i++) {
+                if (rainDrops.length < maxRainDrops && Math.random() > 0.5) {
+                    rainDrops.push({
+                        x: Math.random() * canvas.width,
+                        y: -20,
+                        length: 10 + midsAvg * 30, // Length reacts to mids
+                        speed: 5 + midsAvg * 15, // Speed reacts to mids
+                        opacity: 0.5 + highsAvg * 0.5 // Opacity reacts to highs
+                    });
                 }
             }
-            
-            draw(ctx) {
-                ctx.fillStyle = `hsla(${this.hue}, 100%, ${60 + (this.life * 40)}%, ${this.life * 0.8})`;
-                ctx.shadowColor = `hsl(${this.hue}, 100%, 70%)`;
-                ctx.shadowBlur = 10;
+
+            ctx.strokeStyle = visualizerColor;
+            ctx.lineWidth = 2;
+
+            for (let i = rainDrops.length - 1; i >= 0; i--) {
+                const drop = rainDrops[i];
+                drop.y += drop.speed;
+                
+                // Draw the drop
+                ctx.globalAlpha = drop.opacity;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, Math.max(0.5, this.size), 0, Math.PI * 2);
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x, drop.y - drop.length);
+                ctx.stroke();
+                
+                // Remove if off screen
+                if (drop.y > canvas.height + 20) {
+                    rainDrops.splice(i, 1);
+                }
+            }
+            ctx.globalAlpha = 1.0;
+        }
+
+        // 2. Starfield (NEW)
+        const stars = [];
+        const maxStars = 800;
+
+        function initStars() {
+            stars.length = 0; // Clear existing stars
+            for (let i = 0; i < maxStars; i++) {
+                stars.push({
+                    x: (Math.random() - 0.5) * canvas.width * 2,
+                    y: (Math.random() - 0.5) * canvas.height * 2,
+                    z: Math.random() * canvas.width // Start at random depths
+                });
+            }
+        }
+
+        function drawStarfieldVisualizer(bassAvg, midsAvg, highsAvg) {
+            if (stars.length === 0 || canvas.width === 0) {
+                initStars();
+                if (canvas.width === 0) return; // Don't draw if canvas isn't sized
+            }
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const speed = bassAvg * 10 + 1; // Speed reacts to bass
+            const pulse = 1 + midsAvg * 1.5; // Size pulse reacts to mids
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+
+            for (let i = 0; i < stars.length; i++) {
+                const star = stars[i];
+                star.z -= speed;
+
+                // Reset star if it goes behind the camera
+                if (star.z <= 0) {
+                    star.z = canvas.width;
+                    star.x = (Math.random() - 0.5) * canvas.width * 2;
+                    star.y = (Math.random() - 0.5) * canvas.height * 2;
+                }
+
+                const sx = (star.x / star.z) * (canvas.width / 2);
+                const sy = (star.y / star.z) * (canvas.height / 2);
+
+                // Prevent division by zero if z is very small & check bounds
+                if (star.z <= 0.1 || sx > canvas.width / 2 || sx < -canvas.width / 2 || sy > canvas.height / 2 || sy < -canvas.height / 2) {
+                    star.z = 0; // Force reset
+                    continue;
+                }
+
+                const size = ((canvas.width - star.z) / canvas.width) * 4 * pulse;
+                const opacity = 0.5 + highsAvg * 0.5; // Brightness reacts to highs
+
+                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                ctx.beginPath();
+                ctx.arc(sx, sy, Math.max(0.1, size / 2), 0, Math.PI * 2);
                 ctx.fill();
             }
-        }
-        
-        function drawCosmicPulseVisualizer(bassAvg, midsAvg, highsAvg) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Fade background
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.shadowBlur = 0; 
 
-            while (particles.length < maxParticles) {
-                particles.push(new CosmicParticle());
-            }
-
-            particles.forEach(p => {
-                p.update(bassAvg, midsAvg, highsAvg);
-                p.draw(ctx);
-            });
-        }
-
-        // 2. Aero Energy (Lines)
-        const aeroLines = [];
-        const maxAeroLines = 35; 
-        class AeroLine {
-            constructor(x, y, color1, color2) {
-                this.x = x; this.y = y;
-                this.points = [{x: x, y: y}];
-                this.length = 10 + Math.random() * 50;
-                this.speed = 1 + Math.random() * 3;
-                this.angle = Math.random() * Math.PI * 2;
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
-                this.life = 1; this.color1 = color1; this.color2 = color2; this.age = 0;
-            }
-            update(bass, mids, highs) {
-                this.x += this.vx; this.y += this.vy;
-                this.vx += (Math.random() - 0.5) * highs * 0.5;
-                this.vy += (Math.random() - 0.5) * highs * 0.5;
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-                this.points.unshift({x: this.x, y: this.y});
-                if (this.points.length > this.length) this.points.pop();
-                this.life -= 0.005 - (mids) * 0.002;
-                if (this.life <= 0) this.life = 0;
-                this.age++;
-            }
-            draw(ctx) {
-                if (this.points.length < 2) return;
-                ctx.globalAlpha = this.life;
-                ctx.lineWidth = 2 + (this.age / 400);
-                ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-                const gradient = ctx.createLinearGradient(this.points[0].x, this.points[0].y, this.points[this.points.length - 1].x, this.points[this.points.length - 1].y);
-                gradient.addColorStop(0, this.color1);
-                gradient.addColorStop(1, this.color2);
-                ctx.strokeStyle = gradient;
-                ctx.shadowColor = this.color1;
-                ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.moveTo(this.points[0].x, this.points[0].y);
-                for (let i = 1; i < this.points.length; i++) ctx.lineTo(this.points[i].x, this.points[i].y);
-                ctx.stroke();
-                ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
-            }
-        }
-        function drawAeroEnergyVisualizer(bassAvg, midsAvg, highsAvg) {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Fade background
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            if (aeroLines.length < maxAeroLines && Math.random() < 0.05 + (midsAvg) * 0.1) {
-                const startX = Math.random() * canvas.width;
-                const startY = Math.random() * canvas.height;
-                const hueShift = (Date.now() * 0.01) % 360;
-                const dynamicSecondaryColor = `hsl(${(hslToHex(visualizerColor).h + hueShift) % 360}, 100%, 65%)`;
-                aeroLines.push(new AeroLine(startX, startY, visualizerColor, dynamicSecondaryColor));
-            }
-            for (let i = aeroLines.length - 1; i >= 0; i--) {
-                aeroLines[i].update(bassAvg, midsAvg, highsAvg);
-                aeroLines[i].draw(ctx);
-                if (aeroLines[i].life <= 0 || aeroLines[i].age > 1000) aeroLines.splice(i, 1);
-            }
+            ctx.restore();
         }
 
         // 3. Retro Waveform
@@ -3422,9 +3418,16 @@
                 document.querySelectorAll('.visualizer-tab').forEach(tab => tab.classList.remove('active'));
                 clickedTab.classList.add('active');
                 activeVisualizer = clickedTab.dataset.visualizer;
+                
+                // Re-initialize stars if switching to starfield
+                if (activeVisualizer === 'starfield') {
+                    initStars();
+                }
+
                 if (visualizerActive) startVisualizer(); // Restart with new visualizer
             }
         });
+        // Set the default active tab
         document.querySelector(`.visualizer-tab[data-visualizer="${activeVisualizer}"]`).classList.add('active');
 
         // --- Color Conversion Helper (Hex to HSL) ---
