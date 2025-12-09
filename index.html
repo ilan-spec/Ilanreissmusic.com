@@ -38,7 +38,15 @@
         body {
             font-family: 'Inter', system-ui, sans-serif;
             color: #000;
-            background: #008080;
+            /* Keep the teal background as a fallback */
+            background-color: #008080;
+            /* Centered small background image from repository root (background1.jpeg).
+               It is non-repeating and sized to be somewhat small so it doesn't interfere
+               with the site's layout or content. */
+            background-image: url('background1.png');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 300px auto; /* adjust this value if you want it larger/smaller */
             overflow: hidden; /* Prevent body scrolling on desktop */
             height: 100vh; /* Full viewport height */
             user-select: none; /* Disable text selection */
