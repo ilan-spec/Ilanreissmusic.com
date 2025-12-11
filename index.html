@@ -1666,7 +1666,7 @@
                 <span id="now-playing">Select a track to play</span>
                 <!-- Standard HTML audio element -->
                 <!-- Added 'playsinline' for iOS background audio compatibility -->
-                <audio id="audio-player" controls crossorigin="anonymous" playsinline></audio>
+                <audio id="audio-player" controls crossorigin="anonymous" playsinline webkit-playsinline></audio>
             </div>
             
             <div class="content-inner">
@@ -1838,7 +1838,7 @@
                     </div>
                 </div>
                 <!-- Added 'playsinline' for iOS background audio compatibility -->
-                <audio id="deck-a-audio" crossorigin="anonymous" playsinline></audio>
+                <audio id="deck-a-audio" crossorigin="anonymous" playsinline webkit-playsinline></audio>
             </div>
             
             <!-- Library -->
@@ -1902,7 +1902,7 @@
                     </div>
                 </div>
                 <!-- Added 'playsinline' for iOS background audio compatibility -->
-                <audio id="deck-b-audio" crossorigin="anonymous" playsinline></audio>
+                <audio id="deck-b-audio" crossorigin="anonymous" playsinline webkit-playsinline></audio>
             </div>
         </div>
         <div class="resize-handle"></div>
@@ -2012,7 +2012,7 @@
     <div id="drag-ghost-stack" class="drag-ghost-stack" style="display: none;"></div>
 
     <!-- Silent audio element for background playback fix (NEW) -->
-    <audio id="silent-audio-loop" loop playsinline src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
+    <audio id="silent-audio-loop" loop playsinline webkit-playsinline src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -2470,10 +2470,20 @@
             }
         }
 
-        // Pause visualizer if tab is hidden
+        // Pause visualizer if tab is hidden. Also attempt best-effort resume of audio
+        // when the page becomes hidden (e.g., iPhone lock) so background audio can
+        // continue where the OS allows it. Note: OS/browser ultimately control
+        // lock-screen behavior and this is best-effort.
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopVisualizer();
+                // Try to resume AudioContext and a silent loop to keep audio alive on iOS
+                try {
+                    if (audioContext && audioContext.state === 'suspended') {
+                        audioContext.resume().catch(() => {});
+                    }
+                } catch (e) {}
+                tryStartSilentAudio();
             } else {
                 const anyAudioPlaying = !audioPlayer.paused || 
                                       (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
