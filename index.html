@@ -40,18 +40,31 @@
             color: #000;
             /* Keep the teal background as a fallback */
             background-color: #008080;
-            /* Centered small background image from repository root (background1.jpeg).
-               It is non-repeating and sized to be somewhat small so it doesn't interfere
-               with the site's layout or content. */
-            background-image: url('background1.png');
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: 300px auto; /* adjust this value if you want it larger/smaller */
+            /* Background image is rendered as a separate positioned <img> element
+               so it remains visible behind windows even when the background color
+               changes and so it can be clicked & dragged. */
+            background-image: none;
             overflow: hidden; /* Prevent body scrolling on desktop */
             height: 100vh; /* Full viewport height */
             user-select: none; /* Disable text selection */
             -webkit-user-select: none; /* Safari compatibility */
             touch-action: none; /* Disable all browser touch gestures (pinch-zoom, etc.) */
+        }
+
+        /* Floating background/logo image that sits behind all windows. */
+        #background1 {
+            position: fixed;
+            top: 8mm; /* a few mm from the top by default */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px; /* default visible size, scales down on small screens */
+            max-width: 40%;
+            height: auto;
+            z-index: 0; /* behind windows (windows use z-index >= 10) */
+            pointer-events: auto; /* allow dragging/clicks */
+            cursor: grab;
+            touch-action: none; /* handle touch dragging manually */
+            user-select: none;
         }
 
         /* --- Window System --- */
@@ -1633,6 +1646,10 @@
     </style>
 </head>
 <body>
+
+    <!-- Floating background/logo image (keeps behind windows and is draggable) -->
+    <img id="background1" src="background1.png" alt="background logo" draggable="false">
+
 
     <!-- Main Player Window -->
     <div class="player-container window" id="player-container">
@@ -4211,6 +4228,98 @@
         lockScreenImage.src = "cover.png"; 
         lockScreenImage.style.display = 'none';
         document.body.appendChild(lockScreenImage);
+
+        // --- Draggable background/logo (`background1.png`) ---
+        const bgImage = document.getElementById('background1');
+        (function initBackgroundDrag() {
+            if (!bgImage) return;
+
+            // Restore saved position (if any)
+            try {
+                const pos = JSON.parse(localStorage.getItem('bgImagePos') || 'null');
+                if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
+                    // Use explicit px positioning when a saved position exists
+                    bgImage.style.left = pos.left + 'px';
+                    bgImage.style.top = pos.top + 'px';
+                    bgImage.style.transform = 'none';
+                }
+            } catch(e) { /* ignore parse errors */ }
+
+            let dragging = false;
+            let startX = 0, startY = 0;
+            let startLeft = 0, startTop = 0;
+
+            function onPointerDown(e) {
+                e.preventDefault();
+                dragging = true;
+                bgImage.style.cursor = 'grabbing';
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                // If element is centered via transform, compute current pixel position first
+                const rect = bgImage.getBoundingClientRect();
+                if (bgImage.style.transform && bgImage.style.transform !== 'none') {
+                    // Set explicit left/top in px to make dragging math simple
+                    bgImage.style.left = rect.left + 'px';
+                    bgImage.style.top = rect.top + 'px';
+                    bgImage.style.transform = 'none';
+                }
+
+                startX = clientX;
+                startY = clientY;
+                startLeft = parseFloat(bgImage.style.left || rect.left || 0);
+                startTop = parseFloat(bgImage.style.top || rect.top || 0);
+
+                document.addEventListener('mousemove', onPointerMove);
+                document.addEventListener('touchmove', onPointerMove, { passive: false });
+                document.addEventListener('mouseup', onPointerUp);
+                document.addEventListener('touchend', onPointerUp);
+            }
+
+            function onPointerMove(e) {
+                if (!dragging) return;
+                e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                let newLeft = startLeft + (clientX - startX);
+                let newTop = startTop + (clientY - startY);
+
+                // Constrain inside viewport (keep image visible)
+                const imgRect = bgImage.getBoundingClientRect();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const w = imgRect.width;
+                const h = imgRect.height;
+
+                newLeft = Math.max(0, Math.min(newLeft, vw - w));
+                newTop = Math.max(0, Math.min(newTop, vh - h));
+
+                bgImage.style.left = Math.round(newLeft) + 'px';
+                bgImage.style.top = Math.round(newTop) + 'px';
+            }
+
+            function onPointerUp() {
+                if (!dragging) return;
+                dragging = false;
+                bgImage.style.cursor = 'grab';
+                document.removeEventListener('mousemove', onPointerMove);
+                document.removeEventListener('touchmove', onPointerMove);
+                document.removeEventListener('mouseup', onPointerUp);
+                document.removeEventListener('touchend', onPointerUp);
+
+                // Persist position
+                try {
+                    const left = parseFloat(bgImage.style.left || 0);
+                    const top = parseFloat(bgImage.style.top || 0);
+                    localStorage.setItem('bgImagePos', JSON.stringify({ left, top }));
+                } catch(e) { /* ignore */ }
+            }
+
+            bgImage.addEventListener('mousedown', onPointerDown);
+            bgImage.addEventListener('touchstart', onPointerDown, { passive: false });
+        })();
         
         // Init Solitaire
         initSolitaireGame();
