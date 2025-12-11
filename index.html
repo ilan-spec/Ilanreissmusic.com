@@ -2160,9 +2160,11 @@
         ]);
 
         // Create objects for tracks, assigning BPM or a default
-        const audioFileObjects = audioFiles.map(file => ({
+        // Use `let` so we can replace this list with files fetched from GitHub later.
+        let audioFileObjects = audioFiles.map(file => ({
             name: file,
-            bpm: bpmMap.get(file) || 120.00 
+            bpm: bpmMap.get(file) || 120.00,
+            url: null // will be populated when files are fetched or built locally
         }));
         
         // Create objects for mixes (no BPM)
@@ -2802,23 +2804,25 @@
             `;
             li.dataset.filename = fileObj.name;
             li.dataset.isMix = isMix; // Store type
+            // If we have a remote URL (from GitHub raw), store it for playback
+            li.dataset.url = fileObj.url || '';
             
             // Add click listener to play
             li.addEventListener('click', () => {
                 const filename = li.dataset.filename;
-                const path = li.dataset.isMix === 'true' ? 'mixes/' : 'Audio/';
-                
+                const fileUrl = li.dataset.url && li.dataset.url.length ? li.dataset.url : (li.dataset.isMix === 'true' ? 'mixes/' + filename : 'audio/' + filename);
+
                 // Stop other audio sources
                 document.getElementById('deck-a-audio').pause();
                 document.getElementById('deck-b-audio').pause();
-                
-                audioPlayer.src = path + filename;
-                
+
+                audioPlayer.src = fileUrl;
+
                 if (!audioContext) setupAudioContext(); 
-                
+
                 audioPlayer.play();
                 tryStartSilentAudio(); // NEW: Try to start silent audio
-                
+
                 nowPlayingElement.textContent = li.querySelector('.file-name').textContent;
                 
                 // Set active style
@@ -2855,6 +2859,42 @@
             });
         }
         populateFileList(currentTracklist); // Initial population
+
+        // Try to fetch audio files list from the GitHub repo 'audio/' folder so
+        // newly pushed files appear automatically on the live site.
+        async function refreshAudioFromGithub() {
+            const owner = 'ilan-spec';
+            const repo = 'Ilanreissmusic.com';
+            const branch = 'main';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/audio?ref=${branch}`;
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error('GitHub API error ' + res.status);
+                const data = await res.json();
+                if (!Array.isArray(data)) return;
+                const files = data
+                    .filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3'))
+                    .map(item => ({
+                        name: item.name,
+                        url: item.download_url,
+                        bpm: bpmMap.get(item.name) || 120.00
+                    }));
+                if (files.length > 0) {
+                    audioFileObjects = files.map(f => ({ name: f.name, bpm: f.bpm, url: f.url }));
+                    currentTracklist = [...audioFileObjects];
+                    currentDjTracklist = [...audioFileObjects];
+                    populateFileList(currentTracklist);
+                    populateDjLibrary(currentDjTracklist);
+                    console.log('Loaded', files.length, 'audio files from GitHub audio/ folder.');
+                }
+            } catch (e) {
+                console.warn('Could not load audio files from GitHub:', e.message);
+            }
+        }
+
+        // Run refresh in the background (non-blocking). For public repos this works
+        // without authentication; rate limits may apply for heavy use.
+        refreshAudioFromGithub();
 
         // Populate "Mixes" list
         function populateMixList(files) {
@@ -3023,7 +3063,9 @@
                         filter: filterBFilter, echo: { wet: wetMixB }
                     };
                     
-                    audio.src = 'Audio/' + selectedDjTrack; // Load from 'Audio' folder
+                    // Prefer a remote URL if available (from GitHub raw), otherwise fall back to local 'audio/' folder
+                    const trackObj = audioFileObjects.find(f => f.name === selectedDjTrack);
+                    audio.src = (trackObj && trackObj.url) ? trackObj.url : ('audio/' + selectedDjTrack);
                     trackNameText.textContent = selectedDjTrack.replace('.mp3', ''); 
                     audio.load();
                     
