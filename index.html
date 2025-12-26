@@ -3423,6 +3423,19 @@
                 label.addEventListener('click', () => {
                     row.muted = !row.muted;
                     label.style.opacity = row.muted ? '0.4' : '1.0';
+                    // If gainNode exists, update it immediately; otherwise it will be
+                    // applied when the gainNode is created during sample load.
+                    if (row.gainNode) {
+                        try { row.gainNode.gain.value = row.muted ? 0 : (row.volume || 1.0); } catch (e) {}
+                    } else if (audioContext) {
+                        // create gain node now so mute takes effect even before samples reload
+                        try {
+                            row.gainNode = audioContext.createGain();
+                            row.gainNode.gain.value = row.muted ? 0 : (row.volume || 1.0);
+                            if (tr808PreGain) row.gainNode.connect(tr808PreGain);
+                            else row.gainNode.connect(analyser);
+                        } catch (e) {}
+                    }
                 });
 
                 // small controls container (volume)
