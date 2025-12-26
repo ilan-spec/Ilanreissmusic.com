@@ -2934,6 +2934,53 @@
             });
         }
         populateMixList(currentMixlist); // Initial population
+
+        // --- Feeling Lucky (random track) ---
+        function playRandomTrack() {
+            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            if (!tracks || tracks.length === 0) return;
+            const idx = Math.floor(Math.random() * tracks.length);
+            const track = tracks[idx];
+
+            // Ensure main tab is shown
+            currentMainPlayerTab = 'tracks';
+            playerTabs.forEach(t => t.classList.remove('active'));
+            const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
+            if (tracksTabBtn) tracksTabBtn.classList.add('active');
+            playerTabContents.forEach(content => {
+                if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
+                else { content.style.display = 'none'; content.classList.remove('active'); }
+            });
+
+            // Try to find the DOM list item and trigger its click (so all UI updates happen)
+            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (!li) {
+                // Repopulate list then try again
+                populateFileList(currentTracklist);
+                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            }
+
+            if (li) {
+                li.click();
+            } else {
+                // Fallback: directly set audio src and update UI
+                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
+                document.getElementById('deck-a-audio').pause();
+                document.getElementById('deck-b-audio').pause();
+                audioPlayer.src = fileUrl;
+                if (!audioContext) setupAudioContext();
+                audioPlayer.play().catch(() => {});
+                tryStartSilentAudio();
+                nowPlayingElement.textContent = track.name.replace('.mp3','');
+                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+                if (match) match.classList.add('active');
+                updateMediaSession(track.name.replace('.mp3',''), false);
+            }
+        }
+
+        const feelingLuckyBtn = document.getElementById('feeling-lucky-button');
+        if (feelingLuckyBtn) feelingLuckyBtn.addEventListener('click', playRandomTrack);
         
         // Handle switching between "Tracks" and "Mixes" tabs
         playerTabs.forEach(tab => {
