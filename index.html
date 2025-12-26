@@ -2289,6 +2289,9 @@
         <button id="resume-button" class="window-button" style="margin-left:8px;">Resume</button>
     </div>
 
+    <!-- Global mobile close (appears when a window is opened fullscreen on mobile) -->
+    <button id="mobile-close-global" title="Close" style="display:none; position:fixed; right:14px; top:14px; z-index:10001; width:44px; height:44px; border-radius:10px; background:rgba(0,0,0,0.7); color:#fff; font-size:18px; align-items:center; justify-content:center;">✕</button>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         
@@ -4171,13 +4174,54 @@
         });
         
         // --- Window Button Listeners (Close, Minimize, Restore) ---
-        
+
+        // Mobile-close helper (global large button visible in fullscreen mobile windows)
+        const mobileCloseGlobal = document.getElementById('mobile-close-global');
+        function showMobileCloseFor(id) {
+            if (!mobileCloseGlobal) return;
+            mobileCloseGlobal.dataset.target = id;
+            mobileCloseGlobal.style.display = 'flex';
+        }
+        function hideMobileClose() {
+            if (!mobileCloseGlobal) return;
+            mobileCloseGlobal.dataset.target = '';
+            mobileCloseGlobal.style.display = 'none';
+        }
+
+        if (mobileCloseGlobal) mobileCloseGlobal.addEventListener('click', (e) => {
+            const targetId = mobileCloseGlobal.dataset.target;
+            if (!targetId) return;
+            const win = document.getElementById(targetId);
+            if (win) {
+                win.style.display = 'none';
+                win.classList.remove('mobile-fullscreen');
+            }
+            // Mirror close-button behavior for specific windows
+            if (targetId === 'player-container') {
+                minimizedPlayerIcon.style.display = 'flex';
+            } else if (targetId === 'dj-app-window') {
+                minimizedDjIcon.style.display = 'none';
+                openDjAppIcon.style.display = 'flex';
+            } else if (targetId === 'visualizer-window') {
+                stopVisualizer();
+            } else if (targetId === 'solitaire-window') {
+                minimizedSolitaireIcon.style.display = 'none';
+                openSolitaireIcon.style.display = 'flex';
+            } else if (targetId === 'tr808-window') {
+                minimizedTr808Icon.style.display = 'flex';
+                openTr808Icon.style.display = 'none';
+            }
+            hideMobileClose();
+        });
+
         document.querySelectorAll('.close-button').forEach(button => {
             button.addEventListener('click', (e) => {
                 const targetWindowId = e.target.dataset.target;
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
                     windowToClose.style.display = 'none';
+                    windowToClose.classList.remove('mobile-fullscreen');
+                    hideMobileClose();
                     if (targetWindowId === 'player-container') {
                         minimizedPlayerIcon.style.display = 'flex';
                     } else if (targetWindowId === 'dj-app-window') {
@@ -4200,7 +4244,10 @@
         // Player Minimize/Restore
         minimizePlayerButton.addEventListener('click', () => {
             // If on mobile, remove fullscreen class before hiding
-            if (isMobile) playerContainer.classList.remove('mobile-fullscreen');
+            if (isMobile) {
+                playerContainer.classList.remove('mobile-fullscreen');
+                hideMobileClose();
+            }
             playerContainer.style.display = 'none';
             minimizedPlayerIcon.style.display = 'flex';
         });
@@ -4212,6 +4259,7 @@
                 playerContainer.style.top = '0px';
                 playerContainer.style.width = '100%';
                 playerContainer.style.height = '100%';
+                showMobileCloseFor('player-container');
             }
             playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
@@ -4226,6 +4274,7 @@
                 djAppWindow.style.top = '0px';
                 djAppWindow.style.width = '100%';
                 djAppWindow.style.height = '100%';
+                showMobileCloseFor('dj-app-window');
             }
             djAppWindow.style.display = 'flex';
             openDjAppIcon.style.display = 'none'; 
@@ -4234,7 +4283,10 @@
         });
         
         minimizeDjButton.addEventListener('click', () => {
-            if (isMobile) djAppWindow.classList.remove('mobile-fullscreen');
+            if (isMobile) {
+                djAppWindow.classList.remove('mobile-fullscreen');
+                hideMobileClose();
+            }
             djAppWindow.style.display = 'none';
             minimizedDjIcon.style.display = 'flex'; 
             openDjAppIcon.style.display = 'none'; 
@@ -4251,6 +4303,7 @@
                 tr808Window.style.height = '100%';
                 tr808Window.style.maxHeight = '100%';
                 tr808Window.style.minHeight = '0';
+                showMobileCloseFor('tr808-window');
             } else {
                 // Size to a comfortable landscape default that fits most screens (bigger than before)
                 const targetWidth = Math.min(980, Math.floor(window.innerWidth * 0.94));
@@ -4270,6 +4323,10 @@
         });
 
         if (minimizeTr808Button) minimizeTr808Button.addEventListener('click', () => {
+            if (isMobile) {
+                tr808Window.classList.remove('mobile-fullscreen');
+                hideMobileClose();
+            }
             tr808Window.style.display = 'none';
             minimizedTr808Icon.style.display = 'flex';
             openTr808Icon.style.display = 'none';
@@ -4288,6 +4345,7 @@
                 tr808Window.style.top = '0px';
                 tr808Window.style.width = '100%';
                 tr808Window.style.height = '100%';
+                showMobileCloseFor('tr808-window');
             } else {
                 // If window had no explicit position, center it
                 if (!tr808Window.style.left) {
@@ -4309,6 +4367,7 @@
                 djAppWindow.style.top = '0px';
                 djAppWindow.style.width = '100%';
                 djAppWindow.style.height = '100%';
+                showMobileCloseFor('dj-app-window');
             }
             djAppWindow.style.display = 'flex';
             minimizedDjIcon.style.display = 'none'; 
@@ -4324,6 +4383,7 @@
                 solitaireWindow.style.top = '0px';
                 solitaireWindow.style.width = '100%';
                 solitaireWindow.style.height = '100%';
+                showMobileCloseFor('solitaire-window');
             }
             solitaireWindow.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
@@ -4332,7 +4392,10 @@
         });
 
         minimizeSolitaireButton.addEventListener('click', () => {
-            if (isMobile) solitaireWindow.classList.remove('mobile-fullscreen');
+            if (isMobile) {
+                solitaireWindow.classList.remove('mobile-fullscreen');
+                hideMobileClose();
+            }
             solitaireWindow.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
@@ -4504,6 +4567,7 @@
                 playlistWindow.style.top = '0px';
                 playlistWindow.style.width = '100%';
                 playlistWindow.style.height = '100%';
+                showMobileCloseFor('playlist-window');
             }
             playlistWindow.style.display = 'flex';
             if (!isMobile) bringWindowToFront(playlistWindow);
