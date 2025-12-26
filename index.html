@@ -4199,11 +4199,20 @@
 
         // Player Minimize/Restore
         minimizePlayerButton.addEventListener('click', () => {
+            // If on mobile, remove fullscreen class before hiding
+            if (isMobile) playerContainer.classList.remove('mobile-fullscreen');
             playerContainer.style.display = 'none';
             minimizedPlayerIcon.style.display = 'flex';
         });
 
         minimizedPlayerIcon.addEventListener('click', () => {
+            if (isMobile) {
+                playerContainer.classList.add('mobile-fullscreen');
+                playerContainer.style.left = '0px';
+                playerContainer.style.top = '0px';
+                playerContainer.style.width = '100%';
+                playerContainer.style.height = '100%';
+            }
             playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
             if (!isMobile) bringWindowToFront(playerContainer);
@@ -4211,6 +4220,13 @@
         
         // DJ App Minimize/Restore
         openDjAppIcon.addEventListener('click', () => {
+            if (isMobile) {
+                djAppWindow.classList.add('mobile-fullscreen');
+                djAppWindow.style.left = '0px';
+                djAppWindow.style.top = '0px';
+                djAppWindow.style.width = '100%';
+                djAppWindow.style.height = '100%';
+            }
             djAppWindow.style.display = 'flex';
             openDjAppIcon.style.display = 'none'; 
             minimizedDjIcon.style.display = 'none'; 
@@ -4218,6 +4234,7 @@
         });
         
         minimizeDjButton.addEventListener('click', () => {
+            if (isMobile) djAppWindow.classList.remove('mobile-fullscreen');
             djAppWindow.style.display = 'none';
             minimizedDjIcon.style.display = 'flex'; 
             openDjAppIcon.style.display = 'none'; 
@@ -4286,6 +4303,13 @@
         });
         
         minimizedDjIcon.addEventListener('click', () => {
+            if (isMobile) {
+                djAppWindow.classList.add('mobile-fullscreen');
+                djAppWindow.style.left = '0px';
+                djAppWindow.style.top = '0px';
+                djAppWindow.style.width = '100%';
+                djAppWindow.style.height = '100%';
+            }
             djAppWindow.style.display = 'flex';
             minimizedDjIcon.style.display = 'none'; 
             openDjAppIcon.style.display = 'none'; 
@@ -4294,6 +4318,13 @@
         
         // Solitaire Minimize/Restore (NEW)
         openSolitaireIcon.addEventListener('click', () => {
+            if (isMobile) {
+                solitaireWindow.classList.add('mobile-fullscreen');
+                solitaireWindow.style.left = '0px';
+                solitaireWindow.style.top = '0px';
+                solitaireWindow.style.width = '100%';
+                solitaireWindow.style.height = '100%';
+            }
             solitaireWindow.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'none';
@@ -4301,12 +4332,20 @@
         });
 
         minimizeSolitaireButton.addEventListener('click', () => {
+            if (isMobile) solitaireWindow.classList.remove('mobile-fullscreen');
             solitaireWindow.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
         });
 
         minimizedSolitaireIcon.addEventListener('click', () => {
+            if (isMobile) {
+                solitaireWindow.classList.add('mobile-fullscreen');
+                solitaireWindow.style.left = '0px';
+                solitaireWindow.style.top = '0px';
+                solitaireWindow.style.width = '100%';
+                solitaireWindow.style.height = '100%';
+            }
             solitaireWindow.style.display = 'flex';
             minimizedSolitaireIcon.style.display = 'none';
             openSolitaireIcon.style.display = 'none';
@@ -4459,6 +4498,13 @@
         
         // Open playlist window
         openPlaylistsButton.addEventListener('click', () => {
+            if (isMobile) {
+                playlistWindow.classList.add('mobile-fullscreen');
+                playlistWindow.style.left = '0px';
+                playlistWindow.style.top = '0px';
+                playlistWindow.style.width = '100%';
+                playlistWindow.style.height = '100%';
+            }
             playlistWindow.style.display = 'flex';
             if (!isMobile) bringWindowToFront(playlistWindow);
         });
