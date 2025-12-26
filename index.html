@@ -1765,6 +1765,40 @@
                 .tr808-row .row-label { padding: 6px; font-size: 12px; }
             }
 
+            /* General window polish */
+            .window {
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            /* TR-808 specific window polish */
+            #tr808-window {
+                width: 760px;
+                max-width: 92vw;
+                min-width: 360px;
+                background: linear-gradient(180deg, var(--tr-light), #ffffff);
+                box-shadow: 0 10px 30px rgba(47,46,62,0.18);
+                border-radius: 8px;
+                border: 1px solid rgba(47,46,62,0.06);
+            }
+
+            #tr808-window .title-bar {
+                background: linear-gradient(90deg, var(--tr-dark), var(--tr-red));
+                color: var(--tr-light);
+            }
+
+            #tr808-window .tr808-controls .window-button {
+                background: rgba(255,255,255,0.9);
+                border-radius: 6px;
+                box-shadow: 0 2px 6px rgba(47,46,62,0.08);
+                color: var(--tr-dark);
+            }
+
+            .tr808-row .row-label {
+                background: linear-gradient(180deg, #fff, #f6f6ea);
+                border-radius: 6px;
+            }
+
     </style>
 </head>
 <body>
@@ -3773,6 +3807,10 @@
                     } else if (targetWindowId === 'solitaire-window') { // NEW
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
+                    } else if (targetWindowId === 'tr808-window') {
+                        // When the TR-808 window is closed, minimize it to the bottom bar
+                        minimizedTr808Icon.style.display = 'flex';
+                        openTr808Icon.style.display = 'none';
                     }
                 }
             });
