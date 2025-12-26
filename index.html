@@ -1776,10 +1776,14 @@
                 width: 760px;
                 max-width: 92vw;
                 min-width: 360px;
+                height: 420px;
+                min-height: 220px;
+                max-height: 80vh;
                 background: linear-gradient(180deg, var(--tr-light), #ffffff);
                 box-shadow: 0 10px 30px rgba(47,46,62,0.18);
                 border-radius: 8px;
                 border: 1px solid rgba(47,46,62,0.06);
+                overflow: auto;
             }
 
             #tr808-window .title-bar {
@@ -2085,6 +2089,20 @@
                 <span id="tr808-tempo-display">120</span>
                 <button id="tr808-clear" class="window-button">Clear</button>
                 <button id="tr808-load-samples" class="window-button">Load Samples</button>
+                <!-- Tube compressor / saturation controls -->
+                <div id="tr808-fx" style="display:flex;align-items:center;gap:8px;margin-left:8px;">
+                    <label style="font-weight:700;color:var(--tr-dark);">Tube FX</label>
+                    <label style="font-size:0.85rem;">Thresh</label>
+                    <input type="range" id="tr808-comp-threshold" min="-60" max="0" value="-24">
+                    <label style="font-size:0.85rem;">Ratio</label>
+                    <input type="range" id="tr808-comp-ratio" min="1" max="20" value="4">
+                    <label style="font-size:0.85rem;">Attack</label>
+                    <input type="range" id="tr808-comp-attack" min="0" max="1" step="0.01" value="0.003">
+                    <label style="font-size:0.85rem;">Release</label>
+                    <input type="range" id="tr808-comp-release" min="0" max="1" step="0.01" value="0.25">
+                    <label style="font-size:0.85rem;">Drive</label>
+                    <input type="range" id="tr808-sat-drive" min="0" max="100" value="18">
+                </div>
             </div>
             <div id="tr808-sequencer"></div>
         </div>
@@ -2623,6 +2641,9 @@
             bufferLength = analyser.frequencyBinCount;
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
+
+            // Initialize TR-808 FX chain (tube saturation + compressor)
+            initTr808Fx();
 
             // --- Connect Main Player ---
             sourceMain.connect(gainMain); 
@@ -3249,6 +3270,51 @@
         let tr808Step = 0;
         let tr808TempoValue = parseInt(tr808Tempo.value, 10) || 120;
 
+        // TR-808 FX nodes
+        let tr808PreGain = null;
+        let tr808WaveShaper = null;
+        let tr808Compressor = null;
+
+        function makeTubeCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 50;
+            const samples = 44100;
+            const curve = new Float32Array(samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < samples; ++i) {
+                const x = (i * 2) / samples - 1;
+                // Soft knee/tanh style saturation controlled by k
+                curve[i] = Math.tanh(x * k);
+            }
+            return curve;
+        }
+
+        function initTr808Fx() {
+            if (!audioContext) return;
+            try {
+                tr808PreGain = audioContext.createGain();
+                tr808WaveShaper = audioContext.createWaveShaper();
+                tr808Compressor = audioContext.createDynamicsCompressor();
+
+                // default settings
+                tr808PreGain.gain.value = 1.0;
+                tr808WaveShaper.curve = makeTubeCurve(20);
+                tr808WaveShaper.oversample = '4x';
+
+                tr808Compressor.threshold.value = -24;
+                tr808Compressor.knee.value = 30;
+                tr808Compressor.ratio.value = 4;
+                tr808Compressor.attack.value = 0.003;
+                tr808Compressor.release.value = 0.25;
+
+                // Chain: preGain -> waveshaper -> compressor -> analyser
+                tr808PreGain.connect(tr808WaveShaper);
+                tr808WaveShaper.connect(tr808Compressor);
+                tr808Compressor.connect(analyser);
+            } catch (e) {
+                console.warn('TR-808 FX init failed:', e.message);
+            }
+        }
+
         tr808Tempo.addEventListener('input', (e) => {
             tr808TempoValue = parseInt(e.target.value, 10);
             tr808TempoDisplay.textContent = tr808TempoValue;
@@ -3264,6 +3330,27 @@
             tr808Rows.push({ name, buffer: null, steps });
         }
 
+        // Map raw sample filenames to friendly instrument names
+        function friendlyTr808Name(filename) {
+            if (!filename) return '';
+            const n = filename.toLowerCase();
+            if (n.includes('kick')) return 'Kick';
+            if (n.includes('snare')) return 'Snare';
+            if (n.includes('open') && n.includes('hat')) return 'Open Hat';
+            if ((n.includes('closed') || n.includes('close') || n.includes('clsd')) && n.includes('hat')) return 'Closed Hat';
+            if (n.includes('hat') && !n.includes('open') && !n.includes('close')) return 'Hat';
+            if (n.includes('tom') && (n.includes('hi') || n.includes('high'))) return 'Hi Tom';
+            if (n.includes('tom') && (n.includes('lo') || n.includes('low'))) return 'Low Tom';
+            if (n.includes('tom')) return 'Tom';
+            if (n.includes('clap')) return 'Clap';
+            if (n.includes('rim')) return 'Rim';
+            if (n.includes('cow') || n.includes('bell')) return 'Cowbell';
+            if (n.includes('perc')) return 'Perc';
+            if (n.includes('shaker')) return 'Shaker';
+            // Fallback: strip extension and return a cleaned label
+            return filename.replace(/\.(wav|mp3)$/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
         function renderTr808Sequencer() {
             tr808SequencerEl.innerHTML = '';
             tr808Rows.forEach((row, rowIndex) => {
@@ -3271,7 +3358,7 @@
                 rowEl.className = 'tr808-row';
                 const label = document.createElement('div');
                 label.className = 'row-label';
-                label.textContent = row.name.replace('.wav','').replace('.mp3','');
+                label.textContent = friendlyTr808Name(row.name);
                 rowEl.appendChild(label);
                 for (let i = 0; i < 16; i++) {
                     const stepEl = document.createElement('div');
@@ -3336,7 +3423,13 @@
                 if (row.steps[tr808Step] && row.buffer) {
                     const src = audioContext.createBufferSource();
                     src.buffer = row.buffer;
-                    try { src.connect(analyser); } catch(e) { src.connect(audioContext.destination); }
+                    try {
+                        if (tr808PreGain) {
+                            src.connect(tr808PreGain);
+                        } else {
+                            src.connect(analyser);
+                        }
+                    } catch(e) { src.connect(audioContext.destination); }
                     src.start(now);
                 }
             });
@@ -3370,6 +3463,34 @@
 
         // Auto-load samples on startup (best-effort)
         loadTr808Samples();
+
+        // --- TR-808 FX UI bindings ---
+        const tr808CompThreshold = document.getElementById('tr808-comp-threshold');
+        const tr808CompRatio = document.getElementById('tr808-comp-ratio');
+        const tr808CompAttack = document.getElementById('tr808-comp-attack');
+        const tr808CompRelease = document.getElementById('tr808-comp-release');
+        const tr808SatDrive = document.getElementById('tr808-sat-drive');
+
+        function updateTr808FxParams() {
+            if (!tr808Compressor || !tr808PreGain || !tr808WaveShaper) return;
+            tr808Compressor.threshold.value = parseFloat(tr808CompThreshold.value);
+            tr808Compressor.ratio.value = parseFloat(tr808CompRatio.value);
+            tr808Compressor.attack.value = parseFloat(tr808CompAttack.value);
+            tr808Compressor.release.value = parseFloat(tr808CompRelease.value);
+            // Drive mapping: drive 0-100 -> preGain 0.2-6 and waveshaper curve intensity
+            const drive = parseFloat(tr808SatDrive.value);
+            tr808PreGain.gain.value = 0.2 + (drive / 100) * 5.8; // 0.2..6.0
+            // Recreate curve with scaled amount (smaller for subtle, bigger for heavy)
+            const k = 2 + (drive / 100) * 48; // 2..50
+            try { tr808WaveShaper.curve = makeTubeCurve(k); } catch (e) {}
+        }
+
+        [tr808CompThreshold, tr808CompRatio, tr808CompAttack, tr808CompRelease, tr808SatDrive].forEach(el => {
+            if (el) el.addEventListener('input', updateTr808FxParams);
+        });
+
+        // Initialize UI values into nodes when context is ready
+        if (audioContext && tr808Compressor) updateTr808FxParams();
 
         // --- DJ App: Library & Deck Setup ---
         function populateDjLibrary(files) {
@@ -3842,8 +3963,17 @@
             openDjAppIcon.style.display = 'none'; 
         });
 
-        // TR-808 Minimize/Restore
+        // TR-808 Minimize/Restore (open centers window and sizes to fit)
         if (openTr808Icon) openTr808Icon.addEventListener('click', () => {
+            // Size to a comfortable landscape default that fits most screens
+            const targetWidth = Math.min(760, Math.floor(window.innerWidth * 0.92));
+            const targetHeight = Math.min(520, Math.floor(window.innerHeight * 0.72));
+            tr808Window.style.width = targetWidth + 'px';
+            tr808Window.style.height = targetHeight + 'px';
+            tr808Window.style.maxHeight = '80vh';
+            // Center on screen with small margin
+            tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - targetWidth) / 2)) + 'px';
+            tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - targetHeight) / 2)) + 'px';
             tr808Window.style.display = 'flex';
             openTr808Icon.style.display = 'none';
             minimizedTr808Icon.style.display = 'none';
@@ -3857,9 +3987,19 @@
         });
 
         if (minimizedTr808Icon) minimizedTr808Icon.addEventListener('click', () => {
+            // Restore previous size if present, otherwise center
             tr808Window.style.display = 'flex';
             minimizedTr808Icon.style.display = 'none';
             openTr808Icon.style.display = 'none';
+            // If window had no explicit position, center it
+            if (!tr808Window.style.left) {
+                const w = Math.min(760, Math.floor(window.innerWidth * 0.92));
+                const h = Math.min(520, Math.floor(window.innerHeight * 0.72));
+                tr808Window.style.width = w + 'px';
+                tr808Window.style.height = h + 'px';
+                tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - w) / 2)) + 'px';
+                tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - h) / 2)) + 'px';
+            }
             if (!isMobile) bringWindowToFront(tr808Window);
         });
         
