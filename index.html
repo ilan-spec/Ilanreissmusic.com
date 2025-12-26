@@ -1717,6 +1717,18 @@
                 align-items: center;
             }
 
+            .tr808-row .row-controls {
+                display:flex;
+                gap:6px;
+                align-items:center;
+                padding:4px 6px;
+            }
+
+            .tr808-volume {
+                width: 70px;
+                transform: rotate(0deg);
+            }
+
             .tr808-row .row-label {
                 padding: 8px 10px;
                 background: #fff;
@@ -2107,6 +2119,11 @@
                 <div style="display:flex;gap:6px;align-items:center;margin-left:6px;">
                     <button id="tr-set-808" class="window-button tr-set active" title="Use TR-808 samples">808</button>
                     <button id="tr-set-909" class="window-button tr-set" title="Use TR-909 samples">909</button>
+                </div>
+                <div style="margin-left:10px;display:flex;align-items:center;gap:8px;">
+                    <label style="font-weight:700;color:var(--tr-dark);">Swing</label>
+                    <input type="range" id="tr808-swing" min="0" max="60" value="0">
+                    <span id="tr808-swing-display">0%</span>
                 </div>
                 <!-- Tube compressor / saturation controls -->
                 <div id="tr808-fx" style="display:flex;align-items:center;gap:8px;margin-left:8px;">
@@ -3329,6 +3346,17 @@
                 tr808PreGain.connect(tr808WaveShaper);
                 tr808WaveShaper.connect(tr808Compressor);
                 tr808Compressor.connect(analyser);
+
+                // Ensure each row has a gain node connected into the preGain
+                tr808Rows.forEach(r => {
+                    try {
+                        if (!r.gainNode) {
+                            r.gainNode = audioContext.createGain();
+                            r.gainNode.gain.value = r.muted ? 0 : (r.volume || 1.0);
+                            r.gainNode.connect(tr808PreGain);
+                        }
+                    } catch (e) {}
+                });
             } catch (e) {
                 console.warn('TR-808 FX init failed:', e.message);
             }
@@ -3337,16 +3365,27 @@
         tr808Tempo.addEventListener('input', (e) => {
             tr808TempoValue = parseInt(e.target.value, 10);
             tr808TempoDisplay.textContent = tr808TempoValue;
+            // if playing, restart scheduler to pick up new tempo immediately
             if (tr808IsPlaying) {
-                // restart interval with new tempo
-                clearInterval(tr808Interval);
-                tr808Interval = setInterval(tr808Tick, (60 / tr808TempoValue) * 250); // 16th notes
+                if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
+                tr808TimerId = setTimeout(tr808Tick, 0);
             }
         });
 
+        // Swing control binding
+        const tr808Swing = document.getElementById('tr808-swing');
+        const tr808SwingDisplay = document.getElementById('tr808-swing-display');
+        if (tr808Swing) {
+            tr808Swing.addEventListener('input', (e) => {
+                const v = parseInt(e.target.value, 10);
+                tr808SwingDisplay.textContent = v + '%';
+                window.tr808SwingValue = v;
+            });
+        }
+
         function createTr808Row(name) {
             const steps = new Array(16).fill(false);
-            tr808Rows.push({ name, buffer: null, steps });
+            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: 1.0, gainNode: null });
         }
 
         // Map raw sample filenames to friendly instrument names
@@ -3378,7 +3417,35 @@
                 const label = document.createElement('div');
                 label.className = 'row-label';
                 label.textContent = friendlyTr808Name(row.name);
-                rowEl.appendChild(label);
+                // clicking the label toggles mute for the row
+                label.style.cursor = 'pointer';
+                label.title = 'Toggle mute/play for this sound';
+                label.addEventListener('click', () => {
+                    row.muted = !row.muted;
+                    label.style.opacity = row.muted ? '0.4' : '1.0';
+                });
+
+                // small controls container (volume)
+                const controlsWrap = document.createElement('div');
+                controlsWrap.className = 'row-controls';
+                const volInput = document.createElement('input');
+                volInput.type = 'range';
+                volInput.min = 0; volInput.max = 1; volInput.step = 0.01; volInput.value = row.volume;
+                volInput.className = 'tr808-volume';
+                volInput.title = 'Volume for this sound';
+                volInput.addEventListener('input', () => {
+                    row.volume = parseFloat(volInput.value);
+                    if (row.gainNode) row.gainNode.gain.value = row.muted ? 0 : row.volume;
+                });
+                controlsWrap.appendChild(volInput);
+
+                // Combine label and controls into a wrapper for first grid column
+                const labelContainer = document.createElement('div');
+                labelContainer.style.display = 'flex';
+                labelContainer.style.flexDirection = 'column';
+                labelContainer.appendChild(label);
+                labelContainer.appendChild(controlsWrap);
+                rowEl.appendChild(labelContainer);
                 for (let i = 0; i < 16; i++) {
                     const stepEl = document.createElement('div');
                     stepEl.className = 'tr808-step';
@@ -3431,6 +3498,16 @@
                             const buf = await audioContext.decodeAudioData(ab);
                             tr808Samples[i].buffer = buf;
                             tr808Rows[i].buffer = buf;
+                            // create per-row gain if fx chain exists
+                            if (audioContext && tr808Rows[i] && !tr808Rows[i].gainNode) {
+                                try {
+                                    tr808Rows[i].gainNode = audioContext.createGain();
+                                    tr808Rows[i].gainNode.gain.value = tr808Rows[i].muted ? 0 : (tr808Rows[i].volume || 1.0);
+                                    // ensure connected into chain
+                                    if (tr808PreGain) tr808Rows[i].gainNode.connect(tr808PreGain);
+                                    else tr808Rows[i].gainNode.connect(analyser);
+                                } catch (e) {}
+                            }
                         } catch (e) {
                             console.warn('Failed to load sample', tr808Samples[i].name, e.message);
                         }
@@ -3449,42 +3526,69 @@
             }
         }
 
+        // Scheduling using recursive setTimeout to support swing (variable offsets)
+        let tr808TimerId = null;
         function tr808Tick() {
-            // Play all active steps at current step index
             if (!audioContext) setupAudioContext();
             const now = audioContext.currentTime;
+            // Play current step
             tr808Rows.forEach(row => {
                 if (row.steps[tr808Step] && row.buffer) {
                     const src = audioContext.createBufferSource();
                     src.buffer = row.buffer;
                     try {
-                        if (tr808PreGain) {
+                        // connect to row gain if present, otherwise to analyser
+                        if (row.gainNode) {
+                            src.connect(row.gainNode);
+                        } else if (tr808PreGain) {
                             src.connect(tr808PreGain);
                         } else {
                             src.connect(analyser);
                         }
-                    } catch(e) { src.connect(audioContext.destination); }
+                    } catch (e) {
+                        try { src.connect(audioContext.destination); } catch(e){}
+                    }
                     src.start(now);
                 }
             });
-            // Visual cue: flash active column (optional)
-            // Advance step
+
+            // Advance step index
+            const prevStep = tr808Step;
             tr808Step = (tr808Step + 1) % 16;
+
+            // compute next interval (ms) taking tempo and swing into account
+            const baseInterval = (60 / tr808TempoValue) * 250; // ms per 16th
+            // swing value 0..60 (%), apply to off-beats (odd steps)
+            const swing = parseFloat(window.tr808SwingValue || 0); // percent
+            // if next step is odd (1-based even), delay it by +swing, otherwise shorten by -swing
+            const isNextOdd = (tr808Step % 2) === 1; // odd index
+            let nextInterval = baseInterval;
+            if (swing > 0) {
+                const swingFactor = swing / 100;
+                if (isNextOdd) nextInterval = baseInterval * (1 + swingFactor);
+                else nextInterval = baseInterval * (1 - swingFactor);
+            }
+
+            // Clear any existing timer and schedule next tick
+            if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
+            tr808TimerId = setTimeout(tr808Tick, Math.max(10, Math.round(nextInterval)));
         }
 
         tr808PlayBtn && tr808PlayBtn.addEventListener('click', () => {
             if (tr808IsPlaying) return;
             tr808IsPlaying = true;
             tr808Step = 0;
-            const intervalMs = (60 / tr808TempoValue) * 250; // 16th note
-            tr808Interval = setInterval(tr808Tick, intervalMs);
-            // ensure visualizer is running
+            // initialize swing value into global so scheduler can read it
+            window.tr808SwingValue = parseFloat(document.getElementById('tr808-swing').value || 0);
+            // start recursive tick
+            if (tr808TimerId) clearTimeout(tr808TimerId);
+            tr808TimerId = setTimeout(tr808Tick, 0);
             startVisualizer();
         });
 
         tr808StopBtn && tr808StopBtn.addEventListener('click', () => {
             tr808IsPlaying = false;
-            if (tr808Interval) { clearInterval(tr808Interval); tr808Interval = null; }
+            if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
             stopVisualizer();
         });
 
@@ -4035,12 +4139,13 @@
 
         // TR-808 Minimize/Restore (open centers window and sizes to fit)
         if (openTr808Icon) openTr808Icon.addEventListener('click', () => {
-            // Size to a comfortable landscape default that fits most screens
-            const targetWidth = Math.min(760, Math.floor(window.innerWidth * 0.92));
-            const targetHeight = Math.min(520, Math.floor(window.innerHeight * 0.72));
+            // Size to a comfortable landscape default that fits most screens (bigger than before)
+            const targetWidth = Math.min(980, Math.floor(window.innerWidth * 0.94));
+            const targetHeight = Math.min(620, Math.floor(window.innerHeight * 0.78));
             tr808Window.style.width = targetWidth + 'px';
             tr808Window.style.height = targetHeight + 'px';
-            tr808Window.style.maxHeight = '80vh';
+            tr808Window.style.maxHeight = '90vh';
+            tr808Window.style.minHeight = '220px';
             // Center on screen with small margin
             tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - targetWidth) / 2)) + 'px';
             tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - targetHeight) / 2)) + 'px';
