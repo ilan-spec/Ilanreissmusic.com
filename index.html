@@ -1643,6 +1643,54 @@
             }
         }
 
+            /* --- TR-808 Sequencer Styles --- */
+            #tr808-window .tr808-controls {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                padding: 8px;
+                flex-shrink: 0;
+                flex-wrap: wrap;
+            }
+            #tr808-sequencer {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .tr808-row {
+                display: grid;
+                grid-template-columns: 120px repeat(16, 1fr);
+                gap: 6px;
+                align-items: center;
+            }
+            .tr808-row .row-label {
+                padding: 6px 8px;
+                background: #fff;
+                border: 2px inset #808080;
+                font-weight: 600;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .tr808-step {
+                width: 100%;
+                height: 34px;
+                background: #fff;
+                border: 1px solid #808080;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                color: #000080;
+                user-select: none;
+            }
+            .tr808-step.active {
+                background: #000080;
+                color: #fff;
+                box-shadow: 0 0 6px rgba(0,0,0,0.4) inset;
+            }
+
     </style>
 </head>
 <body>
@@ -1911,6 +1959,30 @@
         <div class="resize-handle"></div>
     </div>
     
+    <!-- TR-808 Sequencer Window -->
+    <div id="tr808-window" class="window" style="display: none;">
+        <div class="title-bar">
+            <span class="title-bar-text">🎛️ TR-808 Sequencer</span>
+            <div class="title-bar-buttons">
+                <button class="window-button" id="minimize-tr808-button">_</button>
+                <button class="window-button close-button" data-target="tr808-window">X</button>
+            </div>
+        </div>
+        <div class="content">
+            <div class="tr808-controls">
+                <button id="tr808-play" class="window-button">PLAY</button>
+                <button id="tr808-stop" class="window-button">STOP</button>
+                <label style="margin-left:6px;">Tempo</label>
+                <input type="range" id="tr808-tempo" min="60" max="200" value="120">
+                <span id="tr808-tempo-display">120</span>
+                <button id="tr808-clear" class="window-button">Clear</button>
+                <button id="tr808-load-samples" class="window-button">Load Samples</button>
+            </div>
+            <div id="tr808-sequencer"></div>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+    
     <!-- Solitaire Window (NEW) -->
     <div id="solitaire-window" class="window" style="display: none;">
         <div class="title-bar">
@@ -1973,6 +2045,13 @@
         </div>
         <div id="minimized-solitaire-icon" title="Restore Solitaire">
             <i class="fas fa-diamond"></i> 
+        </div>
+        <!-- TR-808 App Icons -->
+        <div id="open-tr808-icon" title="Open TR-808 Sequencer">
+            <i class="fas fa-drum"></i>
+        </div>
+        <div id="minimized-tr808-icon" title="Restore TR-808" style="display: none;">
+            <i class="fas fa-drum"></i>
         </div>
     </div>
  
@@ -2258,6 +2337,18 @@
         const minimizeSolitaireButton = document.getElementById('minimize-solitaire-button');
         const minimizedSolitaireIcon = document.getElementById('minimized-solitaire-icon');
         const newGameButton = document.getElementById('solitaire-new-game');
+        // TR-808
+        const tr808Window = document.getElementById('tr808-window');
+        const openTr808Icon = document.getElementById('open-tr808-icon');
+        const minimizeTr808Button = document.getElementById('minimize-tr808-button');
+        const minimizedTr808Icon = document.getElementById('minimized-tr808-icon');
+        const tr808PlayBtn = document.getElementById('tr808-play');
+        const tr808StopBtn = document.getElementById('tr808-stop');
+        const tr808Tempo = document.getElementById('tr808-tempo');
+        const tr808TempoDisplay = document.getElementById('tr808-tempo-display');
+        const tr808SequencerEl = document.getElementById('tr808-sequencer');
+        const tr808ClearBtn = document.getElementById('tr808-clear');
+        const tr808LoadSamplesBtn = document.getElementById('tr808-load-samples');
         
         // State variables
         let visualizerColor = '#00FFFF';
@@ -3042,6 +3133,136 @@
             }
         });
 
+        // --- TR-808 Sequencer Implementation ---
+        const tr808Samples = []; // { name, url, buffer }
+        const tr808Rows = []; // { name, buffer, steps: [bool...] }
+        let tr808IsPlaying = false;
+        let tr808Interval = null;
+        let tr808Step = 0;
+        let tr808TempoValue = parseInt(tr808Tempo.value, 10) || 120;
+
+        tr808Tempo.addEventListener('input', (e) => {
+            tr808TempoValue = parseInt(e.target.value, 10);
+            tr808TempoDisplay.textContent = tr808TempoValue;
+            if (tr808IsPlaying) {
+                // restart interval with new tempo
+                clearInterval(tr808Interval);
+                tr808Interval = setInterval(tr808Tick, (60 / tr808TempoValue) * 250); // 16th notes
+            }
+        });
+
+        function createTr808Row(name) {
+            const steps = new Array(16).fill(false);
+            tr808Rows.push({ name, buffer: null, steps });
+        }
+
+        function renderTr808Sequencer() {
+            tr808SequencerEl.innerHTML = '';
+            tr808Rows.forEach((row, rowIndex) => {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'tr808-row';
+                const label = document.createElement('div');
+                label.className = 'row-label';
+                label.textContent = row.name.replace('.wav','').replace('.mp3','');
+                rowEl.appendChild(label);
+                for (let i = 0; i < 16; i++) {
+                    const stepEl = document.createElement('div');
+                    stepEl.className = 'tr808-step';
+                    stepEl.dataset.row = rowIndex;
+                    stepEl.dataset.step = i;
+                    stepEl.textContent = i+1;
+                    if (row.steps[i]) stepEl.classList.add('active');
+                    stepEl.addEventListener('click', () => {
+                        row.steps[i] = !row.steps[i];
+                        stepEl.classList.toggle('active');
+                    });
+                    rowEl.appendChild(stepEl);
+                }
+                tr808SequencerEl.appendChild(rowEl);
+            });
+        }
+
+        async function loadTr808Samples() {
+            // Load sample file list from TR-808 folder in repo (case-sensitive)
+            const owner = 'ilan-spec';
+            const repo = 'Ilanreissmusic.com';
+            const branch = 'main';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/TR-808?ref=${branch}`;
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error('GitHub API ' + res.status);
+                const data = await res.json();
+                const files = data.filter(i => i.type === 'file' && (i.name.toLowerCase().endsWith('.wav') || i.name.toLowerCase().endsWith('.mp3')));
+                if (files.length === 0) return;
+                // Clear and create rows in the order returned
+                tr808Samples.length = 0; tr808Rows.length = 0;
+                for (const f of files) {
+                    tr808Samples.push({ name: f.name, url: f.download_url, buffer: null });
+                    createTr808Row(f.name);
+                }
+                renderTr808Sequencer();
+                // Decode audio buffers
+                if (!audioContext) setupAudioContext();
+                for (let i = 0; i < tr808Samples.length; i++) {
+                    try {
+                        const r = await fetch(tr808Samples[i].url);
+                        const ab = await r.arrayBuffer();
+                        const buf = await audioContext.decodeAudioData(ab);
+                        tr808Samples[i].buffer = buf;
+                        tr808Rows[i].buffer = buf;
+                    } catch (e) {
+                        console.warn('Failed to load sample', tr808Samples[i].name, e.message);
+                    }
+                }
+                console.log('TR-808 samples loaded:', tr808Samples.map(s=>s.name));
+            } catch (e) {
+                console.warn('Could not load TR-808 samples:', e.message);
+            }
+        }
+
+        function tr808Tick() {
+            // Play all active steps at current step index
+            if (!audioContext) setupAudioContext();
+            const now = audioContext.currentTime;
+            tr808Rows.forEach(row => {
+                if (row.steps[tr808Step] && row.buffer) {
+                    const src = audioContext.createBufferSource();
+                    src.buffer = row.buffer;
+                    try { src.connect(analyser); } catch(e) { src.connect(audioContext.destination); }
+                    src.start(now);
+                }
+            });
+            // Visual cue: flash active column (optional)
+            // Advance step
+            tr808Step = (tr808Step + 1) % 16;
+        }
+
+        tr808PlayBtn && tr808PlayBtn.addEventListener('click', () => {
+            if (tr808IsPlaying) return;
+            tr808IsPlaying = true;
+            tr808Step = 0;
+            const intervalMs = (60 / tr808TempoValue) * 250; // 16th note
+            tr808Interval = setInterval(tr808Tick, intervalMs);
+            // ensure visualizer is running
+            startVisualizer();
+        });
+
+        tr808StopBtn && tr808StopBtn.addEventListener('click', () => {
+            tr808IsPlaying = false;
+            if (tr808Interval) { clearInterval(tr808Interval); tr808Interval = null; }
+            stopVisualizer();
+        });
+
+        tr808ClearBtn && tr808ClearBtn.addEventListener('click', () => {
+            tr808Rows.forEach(r => r.steps.fill(false));
+            renderTr808Sequencer();
+        });
+
+        tr808LoadSamplesBtn && tr808LoadSamplesBtn.addEventListener('click', () => loadTr808Samples());
+
+        // Auto-load samples on startup (best-effort)
+        loadTr808Samples();
+
         // --- DJ App: Library & Deck Setup ---
         function populateDjLibrary(files) {
             djLibraryList.innerHTML = '';
@@ -3507,6 +3728,27 @@
             djAppWindow.style.display = 'none';
             minimizedDjIcon.style.display = 'flex'; 
             openDjAppIcon.style.display = 'none'; 
+        });
+
+        // TR-808 Minimize/Restore
+        if (openTr808Icon) openTr808Icon.addEventListener('click', () => {
+            tr808Window.style.display = 'flex';
+            openTr808Icon.style.display = 'none';
+            minimizedTr808Icon.style.display = 'none';
+            if (!isMobile) bringWindowToFront(tr808Window);
+        });
+
+        if (minimizeTr808Button) minimizeTr808Button.addEventListener('click', () => {
+            tr808Window.style.display = 'none';
+            minimizedTr808Icon.style.display = 'flex';
+            openTr808Icon.style.display = 'none';
+        });
+
+        if (minimizedTr808Icon) minimizedTr808Icon.addEventListener('click', () => {
+            tr808Window.style.display = 'flex';
+            minimizedTr808Icon.style.display = 'none';
+            openTr808Icon.style.display = 'none';
+            if (!isMobile) bringWindowToFront(tr808Window);
         });
         
         minimizedDjIcon.addEventListener('click', () => {
