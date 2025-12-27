@@ -2698,6 +2698,176 @@
         const tr808SequencerEl = document.getElementById('tr808-sequencer');
         const tr808ClearBtn = document.getElementById('tr808-clear');
         const tr808LoadSamplesBtn = document.getElementById('tr808-load-samples');
+        // Desktop selection & mini-apps
+        const desktopIconsContainer = document.getElementById('desktop-icons');
+        const desktopIcons = document.querySelectorAll('#desktop-icons .desktop-icon');
+        const selectionRect = document.getElementById('selection-rect');
+        let isSelecting = false;
+        let selStartX = 0, selStartY = 0;
+
+        function rectsIntersect(a, b) {
+            return !(b.left > a.right || b.right < a.left || b.top > a.bottom || b.bottom < a.top);
+        }
+
+        // Start selection only when clicking outside of any existing window
+        document.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // left button only
+            if (e.target.closest('.window')) return; // don't start selection when interacting with windows
+            // begin selection
+            isSelecting = true;
+            selStartX = e.clientX;
+            selStartY = e.clientY;
+            selectionRect.style.display = 'block';
+            selectionRect.style.left = selStartX + 'px';
+            selectionRect.style.top = selStartY + 'px';
+            selectionRect.style.width = '0px';
+            selectionRect.style.height = '0px';
+            // temporary remove pointer events so user can drag smoothly
+            document.addEventListener('mousemove', desktopMouseMove);
+            document.addEventListener('mouseup', desktopMouseUp, { once: true });
+            if (e.cancelable) e.preventDefault();
+        });
+
+        function desktopMouseMove(e) {
+            if (!isSelecting) return;
+            const curX = e.clientX;
+            const curY = e.clientY;
+            const left = Math.min(selStartX, curX);
+            const top = Math.min(selStartY, curY);
+            const width = Math.abs(curX - selStartX);
+            const height = Math.abs(curY - selStartY);
+            selectionRect.style.left = left + 'px';
+            selectionRect.style.top = top + 'px';
+            selectionRect.style.width = width + 'px';
+            selectionRect.style.height = height + 'px';
+        }
+
+        function desktopMouseUp(e) {
+            if (!isSelecting) return;
+            isSelecting = false;
+            document.removeEventListener('mousemove', desktopMouseMove);
+            // determine selected icons inside rect
+            const rect = selectionRect.getBoundingClientRect();
+            const icons = document.querySelectorAll('#desktop-icons .desktop-icon');
+            let anySelected = false;
+            icons.forEach(icon => {
+                const r = icon.getBoundingClientRect();
+                if (rectsIntersect(rect, r)) {
+                    icon.classList.add('selected');
+                    anySelected = true;
+                } else if (! (e.ctrlKey || e.metaKey) ) {
+                    // if ctrl/meta not held, clear other selections
+                    icon.classList.remove('selected');
+                }
+            });
+            // if no icons were selected and no modifier, clear selection
+            if (!anySelected && !(e.ctrlKey || e.metaKey)) {
+                icons.forEach(icon => icon.classList.remove('selected'));
+            }
+            selectionRect.style.display = 'none';
+        }
+
+        // Wire up clicks on icons: ctrl/cmd-click toggles selection; regular click opens mini-app
+        desktopIcons.forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    icon.classList.toggle('selected');
+                    return;
+                }
+                const app = icon.dataset.app;
+                openMiniApp(app, icon);
+            });
+        });
+
+        // Create a small window for mini-apps and attach basic drag/resize/close handlers
+        function openMiniApp(appId, iconEl) {
+            // position near the icon
+            const iconRect = iconEl ? iconEl.getBoundingClientRect() : { left: 120, top: 120 };
+            const win = document.createElement('div');
+            win.className = 'window mini-app-window';
+            win.style.width = '360px';
+            win.style.height = '300px';
+            win.style.left = (iconRect.left + 80) + 'px';
+            win.style.top = (iconRect.top) + 'px';
+            win.style.zIndex = 20;
+
+            const titleBar = document.createElement('div');
+            titleBar.className = 'title-bar';
+            titleBar.innerHTML = `<span class="title-bar-text">${appId.replace(/-/g,' ')}</span>`;
+            const btns = document.createElement('div'); btns.className='title-bar-buttons';
+            const closeBtn = document.createElement('button'); closeBtn.className='window-button'; closeBtn.textContent='X';
+            btns.appendChild(closeBtn);
+            titleBar.appendChild(btns);
+            win.appendChild(titleBar);
+
+            const content = document.createElement('div'); content.className = 'content';
+            content.style.display = 'flex'; content.style.flexDirection = 'column'; content.style.alignItems='stretch'; content.style.justifyContent='flex-start'; content.style.padding='12px';
+
+            // populate app content
+            if (appId === 'fidget-spinner') {
+                content.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;"><div class="mini-app-spinner" id="spinner-`+Date.now()+`"></div><div style="font-weight:700;color:var(--tr-dark);">Click spinner to toggle</div></div>`;
+            } else if (appId === 'clicker') {
+                content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;"><div id="click-counter" style="font-size:2rem;font-weight:900;">0</div><button id="click-btn" class="window-button">CLICK</button></div>`;
+            } else if (appId === 'bubble-pop') {
+                content.innerHTML = `<div id="bubble-area" style="flex:1;position:relative;overflow:hidden;background:linear-gradient(180deg,#f6fbff,#e6f7ff);"></div><div style="margin-top:8px;font-size:0.9rem;color:var(--tr-dark)">Click or tap to spawn bubbles, click bubble to pop</div>`;
+            } else if (appId === 'doodle') {
+                content.innerHTML = `<canvas id="doodle-canvas" width="320" height="200" style="border:1px dashed rgba(0,0,0,0.08);background:#fff;"></canvas><div style="margin-top:6px;display:flex;gap:8px;"><button id="clear-doodle" class="window-button">Clear</button></div>`;
+            } else {
+                content.innerHTML = `<div style="padding:12px;">Mini app: ${appId}</div>`;
+            }
+
+            win.appendChild(content);
+            const resizeHandle = document.createElement('div'); resizeHandle.className='resize-handle'; win.appendChild(resizeHandle);
+            document.body.appendChild(win);
+
+            // close handler
+            closeBtn.addEventListener('click', () => { try { win.remove(); } catch(e){} });
+
+            // attach drag/resize listeners for this window (reuse existing handlers)
+            titleBar.addEventListener('mousedown', (e) => handleDragStart(e, win));
+            titleBar.addEventListener('touchstart', (e) => handleDragStart(e, win), { passive: false });
+            resizeHandle.addEventListener('mousedown', (e) => handleResizeStart(e, win));
+            resizeHandle.addEventListener('touchstart', (e) => handleResizeStart(e, win), { passive: false });
+
+            bringWindowToFront(win);
+
+            // initialize mini-app behaviors
+            if (appId === 'fidget-spinner') {
+                const spinner = content.querySelector('.mini-app-spinner');
+                spinner.addEventListener('click', () => spinner.classList.toggle('spin'));
+            } else if (appId === 'clicker') {
+                const counter = content.querySelector('#click-counter');
+                const btn = content.querySelector('#click-btn');
+                let c = 0;
+                btn.addEventListener('click', () => { c++; counter.textContent = c; });
+            } else if (appId === 'bubble-pop') {
+                const area = content.querySelector('#bubble-area');
+                area.addEventListener('click', (ev) => {
+                    const b = document.createElement('div');
+                    const size = 18 + Math.random() * 40;
+                    b.style.position = 'absolute';
+                    b.style.left = (ev.clientX - area.getBoundingClientRect().left - size/2) + 'px';
+                    b.style.top = (ev.clientY - area.getBoundingClientRect().top - size/2) + 'px';
+                    b.style.width = b.style.height = size + 'px';
+                    b.style.borderRadius = '50%';
+                    b.style.background = `hsl(${Math.random()*360},70%,60%)`;
+                    b.style.cursor = 'pointer';
+                    b.style.boxShadow = '0 6px 12px rgba(0,0,0,0.12)';
+                    area.appendChild(b);
+                    b.addEventListener('click', (e2) => { e2.stopPropagation(); b.remove(); });
+                    // slowly float up and fade
+                    setTimeout(() => { b.style.transition = 'transform 3s linear, opacity 3s'; b.style.transform = 'translateY(-120px)'; b.style.opacity = '0.0'; setTimeout(()=>{ try{ b.remove(); }catch(e){} }, 3000); }, 20);
+                });
+            } else if (appId === 'doodle') {
+                const canvasEl = content.querySelector('#doodle-canvas');
+                const ctx2 = canvasEl.getContext('2d');
+                let drawing = false;
+                canvasEl.addEventListener('pointerdown', (p) => { drawing = true; ctx2.beginPath(); ctx2.moveTo(p.offsetX, p.offsetY); });
+                canvasEl.addEventListener('pointermove', (p) => { if(!drawing) return; ctx2.lineTo(p.offsetX, p.offsetY); ctx2.strokeStyle = '#2F2E3E'; ctx2.lineWidth = 3; ctx2.stroke(); });
+                canvasEl.addEventListener('pointerup', () => drawing=false);
+                const clearBtn = content.querySelector('#clear-doodle'); clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
+            }
+        }
         
         // State variables
         let visualizerColor = '#00FFFF';
