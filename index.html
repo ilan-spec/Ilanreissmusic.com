@@ -1656,19 +1656,43 @@
                 border-right: none;
                 border-left: none; 
             }
-            #digital-clock {
+            /* Clock + visual control wrapper (bottom-left) */
+            #clock-controls {
                 position: fixed;
-                bottom: 45px; 
-                left: 0;
-                width: 100%;
-                text-align: center;
-                z-index: 1000;
-                border-bottom: 2px solid #404040;
-                border-top: 2px solid #fff;
-                border-left: none;
-                border-right: none;
-                padding: 8px 10px; 
+                bottom: 12px;
+                left: 12px;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                z-index: 1100;
             }
+            #digital-clock {
+                width: auto;
+                text-align: left;
+                padding: 6px 10px;
+                color: #fff;
+                font-family: monospace;
+                font-weight: 600;
+                font-size: 14px;
+                background: rgba(0,0,0,0.25);
+                border-radius: 6px;
+                border: 1px solid rgba(255,255,255,0.06);
+            }
+            #visual-mode-toggle {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 8px;
+                min-height: 36px;
+                border-radius: 8px;
+                background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.12));
+                color: #fff;
+                border: 1px solid rgba(255,255,255,0.08);
+                font-size: 12px;
+                cursor: pointer;
+            }
+            #visual-mode-toggle .tv-icon svg { width: 18px; height: 14px; display: block; }
+            #visual-mode-toggle .visual-label { font-size: 12px; letter-spacing: 0.02em; }
         }
         
         /* Narrower phones */
@@ -2406,8 +2430,20 @@
         <div class="resize-handle"></div>
     </div>
     
-    <!-- Bottom Bar: Clock -->
-    <div id="digital-clock"></div>
+    <!-- Bottom controls: Clock + Visual Toggle (bottom-left) -->
+    <div id="clock-controls">
+        <div id="digital-clock"></div>
+        <button id="visual-mode-toggle" class="window-button" title="Visual Mode">
+            <span class="tv-icon">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="2" y="5" width="20" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+                    <rect x="5" y="9" width="10" height="6" rx="1" fill="currentColor"/>
+                    <polyline points="6,3 12,9 18,3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="visual-label">Off</span>
+        </button>
+    </div>
 
     <!-- Bottom Bar: Color Picker & Minimized Icons -->
     <div id="color-picker-container">
@@ -2437,8 +2473,7 @@
         <div id="minimized-tr808-icon" title="Restore TR-808" style="display: none;">
             <i class="fas fa-th-large"></i>
         </div>
-        <!-- Visual mode toggle cycles: off -> CRT -> Vaporwave -->
-        <button id="visual-mode-toggle" class="window-button" title="Visual Mode">Visual: Off</button>
+        <!-- Visual mode toggle moved to bottom-left clock controls -->
     </div>
  
     <!-- Context Menu (hidden) -->
@@ -2752,7 +2787,10 @@
             document.body.classList.remove('mode-crt','mode-vaporwave');
             if (mode === 'crt') document.body.classList.add('mode-crt');
             if (mode === 'vaporwave') document.body.classList.add('mode-vaporwave');
-            if (visualModeToggleBtn) visualModeToggleBtn.textContent = 'Visual: ' + (mode === 'off' ? 'Off' : (mode === 'crt' ? 'CRT' : 'Vaporwave'));
+            if (visualModeToggleBtn) {
+                const label = visualModeToggleBtn.querySelector('.visual-label');
+                if (label) label.textContent = (mode === 'off' ? 'Off' : (mode === 'crt' ? 'CRT' : 'Vaporwave'));
+            }
             try { localStorage.setItem('visualMode', mode); } catch(e){}
         }
         function cycleVisualMode() {
@@ -2762,15 +2800,7 @@
             setVisualMode(next);
         }
         if (visualModeToggleBtn) {
-            // move the button next to the digital clock for prominence
-            try {
-                const clockEl = document.getElementById('digital-clock');
-                if (clockEl && visualModeToggleBtn.parentNode) {
-                    clockEl.insertAdjacentElement('afterend', visualModeToggleBtn);
-                    visualModeToggleBtn.style.marginLeft = '8px';
-                }
-            } catch (e) {}
-
+            // visual toggle is placed in #clock-controls; just wire the click handler
             visualModeToggleBtn.addEventListener('click', cycleVisualMode);
             // init from storage
             const startMode = localStorage.getItem('visualMode') || 'off';
