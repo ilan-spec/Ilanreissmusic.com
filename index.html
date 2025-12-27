@@ -2010,6 +2010,14 @@
             <i class="fas fa-pencil-alt"></i>
             <div class="icon-label">Doodle</div>
         </div>
+        <div class="desktop-icon" id="app-tiles" data-app="satisfy-tiles" title="Satisfying Tiles">
+            <i class="fas fa-th"></i>
+            <div class="icon-label">Tiles</div>
+        </div>
+        <div class="desktop-icon" id="app-slider" data-app="fidget-slider" title="Fidget Slider">
+            <i class="fas fa-sliders-h"></i>
+            <div class="icon-label">Slider</div>
+        </div>
     </div>
 
     <!-- Selection rectangle used for click-drag selecting desktop icons -->
@@ -2833,39 +2841,117 @@
 
             // initialize mini-app behaviors
             if (appId === 'fidget-spinner') {
+                // physics-based spinner with flick & inertia
                 const spinner = content.querySelector('.mini-app-spinner');
-                spinner.addEventListener('click', () => spinner.classList.toggle('spin'));
+                let angle = 0, velocity = 0, lastTime = null, dragging = false, lastY = 0;
+                function raf(now) {
+                    if (!lastTime) lastTime = now; const dt = (now - lastTime) / 1000; lastTime = now;
+                    if (Math.abs(velocity) > 0.001) {
+                        angle += velocity * dt;
+                        velocity *= Math.pow(0.995, dt*60); // friction
+                    } else velocity = 0;
+                    spinner.style.transform = `rotate(${angle}rad)`;
+                    if (isSelecting == false) requestAnimationFrame(raf);
+                }
+                requestAnimationFrame(raf);
+                spinner.addEventListener('pointerdown', (e) => {
+                    dragging = true; lastY = e.clientY; velocity = 0; spinner.setPointerCapture(e.pointerId);
+                });
+                spinner.addEventListener('pointermove', (e) => {
+                    if (!dragging) return; const dy = e.clientY - lastY; lastY = e.clientY; velocity = -dy * 0.03; // map drag to velocity
+                });
+                spinner.addEventListener('pointerup', (e) => { dragging = false; spinner.releasePointerCapture && spinner.releasePointerCapture(e.pointerId); });
+                spinner.addEventListener('click', () => { velocity += 6; });
+
             } else if (appId === 'clicker') {
                 const counter = content.querySelector('#click-counter');
                 const btn = content.querySelector('#click-btn');
-                let c = 0;
-                btn.addEventListener('click', () => { c++; counter.textContent = c; });
+                let c = 0; let lastClick = 0; let streak = 0;
+                function nicePulse(el) { el.style.transition='transform 160ms'; el.style.transform='scale(1.12)'; setTimeout(()=>{ el.style.transform='scale(1)'; },160); }
+                btn.addEventListener('click', () => {
+                    const now = Date.now();
+                    if (now - lastClick < 600) { streak++; } else streak = 1;
+                    lastClick = now;
+                    const add = Math.min(1 + Math.floor(streak/3), 10);
+                    c += add;
+                    counter.textContent = c;
+                    nicePulse(counter);
+                    // spark particles
+                    const p = document.createElement('div'); p.textContent = '+'+add; p.style.position='absolute'; p.style.left='50%'; p.style.transform='translateX(-50%)'; p.style.top='18%'; p.style.fontWeight='900'; p.style.color='var(--tr-dark)'; p.style.opacity='1'; content.appendChild(p);
+                    setTimeout(()=>{ p.style.transition='all 800ms'; p.style.transform='translate(-50%,-60px)'; p.style.opacity='0'; },20); setTimeout(()=>p.remove(),900);
+                });
+
             } else if (appId === 'bubble-pop') {
                 const area = content.querySelector('#bubble-area');
+                // create audio feedback using AudioContext when available
+                let localCtx = null;
+                try { localCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { localCtx = null; }
+                function playPop() {
+                    if (!localCtx) return;
+                    const o = localCtx.createOscillator(); const g = localCtx.createGain();
+                    o.type = 'sine'; o.frequency.value = 800 + Math.random()*400; g.gain.value = 0.0001;
+                    o.connect(g); g.connect(localCtx.destination);
+                    o.start(); g.gain.exponentialRampToValueAtTime(0.08, localCtx.currentTime + 0.01);
+                    g.gain.exponentialRampToValueAtTime(0.001, localCtx.currentTime + 0.25);
+                    o.stop(localCtx.currentTime + 0.26);
+                }
                 area.addEventListener('click', (ev) => {
                     const b = document.createElement('div');
-                    const size = 18 + Math.random() * 40;
+                    const size = 18 + Math.random() * 64;
                     b.style.position = 'absolute';
                     b.style.left = (ev.clientX - area.getBoundingClientRect().left - size/2) + 'px';
                     b.style.top = (ev.clientY - area.getBoundingClientRect().top - size/2) + 'px';
                     b.style.width = b.style.height = size + 'px';
                     b.style.borderRadius = '50%';
-                    b.style.background = `hsl(${Math.random()*360},70%,60%)`;
+                    b.style.background = `radial-gradient(circle at 30% 30%, #fff8, ${'hsl('+ (Math.random()*360) +',70%,60%)'})`;
                     b.style.cursor = 'pointer';
-                    b.style.boxShadow = '0 6px 12px rgba(0,0,0,0.12)';
+                    b.style.boxShadow = '0 8px 18px rgba(0,0,0,0.15)';
+                    b.style.transition = 'transform 220ms ease, opacity 220ms ease';
                     area.appendChild(b);
-                    b.addEventListener('click', (e2) => { e2.stopPropagation(); b.remove(); });
-                    // slowly float up and fade
-                    setTimeout(() => { b.style.transition = 'transform 3s linear, opacity 3s'; b.style.transform = 'translateY(-120px)'; b.style.opacity = '0.0'; setTimeout(()=>{ try{ b.remove(); }catch(e){} }, 3000); }, 20);
+                    b.addEventListener('click', (e2) => { e2.stopPropagation(); b.style.transform='scale(1.5)'; b.style.opacity='0'; playPop(); setTimeout(()=>b.remove(),220); });
+                    // gentle float and fade out if not popped
+                    setTimeout(()=>{ b.style.transform='translateY(-140px) scale(0.9)'; b.style.opacity='0.05'; setTimeout(()=>{ try{ b.remove(); }catch(e){} }, 2500); }, 3000 + Math.random()*2000);
                 });
+
             } else if (appId === 'doodle') {
+                // larger doodle window with color and brush size controls
                 const canvasEl = content.querySelector('#doodle-canvas');
-                const ctx2 = canvasEl.getContext('2d');
-                let drawing = false;
-                canvasEl.addEventListener('pointerdown', (p) => { drawing = true; ctx2.beginPath(); ctx2.moveTo(p.offsetX, p.offsetY); });
-                canvasEl.addEventListener('pointermove', (p) => { if(!drawing) return; ctx2.lineTo(p.offsetX, p.offsetY); ctx2.strokeStyle = '#2F2E3E'; ctx2.lineWidth = 3; ctx2.stroke(); });
+                // resize canvas to be roomy
+                const w = 780, h = 520;
+                canvasEl.width = w; canvasEl.height = h; canvasEl.style.width = w+'px'; canvasEl.style.height = h+'px';
+                const controlsWrap = document.createElement('div'); controlsWrap.style.display='flex'; controlsWrap.style.gap='8px'; controlsWrap.style.marginTop='8px';
+                const colorInput = document.createElement('input'); colorInput.type='color'; colorInput.value='#2F2E3E';
+                const sizeInput = document.createElement('input'); sizeInput.type='range'; sizeInput.min='1'; sizeInput.max='48'; sizeInput.value='6'; sizeInput.style.width='140px';
+                const clearBtn = document.createElement('button'); clearBtn.className='window-button'; clearBtn.textContent='Clear';
+                controlsWrap.appendChild(colorInput); controlsWrap.appendChild(sizeInput); controlsWrap.appendChild(clearBtn);
+                content.appendChild(controlsWrap);
+                const ctx2 = canvasEl.getContext('2d'); ctx2.lineCap='round'; ctx2.lineJoin='round';
+                let drawing = false; let brushColor = colorInput.value; let brushSize = parseInt(sizeInput.value,10);
+                colorInput.addEventListener('input', (e)=> brushColor = e.target.value);
+                sizeInput.addEventListener('input', (e)=> brushSize = parseInt(e.target.value,10));
+                canvasEl.addEventListener('pointerdown', (p) => { drawing = true; ctx2.beginPath(); ctx2.moveTo(p.offsetX, p.offsetY); ctx2.strokeStyle = brushColor; ctx2.lineWidth = brushSize; });
+                canvasEl.addEventListener('pointermove', (p) => { if(!drawing) return; ctx2.lineTo(p.offsetX, p.offsetY); ctx2.strokeStyle = brushColor; ctx2.lineWidth = brushSize; ctx2.stroke(); });
                 canvasEl.addEventListener('pointerup', () => drawing=false);
-                const clearBtn = content.querySelector('#clear-doodle'); clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
+                clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
+
+            } else if (appId === 'satisfy-tiles') {
+                // clickable tiles that flip with satisfying animation
+                content.style.padding = '10px';
+                const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(6,1fr)'; grid.style.gap='8px'; grid.style.width='100%'; grid.style.flex='1';
+                for (let i=0;i<18;i++){
+                    const t = document.createElement('div'); t.style.background='#fff'; t.style.height='56px'; t.style.borderRadius='8px'; t.style.boxShadow='0 6px 14px rgba(0,0,0,0.08)'; t.style.display='flex'; t.style.alignItems='center'; t.style.justifyContent='center'; t.style.fontWeight='700'; t.style.cursor='pointer'; t.textContent='+';
+                    t.addEventListener('click', ()=>{ t.style.transition='transform 260ms cubic-bezier(.2,.9,.1,1), background 260ms'; t.style.transform='scale(0.95)'; t.style.background = `linear-gradient(180deg, hsl(${Math.random()*360},70%,88%), hsl(${Math.random()*360},70%,72%))`; setTimeout(()=>{ t.style.transform='scale(1)'; },260); });
+                    grid.appendChild(t);
+                }
+                content.appendChild(grid);
+
+            } else if (appId === 'fidget-slider') {
+                // a tactile slider
+                content.style.display='flex'; content.style.flexDirection='column'; content.style.alignItems='center';
+                const slider = document.createElement('input'); slider.type='range'; slider.min='0'; slider.max='100'; slider.value='50'; slider.style.width='86%'; slider.style.height='28px';
+                const val = document.createElement('div'); val.textContent = slider.value; val.style.fontWeight='800'; val.style.marginTop='12px';
+                slider.addEventListener('input', ()=>{ val.textContent = slider.value; slider.style.filter = `hue-rotate(${slider.value*3.6}deg)`; });
+                content.appendChild(slider); content.appendChild(val);
             }
         }
         
