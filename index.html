@@ -1981,8 +1981,8 @@
             }
 
             /* Site-wide visual modes */
-            body.mode-crt { filter: contrast(1.08) saturate(1.05); }
-            body.mode-vaporwave { filter: saturate(1.2) hue-rotate(-10deg) contrast(1.02); }
+            body.mode-crt { filter: contrast(1.25) saturate(1.1); transition: filter 300ms ease; }
+            body.mode-vaporwave { filter: saturate(1.35) hue-rotate(-12deg) contrast(1.08); transition: filter 300ms ease; }
 
             /* CRT overlay: scanlines, vignette, subtle noise */
             #screen-overlay { position: fixed; left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:50;display:none; }
@@ -1990,36 +1990,54 @@
             body.mode-crt #screen-overlay::before {
                 content: '';
                 position:absolute; left:0;top:0;right:0;bottom:0;
-                background: linear-gradient(rgba(0,0,0,0.06), rgba(0,0,0,0.12));
+                background: radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.45) 80%);
+                pointer-events:none;
+                mix-blend-mode: multiply;
             }
             body.mode-crt #screen-overlay::after {
                 content: '';
                 position:absolute; left:0;top:0;right:0;bottom:0;
-                background-image: repeating-linear-gradient(transparent 0 2px, rgba(0,0,0,0.06) 2px 4px);
-                opacity: 0.35;
+                background-image: repeating-linear-gradient(transparent 0 1px, rgba(0,0,0,0.12) 1px 3px);
+                opacity: 0.7;
                 transform: scaleY(1.02);
                 mix-blend-mode: multiply;
+                pointer-events:none;
             }
 
+            /* apply warp via SVG filter and small chromatic offset */
+            body.mode-crt #screen-overlay { filter: url(#dispGentle); transition: filter 300ms ease, opacity 280ms ease; opacity:1; }
+            body.mode-crt .window, body.mode-crt .player-container { transform: perspective(900px) rotateX(0.6deg); }
+
             /* Vaporwave overlay: pastel gradient + subtle grain */
-            body.mode-vaporwave #screen-overlay { display:block; }
+            body.mode-vaporwave #screen-overlay { display:block; filter: url(#dispStrong); }
             body.mode-vaporwave #screen-overlay::before {
                 content:''; position:absolute; left:0;top:0;right:0;bottom:0;
-                background: linear-gradient(135deg, rgba(255,180,220,0.12), rgba(160,140,255,0.12));
+                background: linear-gradient(135deg, rgba(255,180,220,0.18), rgba(160,140,255,0.18));
                 mix-blend-mode: screen; pointer-events:none;
             }
             body.mode-vaporwave #screen-overlay::after {
                 content:''; position:absolute; left:0;top:0;right:0;bottom:0;
-                background-image: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
-                opacity:0.6;
-                mix-blend-mode: overlay;
+                background-image: repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,0.02) 2px 4px);
+                opacity:0.35; mix-blend-mode: overlay; pointer-events:none;
             }
+            body.mode-vaporwave .window, body.mode-vaporwave .player-container { transform: perspective(900px) rotateX(0.8deg) rotateZ(-0.3deg) scale(1.01); }
 
             /* Mini-app content helpers */
 
     </style>
 </head>
 <body>
+    <!-- SVG filters for screen warping -->
+    <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
+        <filter id="dispGentle">
+            <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="dispStrong">
+            <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
 
     <!-- Floating background/logo image (keeps behind windows and is draggable) -->
     <img id="background1" src="background1.png" alt="background logo" draggable="false">
@@ -2744,6 +2762,15 @@
             setVisualMode(next);
         }
         if (visualModeToggleBtn) {
+            // move the button next to the digital clock for prominence
+            try {
+                const clockEl = document.getElementById('digital-clock');
+                if (clockEl && visualModeToggleBtn.parentNode) {
+                    clockEl.insertAdjacentElement('afterend', visualModeToggleBtn);
+                    visualModeToggleBtn.style.marginLeft = '8px';
+                }
+            } catch (e) {}
+
             visualModeToggleBtn.addEventListener('click', cycleVisualMode);
             // init from storage
             const startMode = localStorage.getItem('visualMode') || 'off';
