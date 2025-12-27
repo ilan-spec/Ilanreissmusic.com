@@ -240,30 +240,31 @@
             border-bottom: 1px solid #fff;
         }
 
-        /* Clock controls (global) - ensure bottom-right placement on all viewports */
-        #clock-controls {
-            position: fixed;
-            bottom: 12px;
-            right: 12px;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            z-index: 1100;
-            justify-content: flex-end;
-            direction: rtl;
-        }
-        #clock-controls > * { direction: ltr; }
+        /* Digital clock (centered bottom bar) — restore previous appearance */
         #digital-clock {
-            width: auto;
-            text-align: left;
-            padding: 6px 10px;
+            position: fixed;
+            bottom: 45px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 1000;
+            border-bottom: 2px solid #404040;
+            border-top: 2px solid #fff;
+            border-left: none;
+            border-right: none;
+            padding: 8px 10px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.06));
             color: #fff;
             font-family: monospace;
-            font-weight: 600;
-            font-size: 14px;
-            background: rgba(0,0,0,0.25);
-            border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.06);
+            font-weight: 700;
+        }
+
+        /* Visual toggle (bottom-right) — sits beside clock, not overlapping */
+        #visual-toggle-container {
+            position: fixed;
+            bottom: 45px;
+            right: 12px;
+            z-index: 1102; /* above the clock */
         }
         #visual-mode-toggle {
             display: inline-flex;
@@ -272,8 +273,6 @@
             padding: 8px 12px;
             min-width: 64px;
             min-height: 40px;
-            width: auto !important;
-            height: auto !important;
             border-radius: 10px;
             background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));
             color: #fff;
@@ -281,11 +280,8 @@
             font-size: 13px;
             cursor: pointer;
             box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03);
-            transform-origin: center;
         }
-        #visual-mode-toggle:hover { transform: translateY(-2px) scale(1.02); }
-        #visual-mode-toggle:active { transform: translateY(0) scale(0.995); }
-        #visual-mode-toggle .tv-icon svg { width: 24px; height: 18px; display: block; }
+        #visual-mode-toggle .tv-icon svg { width: 28px; height: 20px; display: block; }
         #visual-mode-toggle .visual-label { font-size: 13px; letter-spacing: 0.02em; }
 
         /* --- Main Player Content --- */
@@ -1704,53 +1700,7 @@
                 border-right: none;
                 border-left: none; 
             }
-            /* Clock + visual control wrapper (bottom-right) */
-            #clock-controls {
-                position: fixed;
-                bottom: 12px;
-                right: 12px;
-                display: flex;
-                gap: 8px;
-                align-items: center;
-                z-index: 1100;
-                justify-content: flex-end;
-                direction: rtl;
-            }
-            #clock-controls > * { direction: ltr; }
-            #digital-clock {
-                width: auto;
-                text-align: left;
-                padding: 6px 10px;
-                color: #fff;
-                font-family: monospace;
-                font-weight: 600;
-                font-size: 14px;
-                background: rgba(0,0,0,0.25);
-                border-radius: 6px;
-                border: 1px solid rgba(255,255,255,0.06);
-            }
-            #visual-mode-toggle {
-                display: inline-flex;
-                align-items: center;
-                gap: 8px;
-                padding: 8px 12px;
-                min-width: 64px;
-                min-height: 40px;
-                width: auto !important;
-                height: auto !important;
-                border-radius: 10px;
-                background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));
-                color: #fff;
-                border: 1px solid rgba(255,255,255,0.10);
-                font-size: 13px;
-                cursor: pointer;
-                box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03);
-                transform-origin: center;
-            }
-            #visual-mode-toggle:hover { transform: translateY(-2px) scale(1.02); }
-            #visual-mode-toggle:active { transform: translateY(0) scale(0.995); }
-            #visual-mode-toggle .tv-icon svg { width: 24px; height: 18px; display: block; }
-            #visual-mode-toggle .visual-label { font-size: 13px; letter-spacing: 0.02em; }
+            /* (mobile) clock and visual controls fall back to global styles */
         }
         
         /* Narrower phones */
@@ -2063,8 +2013,8 @@
             }
 
             /* Site-wide visual modes */
-            body.mode-crt { filter: contrast(1.25) saturate(1.1); transition: filter 300ms ease; }
-            body.mode-vaporwave { filter: saturate(1.35) hue-rotate(-12deg) contrast(1.08); transition: filter 300ms ease; }
+            body.mode-crt { filter: contrast(1.4) saturate(1.15) brightness(1.02); transition: filter 300ms ease; }
+            body.mode-vaporwave { filter: saturate(1.6) hue-rotate(-18deg) contrast(1.12) brightness(1.02); transition: filter 300ms ease; }
 
             /* CRT overlay: scanlines, vignette, subtle noise */
             #screen-overlay { position: fixed; left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:50;display:none; }
@@ -2072,16 +2022,16 @@
             body.mode-crt #screen-overlay::before {
                 content: '';
                 position:absolute; left:0;top:0;right:0;bottom:0;
-                background: radial-gradient(ellipse at center, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.45) 80%);
+                background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.55) 80%);
                 pointer-events:none;
                 mix-blend-mode: multiply;
             }
             body.mode-crt #screen-overlay::after {
                 content: '';
                 position:absolute; left:0;top:0;right:0;bottom:0;
-                background-image: repeating-linear-gradient(transparent 0 1px, rgba(0,0,0,0.12) 1px 3px);
-                opacity: 0.7;
-                transform: scaleY(1.02);
+                background-image: repeating-linear-gradient(transparent 0 1px, rgba(0,0,0,0.16) 1px 3px);
+                opacity: 0.88;
+                transform: scaleY(1.04);
                 mix-blend-mode: multiply;
                 pointer-events:none;
             }
@@ -2094,13 +2044,13 @@
             body.mode-vaporwave #screen-overlay { display:block; filter: url(#dispStrong); }
             body.mode-vaporwave #screen-overlay::before {
                 content:''; position:absolute; left:0;top:0;right:0;bottom:0;
-                background: linear-gradient(135deg, rgba(255,180,220,0.18), rgba(160,140,255,0.18));
+                background: linear-gradient(135deg, rgba(255,180,220,0.28), rgba(160,140,255,0.28));
                 mix-blend-mode: screen; pointer-events:none;
             }
             body.mode-vaporwave #screen-overlay::after {
                 content:''; position:absolute; left:0;top:0;right:0;bottom:0;
-                background-image: repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,0.02) 2px 4px);
-                opacity:0.35; mix-blend-mode: overlay; pointer-events:none;
+                background-image: repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,0.04) 2px 4px);
+                opacity:0.6; mix-blend-mode: overlay; pointer-events:none;
             }
             body.mode-vaporwave .window, body.mode-vaporwave .player-container { transform: perspective(900px) rotateX(0.8deg) rotateZ(-0.3deg) scale(1.01); }
 
@@ -2112,12 +2062,12 @@
     <!-- SVG filters for screen warping -->
     <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
         <filter id="dispGentle">
-            <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
         </filter>
         <filter id="dispStrong">
-            <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.14" numOctaves="4" seed="2" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
         </filter>
     </svg>
 
@@ -2488,9 +2438,11 @@
         <div class="resize-handle"></div>
     </div>
     
-    <!-- Bottom controls: Clock + Visual Toggle (bottom-left) -->
-    <div id="clock-controls">
-        <div id="digital-clock"></div>
+    <!-- Bottom Bar: Clock (centered) -->
+    <div id="digital-clock"></div>
+
+    <!-- Visual toggle (bottom-right) -->
+    <div id="visual-toggle-container">
         <button id="visual-mode-toggle" class="window-button" title="Visual Mode">
             <span class="tv-icon">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2858,7 +2810,7 @@
             setVisualMode(next);
         }
         if (visualModeToggleBtn) {
-            // visual toggle is placed in #clock-controls; just wire the click handler
+            // visual toggle is in #visual-toggle-container; wire the click handler
             visualModeToggleBtn.addEventListener('click', cycleVisualMode);
             // init from storage
             const startMode = localStorage.getItem('visualMode') || 'off';
