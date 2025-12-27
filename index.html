@@ -1981,9 +1981,6 @@
             }
 
             /* Mini-app content helpers */
-            .mini-app-spinner { width:80px; height:80px; border-radius:50%; border:10px solid #ddd; border-top-color: var(--tr-dark); margin:12px auto; }
-            .mini-app-spinner.spin { animation: spin 900ms linear infinite; }
-            @keyframes spin { to { transform: rotate(360deg); } }
 
     </style>
 </head>
@@ -1994,17 +1991,9 @@
 
     <!-- Desktop icons (playful / fidget apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
-        <div class="desktop-icon" id="app-fidget-spinner" data-app="fidget-spinner" title="Fidget Spinner">
-            <i class="fas fa-sync-alt"></i>
-            <div class="icon-label">Spinner</div>
-        </div>
         <div class="desktop-icon" id="app-clicker" data-app="clicker" title="Clicker">
             <i class="fas fa-hand-pointer"></i>
             <div class="icon-label">Clicker</div>
-        </div>
-        <div class="desktop-icon" id="app-bubble-pop" data-app="bubble-pop" title="Bubble Pop">
-            <i class="fas fa-circle"></i>
-            <div class="icon-label">Bubbles</div>
         </div>
         <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
             <i class="fas fa-pencil-alt"></i>
@@ -2812,12 +2801,9 @@
             content.style.display = 'flex'; content.style.flexDirection = 'column'; content.style.alignItems='stretch'; content.style.justifyContent='flex-start'; content.style.padding='12px';
 
             // populate app content
-            if (appId === 'fidget-spinner') {
-                content.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;"><div class="mini-app-spinner" id="spinner-`+Date.now()+`"></div><div style="font-weight:700;color:var(--tr-dark);">Click spinner to toggle</div></div>`;
-            } else if (appId === 'clicker') {
-                content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;"><div id="click-counter" style="font-size:2rem;font-weight:900;">0</div><button id="click-btn" class="window-button">CLICK</button></div>`;
-            } else if (appId === 'bubble-pop') {
-                content.innerHTML = `<div id="bubble-area" style="flex:1;position:relative;overflow:hidden;background:linear-gradient(180deg,#f6fbff,#e6f7ff);"></div><div style="margin-top:8px;font-size:0.9rem;color:var(--tr-dark)">Click or tap to spawn bubbles, click bubble to pop</div>`;
+            if (appId === 'clicker') {
+                // make button size fit the word cleanly
+                content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;"><div id="click-counter" style="font-size:2rem;font-weight:900;">0</div><button id="click-btn" class="window-button" style="padding:6px 14px;min-width:0;">CLICK</button></div>`;
             } else if (appId === 'doodle') {
                 content.innerHTML = `<canvas id="doodle-canvas" width="320" height="200" style="border:1px dashed rgba(0,0,0,0.08);background:#fff;"></canvas><div style="margin-top:6px;display:flex;gap:8px;"><button id="clear-doodle" class="window-button">Clear</button></div>`;
             } else {
@@ -2840,30 +2826,7 @@
             bringWindowToFront(win);
 
             // initialize mini-app behaviors
-            if (appId === 'fidget-spinner') {
-                // physics-based spinner with flick & inertia
-                const spinner = content.querySelector('.mini-app-spinner');
-                let angle = 0, velocity = 0, lastTime = null, dragging = false, lastY = 0;
-                function raf(now) {
-                    if (!lastTime) lastTime = now; const dt = (now - lastTime) / 1000; lastTime = now;
-                    if (Math.abs(velocity) > 0.001) {
-                        angle += velocity * dt;
-                        velocity *= Math.pow(0.995, dt*60); // friction
-                    } else velocity = 0;
-                    spinner.style.transform = `rotate(${angle}rad)`;
-                    if (isSelecting == false) requestAnimationFrame(raf);
-                }
-                requestAnimationFrame(raf);
-                spinner.addEventListener('pointerdown', (e) => {
-                    dragging = true; lastY = e.clientY; velocity = 0; spinner.setPointerCapture(e.pointerId);
-                });
-                spinner.addEventListener('pointermove', (e) => {
-                    if (!dragging) return; const dy = e.clientY - lastY; lastY = e.clientY; velocity = -dy * 0.03; // map drag to velocity
-                });
-                spinner.addEventListener('pointerup', (e) => { dragging = false; spinner.releasePointerCapture && spinner.releasePointerCapture(e.pointerId); });
-                spinner.addEventListener('click', () => { velocity += 6; });
-
-            } else if (appId === 'clicker') {
+            if (appId === 'clicker') {
                 const counter = content.querySelector('#click-counter');
                 const btn = content.querySelector('#click-btn');
                 let c = 0; let lastClick = 0; let streak = 0;
@@ -2879,38 +2842,6 @@
                     // spark particles
                     const p = document.createElement('div'); p.textContent = '+'+add; p.style.position='absolute'; p.style.left='50%'; p.style.transform='translateX(-50%)'; p.style.top='18%'; p.style.fontWeight='900'; p.style.color='var(--tr-dark)'; p.style.opacity='1'; content.appendChild(p);
                     setTimeout(()=>{ p.style.transition='all 800ms'; p.style.transform='translate(-50%,-60px)'; p.style.opacity='0'; },20); setTimeout(()=>p.remove(),900);
-                });
-
-            } else if (appId === 'bubble-pop') {
-                const area = content.querySelector('#bubble-area');
-                // create audio feedback using AudioContext when available
-                let localCtx = null;
-                try { localCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { localCtx = null; }
-                function playPop() {
-                    if (!localCtx) return;
-                    const o = localCtx.createOscillator(); const g = localCtx.createGain();
-                    o.type = 'sine'; o.frequency.value = 800 + Math.random()*400; g.gain.value = 0.0001;
-                    o.connect(g); g.connect(localCtx.destination);
-                    o.start(); g.gain.exponentialRampToValueAtTime(0.08, localCtx.currentTime + 0.01);
-                    g.gain.exponentialRampToValueAtTime(0.001, localCtx.currentTime + 0.25);
-                    o.stop(localCtx.currentTime + 0.26);
-                }
-                area.addEventListener('click', (ev) => {
-                    const b = document.createElement('div');
-                    const size = 18 + Math.random() * 64;
-                    b.style.position = 'absolute';
-                    b.style.left = (ev.clientX - area.getBoundingClientRect().left - size/2) + 'px';
-                    b.style.top = (ev.clientY - area.getBoundingClientRect().top - size/2) + 'px';
-                    b.style.width = b.style.height = size + 'px';
-                    b.style.borderRadius = '50%';
-                    b.style.background = `radial-gradient(circle at 30% 30%, #fff8, ${'hsl('+ (Math.random()*360) +',70%,60%)'})`;
-                    b.style.cursor = 'pointer';
-                    b.style.boxShadow = '0 8px 18px rgba(0,0,0,0.15)';
-                    b.style.transition = 'transform 220ms ease, opacity 220ms ease';
-                    area.appendChild(b);
-                    b.addEventListener('click', (e2) => { e2.stopPropagation(); b.style.transform='scale(1.5)'; b.style.opacity='0'; playPop(); setTimeout(()=>b.remove(),220); });
-                    // gentle float and fade out if not popped
-                    setTimeout(()=>{ b.style.transform='translateY(-140px) scale(0.9)'; b.style.opacity='0.05'; setTimeout(()=>{ try{ b.remove(); }catch(e){} }, 2500); }, 3000 + Math.random()*2000);
                 });
 
             } else if (appId === 'doodle') {
