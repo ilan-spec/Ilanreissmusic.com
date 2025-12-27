@@ -1656,16 +1656,19 @@
                 border-right: none;
                 border-left: none; 
             }
-            /* Clock + visual control wrapper (bottom-left) */
+            /* Clock + visual control wrapper (bottom-right) */
             #clock-controls {
                 position: fixed;
                 bottom: 12px;
-                left: 12px;
+                right: 12px;
                 display: flex;
                 gap: 8px;
                 align-items: center;
                 z-index: 1100;
+                justify-content: flex-end;
+                direction: rtl;
             }
+            #clock-controls > * { direction: ltr; }
             #digital-clock {
                 width: auto;
                 text-align: left;
