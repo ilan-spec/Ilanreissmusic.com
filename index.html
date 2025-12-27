@@ -1997,9 +1997,9 @@
             <div class="icon-label">Doodle</div>
         </div>
         
-        <div class="desktop-icon" id="app-slider" data-app="fidget-slider" title="Fidget Slider">
-            <i class="fas fa-sliders-h"></i>
-            <div class="icon-label">Slider</div>
+        <div class="desktop-icon" id="app-color-mixer" data-app="color-mixer" title="Color Mixer">
+            <i class="fas fa-palette"></i>
+            <div class="icon-label">Color</div>
         </div>
     </div>
 
@@ -2838,13 +2838,42 @@
                 canvasEl.addEventListener('pointerup', () => drawing=false);
                 clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
 
-            } else if (appId === 'fidget-slider') {
-                // a tactile slider
-                content.style.display='flex'; content.style.flexDirection='column'; content.style.alignItems='center';
-                const slider = document.createElement('input'); slider.type='range'; slider.min='0'; slider.max='100'; slider.value='50'; slider.style.width='86%'; slider.style.height='28px';
-                const val = document.createElement('div'); val.textContent = slider.value; val.style.fontWeight='800'; val.style.marginTop='12px';
-                slider.addEventListener('input', ()=>{ val.textContent = slider.value; slider.style.filter = `hue-rotate(${slider.value*3.6}deg)`; });
-                content.appendChild(slider); content.appendChild(val);
+            } else if (appId === 'color-mixer') {
+                // Color Mixer: RGB sliders + preview + apply to open doodles
+                const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.flexDirection='column'; wrap.style.gap='8px';
+                const preview = document.createElement('div'); preview.style.height='64px'; preview.style.borderRadius='8px'; preview.style.boxShadow='inset 0 1px 0 rgba(255,255,255,0.2)';
+                const r = document.createElement('input'); r.type='range'; r.min=0; r.max=255; r.value=47;
+                const g = document.createElement('input'); g.type='range'; g.min=0; g.max=255; g.value=46;
+                const b = document.createElement('input'); b.type='range'; b.min=0; b.max=255; b.value=62;
+                const hexIn = document.createElement('input'); hexIn.type='text'; hexIn.value='#2F2E3E'; hexIn.style.width='120px';
+                const btns = document.createElement('div'); btns.style.display='flex'; btns.style.gap='8px';
+                const applyBtn = document.createElement('button'); applyBtn.className='window-button'; applyBtn.textContent='Apply to Doodle';
+                const copyBtn = document.createElement('button'); copyBtn.className='window-button'; copyBtn.textContent='Copy Hex';
+                btns.appendChild(applyBtn); btns.appendChild(copyBtn);
+                wrap.appendChild(preview); wrap.appendChild(r); wrap.appendChild(g); wrap.appendChild(b); wrap.appendChild(hexIn); wrap.appendChild(btns);
+                content.appendChild(wrap);
+                function updateFromRGB() {
+                    const col = `rgb(${r.value},${g.value},${b.value})`;
+                    const hex = '#' + [r.value,g.value,b.value].map(v=>parseInt(v).toString(16).padStart(2,'0')).join('').toUpperCase();
+                    preview.style.background = col;
+                    hexIn.value = hex;
+                }
+                function updateFromHex() {
+                    const v = hexIn.value.replace('#',''); if (!/^[0-9A-Fa-f]{6}$/.test(v)) return; const rv = parseInt(v.substr(0,2),16); const gv = parseInt(v.substr(2,2),16); const bv = parseInt(v.substr(4,2),16);
+                    r.value = rv; g.value = gv; b.value = bv; updateFromRGB();
+                }
+                r.addEventListener('input', updateFromRGB); g.addEventListener('input', updateFromRGB); b.addEventListener('input', updateFromRGB); hexIn.addEventListener('change', updateFromHex);
+                copyBtn.addEventListener('click', () => { navigator.clipboard && navigator.clipboard.writeText(hexIn.value).catch(()=>{}); });
+                applyBtn.addEventListener('click', () => {
+                    // find open doodle canvases and set their color input if present
+                    document.querySelectorAll('.mini-app-window').forEach(win => {
+                        try {
+                            const ci = win.querySelector('input[type="color"]');
+                            if (ci) { ci.value = hexIn.value; ci.dispatchEvent(new Event('input')); }
+                        } catch(e){}
+                    });
+                });
+                updateFromRGB();
             }
         }
         
