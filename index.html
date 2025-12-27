@@ -1926,12 +1926,94 @@
                 border-radius: 6px;
             }
 
+            /* --- Desktop icons & selection rectangle --- */
+            #desktop-icons {
+                position: absolute;
+                left: 24px;
+                top: 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                z-index: 5; /* behind windows (windows default z-index:10) */
+                pointer-events: auto;
+            }
+
+            .desktop-icon {
+                width: 64px;
+                height: 64px;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                font-size: 18px;
+                color: var(--tr-dark);
+                border-radius: 8px;
+                cursor: pointer;
+                user-select: none;
+                transition: transform 160ms ease, box-shadow 120ms;
+            }
+
+            .desktop-icon:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
+
+            .desktop-icon .icon-label { font-size: 0.72rem; font-weight:700; color: var(--tr-dark); }
+
+            .desktop-icon.selected {
+                outline: 3px solid rgba(21, 101, 192, 0.9);
+                outline-offset: -4px;
+            }
+
+            /* Selection rectangle overlay shown while dragging on desktop */
+            #selection-rect {
+                position: fixed;
+                left: 0; top: 0;
+                width: 0; height: 0;
+                border: 2px dashed rgba(0,0,0,0.6);
+                background: rgba(16,124,212,0.08);
+                pointer-events: none;
+                display: none;
+                z-index: 9; /* above icons (5) but below windows (10) */
+            }
+
+            /* Mini-app content helpers */
+            .mini-app-spinner { width:80px; height:80px; border-radius:50%; border:10px solid #ddd; border-top-color: var(--tr-dark); margin:12px auto; }
+            .mini-app-spinner.spin { animation: spin 900ms linear infinite; }
+            @keyframes spin { to { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
 
     <!-- Floating background/logo image (keeps behind windows and is draggable) -->
     <img id="background1" src="background1.png" alt="background logo" draggable="false">
+
+    <!-- Desktop icons (playful / fidget apps) -->
+    <div id="desktop-icons" aria-label="Desktop icons">
+        <div class="desktop-icon" id="app-fidget-spinner" data-app="fidget-spinner" title="Fidget Spinner">
+            <i class="fas fa-sync-alt"></i>
+            <div class="icon-label">Spinner</div>
+        </div>
+        <div class="desktop-icon" id="app-clicker" data-app="clicker" title="Clicker">
+            <i class="fas fa-hand-pointer"></i>
+            <div class="icon-label">Clicker</div>
+        </div>
+        <div class="desktop-icon" id="app-bubble-pop" data-app="bubble-pop" title="Bubble Pop">
+            <i class="fas fa-circle"></i>
+            <div class="icon-label">Bubbles</div>
+        </div>
+        <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
+            <i class="fas fa-pencil-alt"></i>
+            <div class="icon-label">Doodle</div>
+        </div>
+    </div>
+
+    <!-- Selection rectangle used for click-drag selecting desktop icons -->
+    <div id="selection-rect" aria-hidden="true"></div>
 
 
     <!-- Main Player Window -->
