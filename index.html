@@ -2838,17 +2838,6 @@
                 canvasEl.addEventListener('pointerup', () => drawing=false);
                 clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
 
-            } else if (appId === 'satisfy-tiles') {
-                // clickable tiles that flip with satisfying animation
-                content.style.padding = '10px';
-                const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(6,1fr)'; grid.style.gap='8px'; grid.style.width='100%'; grid.style.flex='1';
-                for (let i=0;i<18;i++){
-                    const t = document.createElement('div'); t.style.background='#fff'; t.style.height='56px'; t.style.borderRadius='8px'; t.style.boxShadow='0 6px 14px rgba(0,0,0,0.08)'; t.style.display='flex'; t.style.alignItems='center'; t.style.justifyContent='center'; t.style.fontWeight='700'; t.style.cursor='pointer'; t.textContent='+';
-                    t.addEventListener('click', ()=>{ t.style.transition='transform 260ms cubic-bezier(.2,.9,.1,1), background 260ms'; t.style.transform='scale(0.95)'; t.style.background = `linear-gradient(180deg, hsl(${Math.random()*360},70%,88%), hsl(${Math.random()*360},70%,72%))`; setTimeout(()=>{ t.style.transform='scale(1)'; },260); });
-                    grid.appendChild(t);
-                }
-                content.appendChild(grid);
-
             } else if (appId === 'fidget-slider') {
                 // a tactile slider
                 content.style.display='flex'; content.style.flexDirection='column'; content.style.alignItems='center';
