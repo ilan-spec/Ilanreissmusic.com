@@ -243,11 +243,12 @@
         /* Clock + Visual controls container (bottom-right) */
         #clock-controls {
             position: fixed;
-            bottom: 12px;
-            right: 12px;
+            bottom: 0;
+            right: 0;
             display: flex;
-            gap: 8px;
-            align-items: center;
+            gap: 6px;
+            align-items: flex-end;
+            padding: 6px 8px;
             z-index: 1102;
         }
         /* Classic Windows-style 3D button for the TV toggle */
@@ -262,8 +263,8 @@
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
             border-right: 2px solid #404040;
-            border-bottom: 2px solid #404040;
-            box-shadow: 1px 1px 0 1px #000;
+            border-bottom: none;
+            box-shadow: none;
             color: #000;
             font-family: "Arial Black", sans-serif;
             font-size: 12px;
@@ -273,7 +274,7 @@
             border-top: 2px solid #404040;
             border-left: 2px solid #404040;
             border-right: 2px solid #fff;
-            border-bottom: 2px solid #fff;
+            border-bottom: none;
         }
         #visual-mode-toggle .tv-icon { display:inline-flex; align-items:center; }
         #visual-mode-toggle .tv-icon svg { width: 22px; height: 16px; display: block; stroke: currentColor; fill: currentColor; }
@@ -288,8 +289,7 @@
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
             border-right: 2px solid #404040;
-            border-bottom: 2px solid #404040;
-            box-shadow: 1px 1px 0 1px #000;
+            border-bottom: none;
             color: #000080;
             font-family: "Arial Black", sans-serif;
             font-weight: 900;
