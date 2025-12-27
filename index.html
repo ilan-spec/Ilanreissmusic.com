@@ -1991,18 +1991,12 @@
 
     <!-- Desktop icons (playful / fidget apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
-        <div class="desktop-icon" id="app-clicker" data-app="clicker" title="Clicker">
-            <i class="fas fa-hand-pointer"></i>
-            <div class="icon-label">Clicker</div>
-        </div>
+        
         <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
             <i class="fas fa-pencil-alt"></i>
             <div class="icon-label">Doodle</div>
         </div>
-        <div class="desktop-icon" id="app-tiles" data-app="satisfy-tiles" title="Satisfying Tiles">
-            <i class="fas fa-th"></i>
-            <div class="icon-label">Tiles</div>
-        </div>
+        
         <div class="desktop-icon" id="app-slider" data-app="fidget-slider" title="Fidget Slider">
             <i class="fas fa-sliders-h"></i>
             <div class="icon-label">Slider</div>
@@ -2801,10 +2795,7 @@
             content.style.display = 'flex'; content.style.flexDirection = 'column'; content.style.alignItems='stretch'; content.style.justifyContent='flex-start'; content.style.padding='12px';
 
             // populate app content
-            if (appId === 'clicker') {
-                // make button size fit the word cleanly
-                content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;"><div id="click-counter" style="font-size:2rem;font-weight:900;">0</div><button id="click-btn" class="window-button" style="padding:6px 14px;min-width:0;">CLICK</button></div>`;
-            } else if (appId === 'doodle') {
+            if (appId === 'doodle') {
                 content.innerHTML = `<canvas id="doodle-canvas" width="320" height="200" style="border:1px dashed rgba(0,0,0,0.08);background:#fff;"></canvas><div style="margin-top:6px;display:flex;gap:8px;"><button id="clear-doodle" class="window-button">Clear</button></div>`;
             } else {
                 content.innerHTML = `<div style="padding:12px;">Mini app: ${appId}</div>`;
@@ -2826,25 +2817,7 @@
             bringWindowToFront(win);
 
             // initialize mini-app behaviors
-            if (appId === 'clicker') {
-                const counter = content.querySelector('#click-counter');
-                const btn = content.querySelector('#click-btn');
-                let c = 0; let lastClick = 0; let streak = 0;
-                function nicePulse(el) { el.style.transition='transform 160ms'; el.style.transform='scale(1.12)'; setTimeout(()=>{ el.style.transform='scale(1)'; },160); }
-                btn.addEventListener('click', () => {
-                    const now = Date.now();
-                    if (now - lastClick < 600) { streak++; } else streak = 1;
-                    lastClick = now;
-                    const add = Math.min(1 + Math.floor(streak/3), 10);
-                    c += add;
-                    counter.textContent = c;
-                    nicePulse(counter);
-                    // spark particles
-                    const p = document.createElement('div'); p.textContent = '+'+add; p.style.position='absolute'; p.style.left='50%'; p.style.transform='translateX(-50%)'; p.style.top='18%'; p.style.fontWeight='900'; p.style.color='var(--tr-dark)'; p.style.opacity='1'; content.appendChild(p);
-                    setTimeout(()=>{ p.style.transition='all 800ms'; p.style.transform='translate(-50%,-60px)'; p.style.opacity='0'; },20); setTimeout(()=>p.remove(),900);
-                });
-
-            } else if (appId === 'doodle') {
+            if (appId === 'doodle') {
                 // larger doodle window with color and brush size controls
                 const canvasEl = content.querySelector('#doodle-canvas');
                 // resize canvas to be roomy
