@@ -240,6 +240,54 @@
             border-bottom: 1px solid #fff;
         }
 
+        /* Clock controls (global) - ensure bottom-right placement on all viewports */
+        #clock-controls {
+            position: fixed;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            z-index: 1100;
+            justify-content: flex-end;
+            direction: rtl;
+        }
+        #clock-controls > * { direction: ltr; }
+        #digital-clock {
+            width: auto;
+            text-align: left;
+            padding: 6px 10px;
+            color: #fff;
+            font-family: monospace;
+            font-weight: 600;
+            font-size: 14px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        #visual-mode-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            min-width: 64px;
+            min-height: 40px;
+            width: auto !important;
+            height: auto !important;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.10);
+            font-size: 13px;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03);
+            transform-origin: center;
+        }
+        #visual-mode-toggle:hover { transform: translateY(-2px) scale(1.02); }
+        #visual-mode-toggle:active { transform: translateY(0) scale(0.995); }
+        #visual-mode-toggle .tv-icon svg { width: 24px; height: 18px; display: block; }
+        #visual-mode-toggle .visual-label { font-size: 13px; letter-spacing: 0.02em; }
+
         /* --- Main Player Content --- */
         .content {
             padding: 10px;
