@@ -35,6 +35,66 @@
             touch-action: pan-y; /* Allow vertical scrolling by default */
         }
 
+        // Helper: load a folder of instrument samples (e.g., audio/bass) from the GitHub repo
+        // This will append rows to the sequencer for each file found in the folder.
+        async function loadInstrumentFolder(folderPath, friendlyLabel) {
+            const owner = 'ilan-spec';
+            const repo = 'Ilanreissmusic.com';
+            const branch = 'main';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(folderPath)}?ref=${branch}`;
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) {
+                    console.warn('Instrument folder not found:', folderPath);
+                    return false;
+                }
+                const data = await res.json();
+                if (!Array.isArray(data)) return false;
+                const files = data.filter(i => i.type === 'file' && (i.name.toLowerCase().endsWith('.wav') || i.name.toLowerCase().endsWith('.mp3')));
+                if (files.length === 0) return false;
+
+                // Append rows for each found file
+                const startIndex = tr808Rows.length;
+                for (const f of files) {
+                    createTr808Row(f.name);
+                    // store sample url in tr808Samples-like structure so logging is easier
+                    tr808Samples.push({ name: f.name, url: f.download_url, buffer: null });
+                }
+                renderTr808Sequencer();
+                if (!audioContext) setupAudioContext();
+
+                // Decode and attach buffers to the newly created rows
+                for (let i = 0; i < files.length; i++) {
+                    const sampleIndex = startIndex + i;
+                    try {
+                        const r = await fetch(tr808Samples[tr808Samples.length - files.length + i].url);
+                        const ab = await r.arrayBuffer();
+                        const buf = await audioContext.decodeAudioData(ab);
+                        // assign buffer to the corresponding row
+                        if (tr808Rows[sampleIndex]) {
+                            tr808Rows[sampleIndex].buffer = buf;
+                            // create per-row gain node
+                            if (!tr808Rows[sampleIndex].gainNode) {
+                                try {
+                                    tr808Rows[sampleIndex].gainNode = audioContext.createGain();
+                                    tr808Rows[sampleIndex].gainNode.gain.value = tr808Rows[sampleIndex].muted ? 0 : (tr808Rows[sampleIndex].volume || 1.0);
+                                    if (tr808PreGain) tr808Rows[sampleIndex].gainNode.connect(tr808PreGain);
+                                    else tr808Rows[sampleIndex].gainNode.connect(analyser);
+                                } catch (e) {}
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load instrument sample', files[i].name, e.message);
+                    }
+                }
+                console.log(`Loaded instrument folder ${folderPath}:`, files.map(f=>f.name));
+                return true;
+            } catch (e) {
+                console.warn('Could not load instrument folder', folderPath, e.message);
+                return false;
+            }
+        }
+
         body {
             font-family: 'Inter', system-ui, sans-serif;
             color: #000;
@@ -1676,6 +1736,10 @@
                 --tr-yellow: #DDDA00;
                 --tr-light: #E6E8BF;
                 --tr-dark: #2F2E3E;
+                --tr-group-0: #E6E8BF; /* light */
+                --tr-group-1: #DDDA00; /* yellow */
+                --tr-group-2: #F27900; /* orange */
+                --tr-group-3: #DD1D00; /* red */
             }
 
             /* Match bottom icons style */
@@ -1769,7 +1833,7 @@
             .tr808-step {
                 width: 44px;
                 height: 36px;
-                background: var(--tr-yellow);
+                background: var(--tr-group-1);
                 border-radius: 4px;
                 border: 1px solid rgba(47,46,62,0.06);
                 cursor: pointer;
@@ -1783,10 +1847,17 @@
                 transition: background 120ms, transform 80ms;
             }
 
+            /* Group coloring: each group of 4 steps gets its own color (group-0..3)
+               JS will add `group-N` classes to each step element when rendering. */
+            .tr808-step.group-0 { background: var(--tr-group-0); }
+            .tr808-step.group-1 { background: var(--tr-group-1); }
+            .tr808-step.group-2 { background: var(--tr-group-2); }
+            .tr808-step.group-3 { background: var(--tr-group-3); }
+
             .tr808-step:hover { transform: translateY(-2px); }
 
             .tr808-step.active {
-                background: var(--tr-red);
+                background: var(--tr-dark);
                 color: #fff;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.12);
             }
@@ -3538,6 +3609,9 @@
                 for (let i = 0; i < 16; i++) {
                     const stepEl = document.createElement('div');
                     stepEl.className = 'tr808-step';
+                    // assign group class for each block of 4 steps (0..3 -> group-0, 4..7 -> group-1, ...)
+                    const groupIndex = Math.floor(i / 4);
+                    stepEl.classList.add('group-' + groupIndex);
                     stepEl.dataset.row = rowIndex;
                     stepEl.dataset.step = i;
                     stepEl.textContent = i+1;
