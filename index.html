@@ -240,49 +240,45 @@
             border-bottom: 1px solid #fff;
         }
 
-        /* Digital clock (centered bottom bar) — restore previous appearance */
-        #digital-clock {
+        /* Clock + Visual controls container (bottom-right) */
+        #clock-controls {
             position: fixed;
-            bottom: 45px;
-            left: 0;
-            width: 100%;
-            text-align: center;
-            z-index: 1000;
-            border-bottom: 2px solid #404040;
-            border-top: 2px solid #fff;
-            border-left: none;
-            border-right: none;
-            padding: 8px 10px;
-            background: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.06));
-            color: #fff;
-            font-family: monospace;
-            font-weight: 700;
-        }
-
-        /* Visual toggle (bottom-right) — sits beside clock, not overlapping */
-        #visual-toggle-container {
-            position: fixed;
-            bottom: 45px;
+            bottom: 12px;
             right: 12px;
-            z-index: 1102; /* above the clock */
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 1102;
         }
         #visual-mode-toggle {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            min-width: 64px;
-            min-height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18));
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.10);
+            gap: 10px;
+            padding: 10px 14px;
+            min-width: 72px;
+            min-height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(40,40,40,0.9), rgba(10,10,10,0.75));
+            color: #f8f8f8;
+            border: 1px solid rgba(255,255,255,0.06);
             font-size: 13px;
             cursor: pointer;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
+            backdrop-filter: blur(4px) saturate(120%);
         }
-        #visual-mode-toggle .tv-icon svg { width: 28px; height: 20px; display: block; }
+        #visual-mode-toggle .tv-icon { display:inline-flex; align-items:center; }
+        #visual-mode-toggle .tv-icon svg { width: 30px; height: 22px; display: block; color: #ffd97a; }
         #visual-mode-toggle .visual-label { font-size: 13px; letter-spacing: 0.02em; }
+        #digital-clock {
+            padding: 10px 14px;
+            color: #fff;
+            background: linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.35));
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.04);
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 14px;
+        }
 
         /* --- Main Player Content --- */
         .content {
@@ -579,23 +575,7 @@
             line-height: 22px;
         }
 
-        /* --- Bottom Bar Elements --- */
-        #digital-clock {
-            position: fixed;
-            bottom: 0;
-            right: 0;
-            background: #c0c0c0;
-            border-top: 2px solid #fff;
-            border-left: 2px solid #fff;
-            border-right: 2px solid #404040;
-            border-bottom: 2px solid #404040;
-            padding: 5px 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            z-index: 1000;
-            border-bottom: none;
-            border-right: none;
-        }
+        /* --- Bottom Bar Elements (clock is handled in #clock-controls) --- */
         
         #color-picker-container {
             position: fixed;
@@ -2438,11 +2418,8 @@
         <div class="resize-handle"></div>
     </div>
     
-    <!-- Bottom Bar: Clock (centered) -->
-    <div id="digital-clock"></div>
-
-    <!-- Visual toggle (bottom-right) -->
-    <div id="visual-toggle-container">
+    <!-- Bottom-right controls: TV button (left) + clock (right) -->
+    <div id="clock-controls">
         <button id="visual-mode-toggle" class="window-button" title="Visual Mode">
             <span class="tv-icon">
                 <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -2453,6 +2430,7 @@
             </span>
             <span class="visual-label">Off</span>
         </button>
+        <div id="digital-clock"></div>
     </div>
 
     <!-- Bottom Bar: Color Picker & Minimized Icons -->
@@ -2810,7 +2788,7 @@
             setVisualMode(next);
         }
         if (visualModeToggleBtn) {
-            // visual toggle is in #visual-toggle-container; wire the click handler
+            // visual toggle is in #clock-controls; wire the click handler
             visualModeToggleBtn.addEventListener('click', cycleVisualMode);
             // init from storage
             const startMode = localStorage.getItem('visualMode') || 'off';
