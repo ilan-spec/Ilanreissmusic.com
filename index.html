@@ -240,8 +240,11 @@
             border-bottom: 1px solid #fff;
         }
 
-        /* Digital clock display */
+        /* Digital clock display - fixed to bottom right */
         #digital-clock {
+            position: fixed;
+            bottom: 0;
+            right: 0;
             padding: 5px 10px;
             background: #c0c0c0;
             color: #000;
@@ -250,14 +253,17 @@
             font-size: 1rem;
             text-align: center;
             min-width: 100px;
-            border-left: 1px solid #fff;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: none;
+            border-right: none;
+            z-index: 1000;
         }
         
-        /* Clock controls container */
+        /* Clock controls container - no longer needed but kept for compatibility */
         #clock-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            display: none;
         }
 
         /* --- Main Player Content --- */
@@ -2341,11 +2347,6 @@
         <div class="resize-handle"></div>
     </div>
     
-    <!-- Clock display -->
-    <div id="clock-controls">
-        <div id="digital-clock"></div>
-    </div>
-
     <!-- Bottom Bar: Color Picker & Minimized Icons -->
     <div id="color-picker-container">
         <label for="bg-color-picker">BG:</label>
@@ -5572,5 +5573,9 @@
         initSolitaireGame();
     });
 </script>
+
+    <!-- Digital Clock (bottom right corner) -->
+    <div id="digital-clock"></div>
+
 </body>
 </html>
