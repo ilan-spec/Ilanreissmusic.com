@@ -8,7 +8,9 @@
       - initial-scale=1.0: Sets the initial zoom level to 100%.
       - user-scalable=no, maximum-scale=1.0: Prevents users from zooming, which is crucial for a full-screen app-like experience, especially on mobile.
     -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Ilan Reiss Music Player</title>
     
     <!-- iOS & PWA Goodies -->
@@ -33,6 +35,7 @@
             margin: 0;
             padding: 0;
             touch-action: pan-y; /* Allow vertical scrolling by default */
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
 
         // Helper: load a folder of instrument samples (e.g., audio/bass) from the GitHub repo
@@ -109,6 +112,8 @@
             user-select: none; /* Disable text selection */
             -webkit-user-select: none; /* Safari compatibility */
             touch-action: none; /* Disable all browser touch gestures (pinch-zoom, etc.) */
+            -webkit-font-smoothing: antialiased; /* Smooth fonts on mobile */
+            -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
         }
 
         /* Floating background/logo image that sits behind all windows. */
@@ -231,6 +236,8 @@
             cursor: pointer;
             flex-shrink: 0;
             touch-action: manipulation; /* Allow tapping without triggering parent drag */
+            min-width: 24px; /* Ensure minimum touch target size on mobile */
+            min-height: 24px; /* Ensure minimum touch target size on mobile */
         }
         /* "Pressed" state for buttons */
         .window-button:active, .window-button.active {
@@ -290,6 +297,7 @@
             gap: 5px;
             flex-shrink: 0;
             align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
         }
 
         /* "Inset" text field style */
@@ -306,6 +314,8 @@
             font-size: 1rem;
             font-weight: 500;
             outline: none;
+            -webkit-appearance: none; /* Remove iOS default styling */
+            border-radius: 0; /* Override iOS rounding */
         }
         
         .sort-button {
@@ -332,6 +342,7 @@
             flex-grow: 1; 
             overflow-y: auto; /* Allow vertical scrolling */
             touch-action: pan-y; /* Enable vertical scroll on touch */
+            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
         }
         
         /* Style for both track and mix lists */
@@ -360,7 +371,10 @@
             background: transparent;
             border: 1px solid transparent;
             height: 100px;
+            min-height: 60px; /* Ensure touch targets are at least 44px */
             -webkit-touch-callout: none; /* Disable context menu bubble on iOS */
+            border-radius: 4px; /* Subtle rounding for better mobile feel */
+            transition: background-color 200ms ease; /* Smooth selection feedback */
         }
         
         #file-list li:hover, #mix-list li:hover {
@@ -406,6 +420,7 @@
             align-items: center;
             margin-top: 5px;
             gap: 10px;
+            flex-wrap: wrap; /* Allow buttons to wrap on small screens */
         }
 
         #now-playing {
@@ -546,6 +561,8 @@
             line-height: 20px;
             cursor: pointer;
             flex-shrink: 0;
+            min-width: 32px; /* Ensure 44px minimum touch target on mobile with padding */
+            min-height: 32px; /* Ensure 44px minimum touch target on mobile with padding */
         }
         #info-button:active, #open-playlists-button:active, #add-track-now-playing:active {
             border-top: 2px solid #404040;
@@ -737,6 +754,7 @@
             flex-grow: 1;
             padding: 5px;
             touch-action: pan-y;
+            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
         }
         
         #dj-library-list li {
@@ -1088,6 +1106,7 @@
             list-style: none;
             padding: 5px;
             touch-action: pan-y;
+            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
         }
         #playlist-list li {
             padding: 8px 5px;
@@ -1123,6 +1142,7 @@
             list-style: none;
             padding: 5px;
             touch-action: pan-y;
+            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
         }
         #playlist-tracks li {
             display: flex;
@@ -1327,6 +1347,7 @@
             overflow-y: auto; /* Allow scrolling if tableau gets too long */
             touch-action: pan-y;
             padding: 5px;
+            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
         }
         
         #solitaire-top-panel, #solitaire-tableau {
@@ -1795,13 +1816,7 @@
                 padding: 10px;
                 overflow: auto;
                 background: var(--tr-light);
-            }
-
-            .tr808-row {
-                display: grid;
-                grid-template-columns: 120px repeat(16, 44px);
-                gap: 6px;
-                align-items: center;
+            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
             }
 
             .tr808-row .row-controls {
