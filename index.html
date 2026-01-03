@@ -1816,13 +1816,14 @@
             #tr808-sequencer {
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
-                padding: 8px;
-                overflow-y: auto;
-                overflow-x: hidden;
+                gap: 8px;
+                padding: 10px;
+                overflow: auto;
                 background: var(--tr-light);
                 -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
-                flex-grow: 1;
+            }
+
+            .tr808-row {
                 display: grid;
                 grid-template-columns: 120px repeat(16, 44px);
                 gap: 6px;
