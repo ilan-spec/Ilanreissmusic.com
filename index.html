@@ -240,51 +240,24 @@
             border-bottom: 1px solid #fff;
         }
 
-        /* (clock-controls removed) */
-        /* Classic Windows-style 3D button for the TV toggle */
-        #visual-mode-toggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 34px;
-            padding: 0;
-            background: #c0c0c0;
-            border-top: 2px solid #fff;
-            border-left: 2px solid #fff;
-            border-right: 2px solid #404040;
-            border-bottom: none;
-            box-shadow: none;
-            color: #000;
-            font-family: "Arial Black", sans-serif;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        #visual-mode-toggle:active {
-            border-top: 2px solid #404040;
-            border-left: 2px solid #404040;
-            border-right: 2px solid #fff;
-            border-bottom: none;
-        }
-        #visual-mode-toggle .tv-icon { display:inline-flex; align-items:center; }
-        #visual-mode-toggle .tv-icon svg { width: 22px; height: 16px; display: block; stroke: currentColor; fill: currentColor; }
-        /* Hide the textual label to match other icon-only buttons */
-        #visual-mode-toggle .visual-label { display: none; }
-
-        /* Classic beveled clock box to match other controls */
+        /* Digital clock display */
         #digital-clock {
-            min-width: 110px;
-            padding: 6px 10px;
+            padding: 5px 10px;
             background: #c0c0c0;
-            border-top: 2px solid #fff;
-            border-left: 2px solid #fff;
-            border-right: 2px solid #404040;
-            border-bottom: none;
-            color: #000080;
-            font-family: "Arial Black", sans-serif;
-            font-weight: 900;
-            font-size: 13px;
+            color: #000;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
             text-align: center;
+            min-width: 100px;
+            border-left: 1px solid #fff;
+        }
+        
+        /* Clock controls container */
+        #clock-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         /* --- Main Player Content --- */
@@ -1999,65 +1972,11 @@
                 z-index: 9; /* above icons (5) but below windows (10) */
             }
 
-            /* Site-wide visual modes */
-            body.mode-crt { filter: contrast(1.4) saturate(1.15) brightness(1.02); transition: filter 300ms ease; }
-            body.mode-vaporwave { filter: saturate(1.6) hue-rotate(-18deg) contrast(1.12) brightness(1.02); transition: filter 300ms ease; }
-
-            /* CRT overlay: scanlines, vignette, subtle noise */
-            #screen-overlay { position: fixed; left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:50;display:none; }
-            body.mode-crt #screen-overlay { display:block; mix-blend-mode:overlay; }
-            body.mode-crt #screen-overlay::before {
-                content: '';
-                position:absolute; left:0;top:0;right:0;bottom:0;
-                background: radial-gradient(ellipse at center, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.55) 80%);
-                pointer-events:none;
-                mix-blend-mode: multiply;
-            }
-            body.mode-crt #screen-overlay::after {
-                content: '';
-                position:absolute; left:0;top:0;right:0;bottom:0;
-                background-image: repeating-linear-gradient(transparent 0 1px, rgba(0,0,0,0.16) 1px 3px);
-                opacity: 0.88;
-                transform: scaleY(1.04);
-                mix-blend-mode: multiply;
-                pointer-events:none;
-            }
-
-            /* apply warp via SVG filter and small chromatic offset */
-            body.mode-crt #screen-overlay { filter: url(#dispGentle); transition: filter 300ms ease, opacity 280ms ease; opacity:1; }
-            body.mode-crt .window, body.mode-crt .player-container { transform: perspective(900px) rotateX(0.6deg); }
-
-            /* Vaporwave overlay: pastel gradient + subtle grain */
-            body.mode-vaporwave #screen-overlay { display:block; filter: url(#dispStrong); }
-            body.mode-vaporwave #screen-overlay::before {
-                content:''; position:absolute; left:0;top:0;right:0;bottom:0;
-                background: linear-gradient(135deg, rgba(255,180,220,0.28), rgba(160,140,255,0.28));
-                mix-blend-mode: screen; pointer-events:none;
-            }
-            body.mode-vaporwave #screen-overlay::after {
-                content:''; position:absolute; left:0;top:0;right:0;bottom:0;
-                background-image: repeating-linear-gradient(transparent 0 2px, rgba(255,255,255,0.04) 2px 4px);
-                opacity:0.6; mix-blend-mode: overlay; pointer-events:none;
-            }
-            body.mode-vaporwave .window, body.mode-vaporwave .player-container { transform: perspective(900px) rotateX(0.8deg) rotateZ(-0.3deg) scale(1.01); }
-
             /* Mini-app content helpers */
 
     </style>
 </head>
 <body>
-    <!-- SVG filters for screen warping -->
-    <svg style="position:absolute;width:0;height:0;" aria-hidden="true">
-        <filter id="dispGentle">
-            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-        <filter id="dispStrong">
-            <feTurbulence type="fractalNoise" baseFrequency="0.14" numOctaves="4" seed="2" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="42" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-    </svg>
-
     <!-- Floating background/logo image (keeps behind windows and is draggable) -->
     <img id="background1" src="background1.png" alt="background logo" draggable="false">
 
@@ -2074,9 +1993,6 @@
 
     <!-- Selection rectangle used for click-drag selecting desktop icons -->
     <div id="selection-rect" aria-hidden="true"></div>
-
-    <!-- Screen overlay used for visual modes (scanlines, gradients) -->
-    <div id="screen-overlay" aria-hidden="true"></div>
 
 
     <!-- Main Player Window -->
@@ -2425,18 +2341,8 @@
         <div class="resize-handle"></div>
     </div>
     
-    <!-- Bottom-right controls: TV button (left) + clock (right) -->
+    <!-- Clock display -->
     <div id="clock-controls">
-        <button id="visual-mode-toggle" class="window-button" title="Visual Mode">
-            <span class="tv-icon">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="2" y="5" width="20" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
-                    <rect x="5" y="9" width="10" height="6" rx="1" fill="currentColor"/>
-                    <polyline points="6,3 12,9 18,3" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-                </svg>
-            </span>
-            <span class="visual-label">Off</span>
-        </button>
         <div id="digital-clock"></div>
     </div>
 
@@ -2774,33 +2680,6 @@
         const tr808SequencerEl = document.getElementById('tr808-sequencer');
         const tr808ClearBtn = document.getElementById('tr808-clear');
         const tr808LoadSamplesBtn = document.getElementById('tr808-load-samples');
-        const visualModeToggleBtn = document.getElementById('visual-mode-toggle');
-
-        // Visual mode cycle: off -> crt -> vaporwave
-        const VISUAL_MODES = ['off','crt','vaporwave'];
-        function setVisualMode(mode) {
-            document.body.classList.remove('mode-crt','mode-vaporwave');
-            if (mode === 'crt') document.body.classList.add('mode-crt');
-            if (mode === 'vaporwave') document.body.classList.add('mode-vaporwave');
-            if (visualModeToggleBtn) {
-                const label = visualModeToggleBtn.querySelector('.visual-label');
-                if (label) label.textContent = (mode === 'off' ? 'Off' : (mode === 'crt' ? 'CRT' : 'Vaporwave'));
-            }
-            try { localStorage.setItem('visualMode', mode); } catch(e){}
-        }
-        function cycleVisualMode() {
-            const cur = localStorage.getItem('visualMode') || 'off';
-            const idx = VISUAL_MODES.indexOf(cur);
-            const next = VISUAL_MODES[(idx + 1) % VISUAL_MODES.length];
-            setVisualMode(next);
-        }
-        if (visualModeToggleBtn) {
-            // visual toggle is in #clock-controls; wire the click handler
-            visualModeToggleBtn.addEventListener('click', cycleVisualMode);
-            // init from storage
-            const startMode = localStorage.getItem('visualMode') || 'off';
-            setVisualMode(startMode);
-        }
         // Desktop selection & mini-apps
         const desktopIconsContainer = document.getElementById('desktop-icons');
         const desktopIcons = document.querySelectorAll('#desktop-icons .desktop-icon');
