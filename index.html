@@ -8,7 +8,12 @@
       - initial-scale=1.0: Sets the initial zoom level to 100%.
       - user-scalable=no, maximum-scale=1.0: Prevents users from zooming, which is crucial for a full-screen app-like experience, especially on mobile.
     -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <!-- Safari address bar hide -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Safari-specific fixes for smooth scrolling and safe area -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Ilan Reiss Music Player</title>
     
     <!-- iOS & PWA Goodies -->
@@ -95,11 +100,41 @@
             }
         }
 
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            color: #000;
-            /* Keep the teal background as a fallback */
-            background-color: #008080;
+        input[type="text"],
+        input[type="number"],
+        input[type="range"],
+        input[type="color"],
+        textarea,
+        select {
+            font-size: 16px;
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: slider-horizontal;
+            appearance: slider-horizontal;
+        }
+
+        /* Prevent zoom on input focus - critical for Safari */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+
+        /* Better button interaction on mobile */
+        button, input[type="button"], .window-button {
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        }
+
+        /* Improve list item touch targets */
+        #file-list li, #mix-list li,
+        #dj-library-list li,
+        #playlist-list li,
+        #playlist-tracks li {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
             /* Background image is rendered as a separate positioned <img> element
                so it remains visible behind windows even when the background color
                changes and so it can be clicked & dragged. */
@@ -125,6 +160,7 @@
             cursor: grab;
             touch-action: none; /* handle touch dragging manually */
             user-select: none;
+            -webkit-user-select: none;
         }
 
         /* Mobile fullscreen window helper - applied to windows when opened on small screens */
@@ -145,11 +181,19 @@
         /* On small screens, make the floating background non-interactive and smaller */
         @media (max-width: 768px) {
             #background1 {
-                width: 140px;
+                width: 120px;
                 pointer-events: none;
-                opacity: 0.95;
+                opacity: 0.7;
+                top: 12px;
             }
             .title-bar { cursor: default; } /* No dragging on mobile */
+        }
+
+        @media (max-width: 480px) {
+            #background1 {
+                width: 100px;
+                opacity: 0.5;
+            }
         }
 
         /* --- Window System --- */
@@ -167,6 +211,8 @@
             min-width: 300px; 
             min-height: 200px; 
             z-index: 10; /* Default stacking order */
+            border-radius: 4px;
+            overflow: hidden;
         }
  
         /* Active (top) window is brought to the front */
@@ -231,6 +277,9 @@
             cursor: pointer;
             flex-shrink: 0;
             touch-action: manipulation; /* Allow tapping without triggering parent drag */
+            border-radius: 2px;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 80ms ease-out;
         }
         /* "Pressed" state for buttons */
         .window-button:active, .window-button.active {
@@ -284,6 +333,7 @@
             flex-grow: 1;
             overflow: hidden; /* Important for layout */
             border-top: 1px solid #808080;
+            background: #c0c0c0;
         }
         
         .content-inner {
@@ -315,6 +365,9 @@
             font-size: 1rem;
             font-weight: 500;
             outline: none;
+            border-radius: 2px;
+            -webkit-appearance: none;
+            appearance: none;
         }
         
         .sort-button {
@@ -341,6 +394,8 @@
             flex-grow: 1; 
             overflow-y: auto; /* Allow vertical scrolling */
             touch-action: pan-y; /* Enable vertical scroll on touch */
+            -webkit-overflow-scrolling: touch;
+            border-radius: 4px;
         }
         
         /* Style for both track and mix lists */
@@ -373,13 +428,19 @@
         }
         
         #file-list li:hover, #mix-list li:hover {
-            background: transparent; /* Simple selection style */
+            background: rgba(0, 128, 128, 0.1); /* Simple selection style */
+            border-radius: 2px;
         }
 
         #file-list li .file-icon, #mix-list li .file-icon {
             font-size: 2.5rem;
             color: #000080;
             margin-bottom: 8px;
+            transition: transform 80ms ease-out;
+        }
+
+        #file-list li:hover .file-icon, #mix-list li:hover .file-icon {
+            transform: scale(1.08);
         }
 
         #file-list li.active .file-icon, #mix-list li.active .file-icon {
@@ -415,6 +476,7 @@
             align-items: center;
             margin-top: 5px;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         #now-playing {
@@ -588,6 +650,8 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         #color-picker-container label {
@@ -595,30 +659,40 @@
             font-weight: 600;
         }
         
-        /* Inset color picker */
+        /* Inset color picker - enhanced for mobile */
         #bg-color-picker {
-            width: 40px;
-            height: 25px;
+            width: 48px;
+            height: 32px;
             background: #c0c0c0;
             border-top: 2px solid #404040;
             border-left: 2px solid #404040;
             border-right: 2px solid #fff;
             border-bottom: 2px solid #fff;
             cursor: pointer;
-            padding: 0;
+            padding: 2px;
+            border-radius: 2px;
+            -webkit-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+        }
+        #bg-color-picker:active {
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
         }
         /* Style for color picker internals */
         #bg-color-picker::-webkit-color-swatch-wrapper {
-            padding: 0;
+            padding: 1px;
         }
         #bg-color-picker::-webkit-color-swatch {
-            border: none;
+            border: 1px solid #808080;
         }
 
-        /* Minimized icon "buttons" */
+        /* Minimized icon "buttons" - enhanced touch targets */
         #minimized-player-icon {
-            width: 25px; 
-            height: 25px; 
+            width: 28px; 
+            height: 28px; 
             background: #c0c0c0;
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
@@ -629,9 +703,11 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1rem; 
+            font-size: 0.95rem; 
             color: #000080;
-            margin-left: 10px; 
+            margin-left: 8px;
+            border-radius: 2px;
+            touch-action: manipulation;
         }
         #minimized-player-icon:active {
             border-top: 2px solid #404040;
@@ -642,8 +718,8 @@
         
         /* --- DJ App Styles --- */
         #open-dj-app-icon {
-            width: 25px;
-            height: 25px;
+            width: 28px;
+            height: 28px;
             background: #c0c0c0;
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
@@ -654,9 +730,11 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #000080;
-            margin-left: 10px;
+            margin-left: 8px;
+            border-radius: 2px;
+            touch-action: manipulation;
         }
         #open-dj-app-icon:active {
             border-top: 2px solid #404040;
@@ -666,8 +744,8 @@
         }
         
         #minimized-dj-icon {
-             width: 25px;
-            height: 25px;
+            width: 28px;
+            height: 28px;
             background: #c0c0c0;
             border-top: 2px solid #fff;
             border-left: 2px solid #fff;
@@ -678,6 +756,8 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            border-radius: 2px;
+            touch-action: manipulation;
             font-size: 1rem;
             color: #000080;
             margin-left: 10px;
@@ -719,6 +799,7 @@
             border-bottom-color: #fff;
             padding: 10px;
             gap: 10px;
+            border-radius: 4px;
         }
         
         #dj-library-container {
@@ -756,6 +837,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 80ms ease-out;
         }
         
         #dj-library-list li:hover {
@@ -980,6 +1062,74 @@
             gap: 20px;
             flex-grow: 1;
             padding: 10px 0;
+        }
+        
+        .volume-slider-container, .bpm-slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+        
+        .volume-slider, .bpm-slider {
+            width: 40px;
+            height: 150px;
+            cursor: pointer;
+            -webkit-appearance: slider-vertical;
+            appearance: slider-vertical;
+            writing-mode: bt-lr; /* Browser standard */
+        }
+        
+        .volume-slider::-webkit-slider-thumb, .bpm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            cursor: pointer;
+        }
+        
+        .volume-slider::-moz-range-thumb, .bpm-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #c0c0c0;
+            border-top: 1px solid #fff;
+            border-left: 1px solid #fff;
+            border-right: 1px solid #404040;
+            border-bottom: 1px solid #404040;
+            cursor: pointer;
+            border: 1px solid #808080;
+        }
+        
+        .volume-slider::-webkit-slider-runnable-track, .bpm-slider::-webkit-slider-runnable-track {
+            background: #808080;
+            border-top: 1px solid #404040;
+            border-left: 1px solid #404040;
+            border-right: 1px solid #fff;
+            border-bottom: 1px solid #fff;
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .bpm-label-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .bpm-display {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #000;
+        }
         }
         
         .volume-slider-container, .bpm-slider-container {
@@ -1524,112 +1674,349 @@
 
         /* --- Responsive Media Query (for mobile) --- */
         @media (max-width: 768px) {
+            html, body {
+                width: 100%;
+                height: 100%;
+                overflow-x: hidden;
+            }
             body {
-                overflow: auto; /* Allow scrolling on mobile */
+                overflow-y: auto; /* Allow scrolling on mobile */
+                -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
                 height: auto;
                 min-height: 100vh;
-                padding: 5px;
-                padding-bottom: 120px; /* Space for bottom bars */
+                padding: 10px;
+                padding-bottom: 180px; /* Space for bottom bars */
+                background-attachment: fixed; /* Prevent scroll issues on Safari */
+                display: flex;
+                flex-direction: column;
             }
             /* Stack windows vertically */
             .window {
                 position: relative; 
                 width: 100% !important; 
                 height: auto !important; 
-                min-width: 95vw;
+                max-width: 100vw;
                 left: 0 !important;
                 top: 0 !important;
-                margin-bottom: 10px;
-                box-shadow: 1px 1px 0 1px #000; 
+                margin-bottom: 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+                border-radius: 8px;
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
             }
             .resize-handle { display: none; } /* No resizing on mobile */
-            .title-bar { cursor: default; } /* No dragging on mobile */
+            .title-bar { 
+                cursor: default; /* No dragging on mobile */
+                user-select: none;
+                -webkit-user-select: none;
+                font-size: 15px;
+                padding: 8px 12px;
+            }
             
             .player-container {
                 min-height: 0; 
                 height: auto;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: auto !important;
+                min-height: auto !important;
+                max-height: none !important;
+            }
+
+            .content {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 12px;
             }
 
             .file-browser {
-                min-height: 300px; /* Ensure file list is usable */
+                min-height: 300px; /* Ensure file list is usable on mobile */
+                max-height: 70vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            #file-list, #mix-list {
+                grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+                gap: 12px;
+            }
+
+            #file-list li, #mix-list li {
+                height: 110px;
+                padding: 8px 6px;
+            }
+
+            #file-list li .file-icon, #mix-list li .file-icon {
+                font-size: 3rem;
+                margin-bottom: 6px;
+            }
+
+            #file-list li .file-name, #mix-list li .file-name {
+                font-size: 0.8rem;
+                padding: 4px 3px;
+            }
+
+            #now-playing {
+                font-size: 0.95rem;
+                margin-bottom: 12px;
+                padding: 8px;
+                background: rgba(0, 128, 128, 0.15);
+                border-radius: 4px;
+            }
+
+            #audio-player {
+                width: 100%;
+                height: 50px;
+            }
+
+            .player-controls {
+                margin-top: 10px;
+            }
+
+            .player-bottom-buttons {
+                margin-top: 8px;
+                justify-content: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            #info-button, #open-playlists-button, #add-track-now-playing {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+                line-height: 35px;
+            }
+
+            .search-sort-container {
+                gap: 8px;
+            }
+
+            #search-bar {
+                padding: 10px 12px;
+                font-size: 16px;
+                border-radius: 6px;
+            }
+
+            .sort-button {
+                width: 50px;
+                height: 40px;
+                font-size: 12px;
             }
 
             /* DJ App Mobile Layout: */
+            #dj-app-window {
+                max-height: none;
+                min-width: auto;
+                min-height: auto;
+                width: 100% !important;
+                height: auto !important;
+            }
+
             #dj-app-window .content {
                 flex-direction: column; /* Stack vertically */
                 height: auto;
+                padding: 12px;
             }
+
             #dj-library-container {
                 order: 1; /* Library first */
-                flex-basis: 100%; 
-                height: 250px; /* Fixed height for library */
+                flex-basis: auto; 
+                width: 100%;
+                height: 280px; /* Fixed height for library */
+                margin-bottom: 12px;
+                border-radius: 4px;
             }
+
+            #dj-library-list {
+                font-size: 0.9rem;
+            }
+
+            #dj-library-list li {
+                padding: 8px 10px;
+            }
+
             /* Container for the two decks */
             .dj-decks-container {
                 display: flex;
-                flex-direction: row; /* Decks side-by-side */
-                flex-wrap: wrap;
+                flex-direction: column;
                 order: 2; /* Decks after library */
                 width: 100%;
-                gap: 5px;
+                gap: 12px;
             }
+
             .deck-container {
-                /* Decks take 50% width each */
-                flex-basis: calc(50% - 2.5px); 
-                flex-grow: 1;
-                min-width: 170px; 
+                flex-basis: auto; 
+                flex-grow: 0;
+                min-width: auto;
                 height: auto; 
                 min-height: 0;
+                width: 100%;
+                border-radius: 4px;
+                padding: 12px;
+            }
+
+            .track-name-display {
+                min-height: 50px;
+                padding: 8px;
+                gap: 10px;
+            }
+
+            .load-info-container {
+                flex-direction: row;
+                gap: 8px;
+                margin-top: 10px;
+            }
+
+            .load-button {
+                padding: 10px 12px;
+                height: auto;
+                flex-grow: 1;
+                font-size: 14px;
+            }
+
+            .current-bpm-display {
+                padding: 10px 12px;
+                min-width: 80px;
+                height: auto;
+                font-size: 16px;
+            }
+
+            .deck-controls {
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-top: 10px;
+                justify-content: center;
+            }
+
+            .deck-controls .window-button {
+                width: 50px;
+                height: 40px;
+                font-size: 12px;
+                padding: 6px;
+            }
+
+            .eq-controls {
+                flex-direction: column;
+                gap: 16px;
+                align-items: center;
+                margin-top: 12px;
+            }
+
+            .eq-dial {
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .eq-slider {
+                width: 100%;
             }
 
             .deck-sliders {
-                flex-direction: row; /* Sliders side-by-side */
-                justify-content: space-around; 
-                flex-grow: 0;
-                padding: 10px 0;
+                flex-direction: column;
+                width: 100%;
+                gap: 16px;
+                margin-top: 12px;
             }
-            
+
+            .volume-slider-container, .bpm-slider-container {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
             .volume-slider, .bpm-slider {
-                height: 120px; /* Shorter vertical sliders */
+                width: 100%;
+                height: 30px;
             }
-            
+
+            .scrub-bar {
+                height: 30px;
+                margin: 10px 0;
+            }
+
             .scrub-platter {
-                width: 25px; 
-                height: 25px;
+                width: 28px; 
+                height: 28px;
             }
+
             .platter-spindle {
                 width: 4px;
                 height: 4px;
             }
-            .track-name-display {
-                gap: 5px; 
-            }
-            
+
             /* Playlist window mobile */
+            #playlist-window {
+                width: 100% !important;
+                height: auto !important;
+                min-width: auto;
+                min-height: auto;
+            }
+
             #playlist-window .content {
                 flex-direction: column;
+                padding: 12px;
             }
+
             #playlist-list-container {
                 width: 100%;
                 border-right: none;
                 border-bottom: 2px solid #808080;
-                padding-right: 0;
-                padding-bottom: 10px;
-                height: 200px; /* Fixed height for list */
+                padding: 0;
+                padding-bottom: 12px;
+                margin-bottom: 12px;
+                height: 220px;
             }
+
             #playlist-tracks-container {
-                padding-left: 0;
-                height: 250px; /* Fixed height for tracks */
+                width: 100%;
+                padding: 0;
+                height: 280px;
+            }
+
+            #playlist-list, #playlist-tracks {
+                font-size: 0.95rem;
+            }
+
+            /* Info window mobile */
+            #info-window {
+                width: 100% !important;
+                height: auto !important;
+                min-width: auto;
+                min-height: auto;
+            }
+
+            #info-window .content {
+                padding: 16px;
+                font-size: 1rem;
+            }
+
+            #info-window p {
+                margin-bottom: 12px;
+                line-height: 1.6;
+            }
+
+            #info-window a {
+                color: #1084d0;
+                text-decoration: underline;
             }
             
             /* Solitaire mobile */
             #solitaire-window {
-                min-height: 0;
+                width: 100% !important;
+                height: auto !important;
+                min-width: auto;
+                min-height: auto;
+                max-height: 90vh;
             }
+
+            #solitaire-content {
+                padding: 12px;
+            }
+
             #solitaire-game-board {
                 /* Scale down cards on small screens */
-                --card-width: 60px;
-                --card-height: 86px;
+                --card-width: 64px;
+                --card-height: 90px;
                 gap: 10px;
             }
             
@@ -1637,101 +2024,298 @@
                 width: var(--card-width);
                 height: var(--card-height);
             }
+
             .solitaire-card {
                 width: var(--card-width);
                 height: var(--card-height);
                 font-size: 14px;
                 padding: 3px;
-            }
-            .solitaire-card .card-suit {
-                font-size: 20px;
-            }
-            #solitaire-top-panel, #solitaire-tableau {
-                gap: 5px;
-            }
-             .solitaire-spacer {
-                width: 5px;
-            }
-            .tableau-stack .solitaire-card:not(.facedown) + .solitaire-card:not(.facedown) {
-                margin-top: -65px; 
-            }
-            .tableau-stack .solitaire-card.facedown + .solitaire-card.facedown {
-                margin-top: -78px;
-            }
-             .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
-                margin-top: -78px;
+                border-radius: 3px;
             }
 
-            /* Stack bottom bar items */
+            .solitaire-card .card-suit {
+                font-size: 22px;
+            }
+
+            #solitaire-top-panel, #solitaire-tableau {
+                gap: 6px;
+            }
+
+            .solitaire-spacer {
+                width: 4px;
+            }
+
+            .tableau-stack .solitaire-card:not(.facedown) + .solitaire-card:not(.facedown) {
+                margin-top: -68px; 
+            }
+
+            .tableau-stack .solitaire-card.facedown + .solitaire-card.facedown {
+                margin-top: -80px;
+            }
+
+            .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
+                margin-top: -80px;
+            }
+
+            /* Stack bottom bar items properly */
             #color-picker-container {
                 position: fixed; 
                 bottom: 0;
                 left: 0;
+                right: 0;
                 width: 100%;
                 flex-wrap: wrap; 
                 justify-content: center;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 10px;
                 z-index: 1001; 
                 border-top: 2px solid #fff;
                 border-right: none;
-                border-left: none; 
+                border-left: none;
+                border-bottom: none;
+                background: #c0c0c0;
+                min-height: 60px;
             }
-            /* (mobile) clock and visual controls fall back to global styles */
+
+            #color-picker-container label {
+                font-size: 14px;
+                font-weight: 600;
+                margin: 0;
+                white-space: nowrap;
+            }
+
+            #bg-color-picker {
+                width: 56px;
+                height: 48px;
+                margin: 0;
+                flex-shrink: 0;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            /* Clock on mobile - positioned better */
+            #clock-controls {
+                position: fixed;
+                bottom: 70px;
+                right: 10px;
+                padding: 4px 6px;
+                z-index: 1100;
+            }
+
+            #digital-clock {
+                font-size: 13px;
+                padding: 6px 10px;
+            }
+
+            /* Minimized icons - better touch targets */
+            #minimized-player-icon, #open-dj-app-icon, #minimized-dj-icon, 
+            #open-tr808-icon, #minimized-tr808-icon,
+            #open-solitaire-icon, #minimized-solitaire-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                margin: 0 4px;
+                flex-shrink: 0;
+                border-radius: 4px;
+            }
         }
         
         /* Narrower phones */
-        @media (max-width: 420px) {
-             #file-list, #mix-list {
-                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-                gap: 10px;
+        @media (max-width: 480px) {
+            #color-picker-container {
+                padding: 10px 8px;
+                gap: 8px;
+                min-height: 56px;
             }
+
+            #bg-color-picker {
+                width: 52px;
+                height: 44px;
+                flex-shrink: 0;
+            }
+
+            #color-picker-container label {
+                font-size: 12px;
+                white-space: nowrap;
+            }
+
+            #file-list, #mix-list {
+                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+                gap: 8px;
+            }
+
+            #file-list li, #mix-list li {
+                height: 100px;
+                padding: 6px 4px;
+            }
+
+            #file-list li .file-icon, #mix-list li .file-icon {
+                font-size: 2.8rem;
+                margin-bottom: 4px;
+            }
+
+            #file-list li .file-name, #mix-list li .file-name {
+                font-size: 0.75rem;
+            }
+
+            /* Improve search bar on small screens */
+            .search-sort-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            #search-bar {
+                width: 100%;
+            }
+
+            .sort-button {
+                width: 100%;
+            }
+
             /* Stack EQ knobs */
             .eq-controls {
                 flex-direction: column;
-                gap: 15px;
+                gap: 14px;
                 align-items: center;
             }
-            .eq-slider {
-                width: 70%;
-                max-width: 200px;
+
+            .eq-dial {
+                width: 100%;
+                max-width: 220px;
             }
+
+            .eq-slider {
+                width: 100%;
+                max-width: 100%;
+            }
+
             /* Stack Load button and BPM display */
             .load-info-container {
                 flex-direction: column;
-                align-items: stretch; 
+                gap: 10px;
+                align-items: stretch;
             }
+
+            .load-button {
+                width: 100%;
+                padding: 12px;
+            }
+
             .current-bpm-display {
-                min-width: 0; 
+                width: 100%;
+                text-align: center;
+                min-width: auto;
             }
+
             .deck-controls .window-button {
-                width: 38px; /* Smaller buttons */
-                font-size: 10px;
+                width: 44px;
+                height: 40px;
+                font-size: 11px;
+                padding: 4px 6px;
+            }
+
+            #minimized-player-icon, #open-dj-app-icon, #minimized-dj-icon, 
+            #open-tr808-icon, #minimized-tr808-icon,
+            #open-solitaire-icon, #minimized-solitaire-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
             }
             
             /* Solitaire even smaller */
             #solitaire-game-board {
-                --card-width: 42px;
-                --card-height: 60px;
-                gap: 5px;
+                --card-width: 56px;
+                --card-height: 80px;
+                gap: 6px;
             }
-             #solitaire-top-panel, #solitaire-tableau {
+
+            #solitaire-top-panel, #solitaire-tableau {
                 gap: 4px;
             }
+
             .solitaire-card {
-                font-size: 10px;
+                font-size: 12px;
                 padding: 2px;
-                border-radius: 3px;
+                border-radius: 2px;
             }
+
             .solitaire-card .card-suit {
-                font-size: 14px;
+                font-size: 18px;
             }
+
             .tableau-stack .solitaire-card:not(.facedown) + .solitaire-card:not(.facedown) {
-                margin-top: -48px; 
+                margin-top: -60px; 
             }
+
             .tableau-stack .solitaire-card.facedown + .solitaire-card.facedown {
-                margin-top: -55px;
+                margin-top: -72px;
             }
-             .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
-                margin-top: -55px;
+
+            .tableau-stack .solitaire-card.facedown + .solitaire-card:not(.facedown) {
+                margin-top: -72px;
+            }
+
+            /* Better spacing for small phones */
+            .window {
+                margin-bottom: 14px;
+                border-radius: 6px;
+            }
+
+            .title-bar {
+                font-size: 14px;
+                padding: 7px 10px;
+            }
+
+            #info-window .content {
+                padding: 14px;
+                font-size: 0.95rem;
+            }
+
+            #info-window p {
+                margin-bottom: 10px;
+            }
+
+            .player-bottom-buttons {
+                gap: 6px;
+            }
+
+            #info-button, #open-playlists-button, #add-track-now-playing {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+                line-height: 31px;
+            }
+
+            /* Improve TR-808 on small screens */
+            .tr808-row {
+                grid-template-columns: 90px repeat(16, 28px);
+                gap: 4px;
+            }
+
+            .tr808-step {
+                width: 28px;
+                height: 24px;
+                font-size: 9px;
+                border-radius: 2px;
+            }
+
+            .tr808-row .row-label {
+                padding: 6px;
+                font-size: 11px;
+            }
+
+            #tr808-window .tr808-controls {
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 6px;
+            }
+
+            #tr808-window .tr808-controls .window-button {
+                font-size: 10px;
+                height: 28px;
+                min-width: 48px;
+                padding: 3px 6px;
             }
         }
 
@@ -1749,10 +2333,10 @@
                 --tr-group-3: #DD1D00; /* red */
             }
 
-            /* Match bottom icons style */
+            /* Match bottom icons style - improved touch targets */
             #open-tr808-icon, #minimized-tr808-icon {
-                width: 25px;
-                height: 25px;
+                width: 28px;
+                height: 28px;
                 background: #c0c0c0;
                 border-top: 2px solid #fff;
                 border-left: 2px solid #fff;
@@ -1763,9 +2347,11 @@
                 align-items: center;
                 justify-content: center;
                 cursor: pointer;
-                font-size: 14px;
+                font-size: 13px;
                 color: var(--tr-dark);
-                margin-left: 10px;
+                margin-left: 8px;
+                border-radius: 2px;
+                touch-action: manipulation;
             }
             #open-tr808-icon:active, #minimized-tr808-icon:active {
                 border-top: 2px solid #404040;
@@ -1899,6 +2485,7 @@
                 border-radius: 8px;
                 border: 1px solid rgba(47,46,62,0.06);
                 overflow: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             /* small toggle buttons for sample sets */
