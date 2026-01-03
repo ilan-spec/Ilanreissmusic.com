@@ -1788,13 +1788,15 @@
 
             #tr808-window .tr808-controls {
                 display: flex;
+                flex-direction: row;
                 gap: 8px;
                 align-items: center;
                 padding: 8px;
                 flex-shrink: 0;
-                flex-wrap: wrap;
                 background: linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
                 border-bottom: 1px solid rgba(0,0,0,0.06);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             /* Make control buttons slightly larger and text readable */
@@ -1816,7 +1818,14 @@
                 padding: 10px;
                 overflow: auto;
                 background: var(--tr-light);
-            -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+                -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
+            }
+
+            .tr808-row {
+                display: grid;
+                grid-template-columns: 120px repeat(16, 44px);
+                gap: 6px;
+                align-items: center;
             }
 
             .tr808-row .row-controls {
