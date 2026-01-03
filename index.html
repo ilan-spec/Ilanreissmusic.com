@@ -428,19 +428,13 @@
         }
         
         #file-list li:hover, #mix-list li:hover {
-            background: rgba(0, 128, 128, 0.1); /* Simple selection style */
-            border-radius: 2px;
+            background: transparent; /* Simple selection style */
         }
 
         #file-list li .file-icon, #mix-list li .file-icon {
             font-size: 2.5rem;
             color: #000080;
             margin-bottom: 8px;
-            transition: transform 80ms ease-out;
-        }
-
-        #file-list li:hover .file-icon, #mix-list li:hover .file-icon {
-            transform: scale(1.08);
         }
 
         #file-list li.active .file-icon, #mix-list li.active .file-icon {
