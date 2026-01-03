@@ -1789,39 +1789,40 @@
             #tr808-window .tr808-controls {
                 display: flex;
                 flex-direction: row;
-                gap: 8px;
+                gap: 6px;
                 align-items: center;
-                padding: 8px;
+                padding: 6px 8px;
                 flex-shrink: 0;
                 background: linear-gradient(90deg, rgba(0,0,0,0.03), rgba(0,0,0,0.01));
                 border-bottom: 1px solid rgba(0,0,0,0.06);
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                flex-wrap: wrap;
+                row-gap: 4px;
             }
 
             /* Make control buttons slightly larger and text readable */
             #tr808-window .tr808-controls .window-button {
-                font-size: 12px;
-                height: 30px;
-                padding: 4px 10px;
-                min-width: 64px;
-                line-height: 20px;
+                font-size: 11px;
+                height: 26px;
+                padding: 3px 8px;
+                min-width: 50px;
+                line-height: 18px;
                 color: var(--tr-dark);
             }
             /* Ensure PLAY/STOP/CLEAR labels fit on small screens */
-            #tr808-play, #tr808-stop, #tr808-clear { min-width: 54px; padding: 6px 8px; font-size: 12px; }
+            #tr808-play, #tr808-stop, #tr808-clear { min-width: 48px; padding: 3px 6px; font-size: 11px; }
 
             #tr808-sequencer {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
-                padding: 10px;
-                overflow: auto;
+                gap: 6px;
+                padding: 8px;
+                overflow-y: auto;
+                overflow-x: hidden;
                 background: var(--tr-light);
                 -webkit-overflow-scrolling: touch; /* Smooth momentum scrolling on iOS */
-            }
-
-            .tr808-row {
+                flex-grow: 1;
                 display: grid;
                 grid-template-columns: 120px repeat(16, 44px);
                 gap: 6px;
@@ -1906,14 +1907,23 @@
                 width: 760px;
                 max-width: 92vw;
                 min-width: 360px;
-                height: 420px;
-                min-height: 220px;
-                max-height: 80vh;
+                height: 450px;
+                min-height: 280px;
+                max-height: 85vh;
                 background: linear-gradient(180deg, var(--tr-light), #ffffff);
                 box-shadow: 0 10px 30px rgba(47,46,62,0.18);
                 border-radius: 8px;
                 border: 1px solid rgba(47,46,62,0.06);
-                overflow: auto;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            #tr808-window .content {
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1;
+                overflow: hidden;
             }
 
             /* small toggle buttons for sample sets */
