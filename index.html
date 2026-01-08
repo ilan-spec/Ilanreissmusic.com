@@ -2129,6 +2129,10 @@
             <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
             <p><em>(You can edit this text in the index.html file)</em></p>
+            <!-- Animated GIF shown only when the Info window is opened -->
+            <div class="load-info-container" style="justify-content:center; margin-top:8px;">
+                <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:none; width:100%; max-width:360px; height:auto; border:1px solid #808080;" />
+            </div>
         </div>
         <div class="resize-handle"></div>
     </div>
@@ -4508,6 +4512,13 @@
         infoButton.addEventListener('click', () => {
             infoWindow.style.display = 'flex';
             if (!isMobile) bringWindowToFront(infoWindow);
+            // Load and show the animated GIF only when the info window opens
+            const _infoGif = document.getElementById('info-gif');
+            if (_infoGif) {
+                // Use the data-src attribute so the GIF doesn't load until requested
+                _infoGif.src = _infoGif.dataset.src || '';
+                _infoGif.style.display = 'block';
+            }
         });
         
         // --- Window Button Listeners (Close, Minimize, Restore) ---
@@ -4566,6 +4577,13 @@
                         openDjAppIcon.style.display = 'flex'; // Show open icon
                     } else if (targetWindowId === 'visualizer-window') {
                         stopVisualizer();
+                    } else if (targetWindowId === 'info-window') {
+                        // When info window is closed, hide and clear the GIF so it stops
+                        const _infoGif = document.getElementById('info-gif');
+                        if (_infoGif) {
+                            _infoGif.src = '';
+                            _infoGif.style.display = 'none';
+                        }
                     } else if (targetWindowId === 'solitaire-window') { // NEW
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
