@@ -5570,8 +5570,13 @@
                 const pos = JSON.parse(localStorage.getItem('bgImagePos') || 'null');
                 if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') {
                     // Use explicit px positioning when a saved position exists
-                    bgImage.style.left = pos.left + 'px';
-                    bgImage.style.top = pos.top + 'px';
+                    // Clamp saved position to viewport so it can't be off-screen on other hosts
+                    const imgW = bgImage.offsetWidth || 200;
+                    const imgH = bgImage.offsetHeight || 200;
+                    const clampedLeft = Math.max(8, Math.min(pos.left, window.innerWidth - imgW - 8));
+                    const clampedTop = Math.max(8, Math.min(pos.top, window.innerHeight - imgH - 8));
+                    bgImage.style.left = clampedLeft + 'px';
+                    bgImage.style.top = clampedTop + 'px';
                     bgImage.style.transform = 'none';
                 }
             } catch(e) { /* ignore parse errors */ }
