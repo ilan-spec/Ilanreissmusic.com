@@ -5549,6 +5549,19 @@
 
         // --- Draggable background/logo (`background1.png`) ---
         const bgImage = document.getElementById('background1');
+        // Defensive: ensure the image has the correct relative src and is visible.
+        if (bgImage) {
+            try {
+                const expected = './' + encodeURI('background1.png');
+                if (!bgImage.src || !bgImage.src.endsWith('background1.png')) {
+                    bgImage.src = expected;
+                }
+                bgImage.style.display = bgImage.style.display || 'block';
+                bgImage.style.zIndex = (bgImage.style.zIndex || 0);
+                // Log load errors for easier debugging in browser console
+                bgImage.addEventListener('error', () => console.warn('background1.png failed to load — check path/case.'));
+            } catch (e) {}
+        }
         (function initBackgroundDrag() {
             if (!bgImage) return;
 
