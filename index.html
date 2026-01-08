@@ -5578,6 +5578,15 @@
                     bgImage.style.left = clampedLeft + 'px';
                     bgImage.style.top = clampedTop + 'px';
                     bgImage.style.transform = 'none';
+                } else {
+                    // No saved position — force a safe centered-top default but keep it draggable
+                    const imgW = bgImage.offsetWidth || 200;
+                    const imgH = bgImage.offsetHeight || 200;
+                    const defaultLeft = Math.max(12, (window.innerWidth - imgW) / 2);
+                    const defaultTop = 28; // small offset from top so it's visible
+                    bgImage.style.left = defaultLeft + 'px';
+                    bgImage.style.top = defaultTop + 'px';
+                    bgImage.style.transform = 'none';
                 }
             } catch(e) { /* ignore parse errors */ }
 
