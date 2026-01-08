@@ -1489,9 +1489,11 @@
         }
 
         .solitaire-card.facedown {
-            background-color: #000080;
-            background-image: linear-gradient(135deg, #000080 25%, #1084d0 25%, #1084d0 50%, #000080 50%, #000080 75%, #1084d0 75%, #1084d0 100%);
-            background-size: 20px 20px;
+            background-color: #f5f5dc;
+            background-image: url('./playingcard.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             color: transparent;
             padding: 0;
         }
@@ -1609,9 +1611,11 @@
         }
 
         .blackjack-card.facedown {
-            background-color: #1a4d7a;
-            background-image: 
-                repeating-linear-gradient(45deg, #1a4d7a, #1a4d7a 10px, #0d2640 10px, #0d2640 20px);
+            background-color: #f5f5dc;
+            background-image: url('./playingcard.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             color: transparent;
         }
         
@@ -6097,6 +6101,13 @@
             
             if (isFaceDown) {
                 cardEl.classList.add('facedown');
+                // Use image for card back
+                const img = document.createElement('img');
+                img.src = './playingcard.png';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.borderRadius = '6px';
+                cardEl.appendChild(img);
             } else {
                 if (card.suit === '♥' || card.suit === '♦') cardEl.classList.add('red');
                 else cardEl.classList.add('black');
@@ -6136,7 +6147,10 @@
                 return;
             }
             
-            if (bjGameActive) return;
+            if (bjGameActive) {
+                console.warn('Game already active, ignoring deal');
+                return;
+            }
             
             const bet = parseInt(bjBetInput.value) || 10;
             if (bet > bjCoins || bet < 1) {
@@ -6164,24 +6178,27 @@
             
             displayBjHands();
             
-            // Check for blackjack
-            const playerVal = calculateHandValue(bjPlayerHand);
-            const dealerVal = calculateHandValue(bjDealerHand);
-            
-            bjHitButton.style.display = 'block';
-            bjStandButton.style.display = 'block';
-            bjDealButton.style.display = 'none';
+            // Update button states FIRST
             bjDealButton.textContent = 'Deal';
+            bjDealButton.style.display = 'none';
+            bjDealButton.disabled = false;
+            bjHitButton.style.display = 'block';
+            bjHitButton.disabled = false;
+            bjStandButton.style.display = 'block';
+            bjStandButton.disabled = false;
+            
+            // Check for blackjack or bust
+            const playerVal = calculateHandValue(bjPlayerHand);
             
             if (playerVal === 21 && bjPlayerHand.length === 2) {
-                bjMessage.textContent = 'Blackjack!';
-                finishBjGame();
+                bjMessage.textContent = 'Blackjack! 🎉';
+                setTimeout(() => finishBjGame(), 800);
                 return;
             }
             
             if (playerVal > 21) {
-                bjMessage.textContent = 'Bust! You lost.';
-                finishBjGame();
+                bjMessage.textContent = 'Bust! You lost. 😢';
+                setTimeout(() => finishBjGame(), 800);
             }
         }
         
@@ -6193,10 +6210,10 @@
             
             const playerVal = calculateHandValue(bjPlayerHand);
             if (playerVal > 21) {
-                bjMessage.textContent = 'Bust! You lost.';
-                finishBjGame();
+                bjMessage.textContent = 'Bust! You lost. 😢';
+                setTimeout(() => finishBjGame(), 600);
             } else if (playerVal === 21) {
-                bjMessage.textContent = 'You hit 21!';
+                bjMessage.textContent = 'You hit 21! Stand or hit again?';
             }
         }
         
@@ -6204,10 +6221,16 @@
             if (!bjGameActive) return;
             
             bjPlayerStood = true;
+            bjHitButton.disabled = true;
+            bjStandButton.disabled = true;
             bjHitButton.style.display = 'none';
             bjStandButton.style.display = 'none';
             
             displayBjHands();
+            
+            // Small delay before dealer plays
+            setTimeout(() => finishBjGame(), 400);
+        }
             
             // Dealer must hit on 16 or less
             while (calculateHandValue(bjDealerHand) < 17) {
@@ -6248,6 +6271,8 @@
         function finishBjGame() {
             bjGameActive = false;
             bjPlayerStood = true;
+            bjHitButton.disabled = true;
+            bjStandButton.disabled = true;
             bjHitButton.style.display = 'none';
             bjStandButton.style.display = 'none';
             
@@ -6262,10 +6287,16 @@
             
             displayBjHands();
             
-            // Immediately show Deal button for continuous play
+            // Show Deal button for next hand
             bjDealButton.textContent = 'Deal Again';
             bjDealButton.style.display = 'block';
             bjDealButton.style.visibility = 'visible';
+            bjDealButton.disabled = false;
+            
+            // Give user time to see result before allowing new deal
+            setTimeout(() => {
+                bjBetInput.focus();
+            }, 500);
         }
         
         // Event listeners for blackjack
