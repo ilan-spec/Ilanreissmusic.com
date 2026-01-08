@@ -1557,10 +1557,10 @@
 
         /* --- Blackjack Game Styles --- */
         #blackjack-window {
-            width: 500px;
-            height: 550px;
-            min-width: 380px;
-            min-height: 450px;
+            width: 680px;
+            height: 720px;
+            min-width: 520px;
+            min-height: 560px;
         }
 
         #blackjack-content {
@@ -6210,6 +6210,18 @@
             updateBjCoinsDisplay();
             saveBjCoins();
             bjMessage.textContent = message;
+            // Finalize round UI so player can immediately deal again
+            bjGameActive = false;
+            bjPlayerStood = true;
+            try { bjHitButton.style.display = 'none'; } catch(e){}
+            try { bjStandButton.style.display = 'none'; } catch(e){}
+            try {
+                bjDealButton.textContent = 'Deal Again';
+                bjDealButton.style.display = 'block';
+                bjDealButton.style.visibility = 'visible';
+                bjDealButton.disabled = false;
+            } catch(e) {}
+            displayBjHands();
         }
         
         function finishBjGame() {
