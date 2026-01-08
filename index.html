@@ -2131,7 +2131,7 @@
             <p><em>(You can edit this text in the index.html file)</em></p>
             <!-- Animated GIF shown only when the Info window is opened -->
             <div class="load-info-container" style="justify-content:center; margin-top:8px;">
-                <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:none; width:100%; max-width:360px; height:auto; border:1px solid #808080;" />
+                <img id="info-gif" data-src="ilan%20animation.gif" alt="Ilan animation" style="display:none; width:100%; max-width:360px; height:auto; border:1px solid #808080;" />
             </div>
         </div>
         <div class="resize-handle"></div>
@@ -4516,7 +4516,8 @@
             const _infoGif = document.getElementById('info-gif');
             if (_infoGif) {
                 // Use the data-src attribute so the GIF doesn't load until requested
-                _infoGif.src = _infoGif.dataset.src || '';
+                const src = _infoGif.dataset.src || '';
+                _infoGif.src = src ? encodeURI(src) : '';
                 _infoGif.style.display = 'block';
             }
         });
