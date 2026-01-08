@@ -1533,6 +1533,100 @@
             margin-top: -75px;
         }
 
+        /* --- Blackjack Game Styles --- */
+        #blackjack-window {
+            width: 500px;
+            height: 550px;
+            min-width: 380px;
+            min-height: 450px;
+        }
+
+        #blackjack-content {
+            background: #008000; /* Green felt */
+        }
+
+        .blackjack-card {
+            width: 50px;
+            height: 70px;
+            background-color: #fff;
+            border: 1px solid #000;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 3px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .blackjack-card.red {
+            color: #d00000;
+        }
+
+        .blackjack-card.black {
+            color: #000;
+        }
+
+        .blackjack-card.facedown {
+            background-color: #000080;
+            background-image: linear-gradient(135deg, #000080 25%, #1084d0 25%, #1084d0 50%, #000080 50%, #000080 75%, #1084d0 75%, #1084d0 100%);
+            background-size: 10px 10px;
+            color: transparent;
+        }
+
+        /* Blackjack icon styles (matching solitaire pattern) */
+        #open-blackjack-icon {
+            width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: 1px 1px 0 1px #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #c00000;
+            margin-left: 10px;
+        }
+
+        #open-blackjack-icon:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
+
+        #minimized-blackjack-icon {
+            width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            box-shadow: 1px 1px 0 1px #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #c00000;
+            margin-left: 10px;
+        }
+
+        #minimized-blackjack-icon:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
 
         /* --- Responsive Media Query (for mobile) --- */
         @media (max-width: 768px) {
@@ -2384,6 +2478,63 @@
         </div>
         <div class="resize-handle"></div>
     </div>
+
+    <!-- Blackjack Window -->
+    <div id="blackjack-window" class="window" style="display: none;">
+        <div class="title-bar">
+            <span class="title-bar-text">♠️ Blackjack</span>
+            <div class="title-bar-buttons">
+                <button class="window-button" id="minimize-blackjack-button">_</button>
+                <button class="window-button close-button" data-target="blackjack-window">X</button>
+            </div>
+        </div>
+        <div class="content" id="blackjack-content" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Coin display and cooldown timer -->
+            <div id="blackjack-stats" style="text-align: center; font-weight: 700; font-size: 1rem;">
+                <div>Coins: <span id="bj-coins">100</span></div>
+                <div id="bj-cooldown-display" style="color: #c00; display: none;">Cooldown: <span id="bj-cooldown-timer">60</span>s</div>
+            </div>
+            
+            <!-- Dealer and Player hands -->
+            <div id="blackjack-game-area" style="display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
+                <!-- Dealer Hand -->
+                <div style="text-align: center;">
+                    <div style="font-weight: 700; margin-bottom: 5px;">Dealer</div>
+                    <div id="bj-dealer-cards" style="display: flex; gap: 5px; justify-content: center; min-height: 80px; align-items: center;">
+                        <!-- Dealer cards go here -->
+                    </div>
+                    <div id="bj-dealer-total" style="font-weight: 700; margin-top: 5px;">Total: 0</div>
+                </div>
+                
+                <!-- Game messages -->
+                <div id="bj-message" style="text-align: center; font-weight: 700; font-size: 0.95rem; min-height: 20px; color: #008080;"></div>
+                
+                <!-- Player Hand -->
+                <div style="text-align: center;">
+                    <div style="font-weight: 700; margin-bottom: 5px;">Your Hand</div>
+                    <div id="bj-player-cards" style="display: flex; gap: 5px; justify-content: center; min-height: 80px; align-items: center;">
+                        <!-- Player cards go here -->
+                    </div>
+                    <div id="bj-player-total" style="font-weight: 700; margin-top: 5px;">Total: 0</div>
+                </div>
+            </div>
+            
+            <!-- Betting and controls -->
+            <div id="blackjack-controls" style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; gap: 5px; align-items: center; justify-content: center;">
+                    <label for="bj-bet-input" style="font-weight: 700;">Bet:</label>
+                    <input type="number" id="bj-bet-input" min="1" value="10" style="width: 60px; padding: 4px; border: 1px solid #000;">
+                    <span id="bj-bet-max" style="font-size: 0.85rem;">(max: <span id="bj-max-bet">100</span>)</span>
+                </div>
+                <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                    <button id="bj-deal-button" class="window-button" style="padding: 6px 12px; font-weight: 700;">Deal</button>
+                    <button id="bj-hit-button" class="window-button" style="padding: 6px 12px; font-weight: 700; display: none;">Hit</button>
+                    <button id="bj-stand-button" class="window-button" style="padding: 6px 12px; font-weight: 700; display: none;">Stand</button>
+                </div>
+            </div>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
     
     <!-- Bottom Bar: Color Picker & Minimized Icons -->
     <div id="color-picker-container">
@@ -2412,6 +2563,13 @@
         </div>
         <div id="minimized-tr808-icon" title="Restore TR-808" style="display: none;">
             <i class="fas fa-th-large"></i>
+        </div>
+        <!-- Blackjack Icons -->
+        <div id="open-blackjack-icon" title="Open Blackjack">
+            <i class="fas fa-spade"></i> 
+        </div>
+        <div id="minimized-blackjack-icon" title="Restore Blackjack" style="display: none;">
+            <i class="fas fa-spade"></i> 
         </div>
         <!-- Visual mode toggle moved to bottom-left clock controls -->
     </div>
@@ -2707,6 +2865,26 @@
         const minimizeSolitaireButton = document.getElementById('minimize-solitaire-button');
         const minimizedSolitaireIcon = document.getElementById('minimized-solitaire-icon');
         const newGameButton = document.getElementById('solitaire-new-game');
+        
+        // Blackjack (NEW)
+        const blackjackWindow = document.getElementById('blackjack-window');
+        const openBlackjackIcon = document.getElementById('open-blackjack-icon');
+        const minimizeBlackjackButton = document.getElementById('minimize-blackjack-button');
+        const minimizedBlackjackIcon = document.getElementById('minimized-blackjack-icon');
+        const bjCoinsDisplay = document.getElementById('bj-coins');
+        const bjCooldownDisplay = document.getElementById('bj-cooldown-display');
+        const bjCooldownTimer = document.getElementById('bj-cooldown-timer');
+        const bjBetInput = document.getElementById('bj-bet-input');
+        const bjMaxBet = document.getElementById('bj-max-bet');
+        const bjDealButton = document.getElementById('bj-deal-button');
+        const bjHitButton = document.getElementById('bj-hit-button');
+        const bjStandButton = document.getElementById('bj-stand-button');
+        const bjMessage = document.getElementById('bj-message');
+        const bjDealerCards = document.getElementById('bj-dealer-cards');
+        const bjPlayerCards = document.getElementById('bj-player-cards');
+        const bjDealerTotal = document.getElementById('bj-dealer-total');
+        const bjPlayerTotal = document.getElementById('bj-player-total');
+        
         // TR-808
         const tr808Window = document.getElementById('tr808-window');
         const openTr808Icon = document.getElementById('open-tr808-icon');
@@ -4604,6 +4782,9 @@
                     } else if (targetWindowId === 'solitaire-window') { // NEW
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
+                    } else if (targetWindowId === 'blackjack-window') {
+                        minimizedBlackjackIcon.style.display = 'none';
+                        openBlackjackIcon.style.display = 'flex';
                     } else if (targetWindowId === 'tr808-window') {
                         // When the TR-808 window is closed, minimize it to the bottom bar
                         minimizedTr808Icon.style.display = 'flex';
@@ -5665,6 +5846,377 @@
             bgImage.addEventListener('mousedown', onPointerDown);
             bgImage.addEventListener('touchstart', onPointerDown, { passive: false });
         })();
+        
+        // ==================== BLACKJACK GAME ====================
+        // Coin system state
+        const INITIAL_COINS = 100;
+        const COOLDOWN_DURATION = 60; // 1 minute in seconds
+        let bjCoins = INITIAL_COINS;
+        let bjCooldownActive = false;
+        let bjCooldownInterval = null;
+        
+        // Game state
+        let bjDeck = [];
+        let bjDealerHand = [];
+        let bjPlayerHand = [];
+        let bjGameActive = false;
+        let bjPlayerStood = false;
+        let bjCurrentBet = 0;
+        
+        // Load coin state from localStorage
+        function loadBjCoins() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('bjCoins') || 'null');
+                const cooldown = JSON.parse(localStorage.getItem('bjCooldownTime') || 'null');
+                
+                if (saved !== null) bjCoins = saved;
+                
+                // Check if cooldown is still active
+                if (cooldown !== null && Date.now() < cooldown) {
+                    const timeLeft = Math.ceil((cooldown - Date.now()) / 1000);
+                    startBjCooldown(timeLeft);
+                } else if (cooldown !== null) {
+                    localStorage.removeItem('bjCooldownTime');
+                }
+            } catch (e) {}
+        }
+        
+        // Save coin state to localStorage
+        function saveBjCoins() {
+            try {
+                localStorage.setItem('bjCoins', JSON.stringify(bjCoins));
+            } catch (e) {}
+        }
+        
+        // Start cooldown timer when coins run out
+        function startBjCooldown(duration) {
+            if (bjCooldownActive) return;
+            bjCooldownActive = true;
+            let secondsLeft = duration;
+            
+            // Save cooldown end time
+            try {
+                localStorage.setItem('bjCooldownTime', JSON.stringify(Date.now() + duration * 1000));
+            } catch (e) {}
+            
+            bjCooldownDisplay.style.display = 'block';
+            bjDealButton.disabled = true;
+            bjCooldownTimer.textContent = secondsLeft;
+            
+            bjCooldownInterval = setInterval(() => {
+                secondsLeft--;
+                bjCooldownTimer.textContent = secondsLeft;
+                
+                if (secondsLeft <= 0) {
+                    clearInterval(bjCooldownInterval);
+                    bjCooldownActive = false;
+                    bjCooldownDisplay.style.display = 'none';
+                    bjDealButton.disabled = false;
+                    bjCoins = INITIAL_COINS;
+                    updateBjCoinsDisplay();
+                    saveBjCoins();
+                    localStorage.removeItem('bjCooldownTime');
+                }
+            }, 1000);
+        }
+        
+        function updateBjCoinsDisplay() {
+            bjCoinsDisplay.textContent = bjCoins;
+            bjMaxBet.textContent = bjCoins;
+            
+            // Auto-adjust bet if it exceeds coins
+            const currentBet = parseInt(bjBetInput.value) || 10;
+            if (currentBet > bjCoins) {
+                bjBetInput.value = Math.max(1, bjCoins);
+            }
+        }
+        
+        // Card deck management
+        function initBjDeck() {
+            const suits = ['♠', '♥', '♦', '♣'];
+            const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            bjDeck = [];
+            
+            for (let i = 0; i < 2; i++) { // 2 decks for more variety
+                for (const suit of suits) {
+                    for (const rank of ranks) {
+                        bjDeck.push({ rank, suit });
+                    }
+                }
+            }
+            
+            // Shuffle
+            for (let i = bjDeck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [bjDeck[i], bjDeck[j]] = [bjDeck[j], bjDeck[i]];
+            }
+        }
+        
+        function drawBjCard() {
+            if (bjDeck.length < 10) initBjDeck(); // Re-shuffle if low
+            return bjDeck.pop();
+        }
+        
+        function getCardValue(card) {
+            if (card.rank === 'A') return 11;
+            if (['J', 'Q', 'K'].includes(card.rank)) return 10;
+            return parseInt(card.rank);
+        }
+        
+        function calculateHandValue(hand) {
+            let value = 0;
+            let aces = 0;
+            
+            for (const card of hand) {
+                const cardVal = getCardValue(card);
+                value += cardVal;
+                if (card.rank === 'A') aces++;
+            }
+            
+            // Adjust for aces if busted
+            while (value > 21 && aces > 0) {
+                value -= 10;
+                aces--;
+            }
+            
+            return value;
+        }
+        
+        function renderBjCard(card, isFaceDown = false) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'blackjack-card';
+            
+            if (isFaceDown) {
+                cardEl.classList.add('facedown');
+            } else {
+                if (card.suit === '♥' || card.suit === '♦') cardEl.classList.add('red');
+                else cardEl.classList.add('black');
+                cardEl.textContent = `${card.rank}${card.suit}`;
+            }
+            
+            return cardEl;
+        }
+        
+        function displayBjHands() {
+            // Dealer hand
+            bjDealerCards.innerHTML = '';
+            for (let i = 0; i < bjDealerHand.length; i++) {
+                const isFaceDown = i === 0 && bjGameActive && !bjPlayerStood;
+                bjDealerCards.appendChild(renderBjCard(bjDealerHand[i], isFaceDown));
+            }
+            
+            if (!bjGameActive || bjPlayerStood) {
+                bjDealerTotal.textContent = `Total: ${calculateHandValue(bjDealerHand)}`;
+            } else {
+                bjDealerTotal.textContent = `Total: ${calculateHandValue(bjDealerHand.slice(1))} + ?`;
+            }
+            
+            // Player hand
+            bjPlayerCards.innerHTML = '';
+            for (const card of bjPlayerHand) {
+                bjPlayerCards.appendChild(renderBjCard(card, false));
+            }
+            bjPlayerTotal.textContent = `Total: ${calculateHandValue(bjPlayerHand)}`;
+        }
+        
+        function dealBjGame() {
+            if (bjCoins <= 0) {
+                startBjCooldown(COOLDOWN_DURATION);
+                bjMessage.textContent = 'Out of coins! Waiting for cooldown...';
+                return;
+            }
+            
+            if (bjGameActive) return;
+            
+            const bet = parseInt(bjBetInput.value) || 10;
+            if (bet > bjCoins || bet < 1) {
+                bjMessage.textContent = 'Invalid bet amount!';
+                return;
+            }
+            
+            bjCurrentBet = bet;
+            bjCoins -= bet;
+            updateBjCoinsDisplay();
+            saveBjCoins();
+            
+            // Reset hands
+            bjDealerHand = [];
+            bjPlayerHand = [];
+            bjGameActive = true;
+            bjPlayerStood = false;
+            bjMessage.textContent = '';
+            
+            // Deal 2 cards each
+            bjDealerHand.push(drawBjCard());
+            bjPlayerHand.push(drawBjCard());
+            bjDealerHand.push(drawBjCard());
+            bjPlayerHand.push(drawBjCard());
+            
+            displayBjHands();
+            
+            // Check for blackjack
+            const playerVal = calculateHandValue(bjPlayerHand);
+            const dealerVal = calculateHandValue(bjDealerHand);
+            
+            bjHitButton.style.display = 'inline-block';
+            bjStandButton.style.display = 'inline-block';
+            bjDealButton.style.display = 'none';
+            
+            if (playerVal === 21 && bjPlayerHand.length === 2) {
+                bjMessage.textContent = 'Blackjack!';
+                finishBjGame();
+                return;
+            }
+            
+            if (playerVal > 21) {
+                bjMessage.textContent = 'Bust! You lost.';
+                finishBjGame();
+            }
+        }
+        
+        function bjHit() {
+            if (!bjGameActive || bjPlayerStood) return;
+            
+            bjPlayerHand.push(drawBjCard());
+            displayBjHands();
+            
+            const playerVal = calculateHandValue(bjPlayerHand);
+            if (playerVal > 21) {
+                bjMessage.textContent = 'Bust! You lost.';
+                finishBjGame();
+            } else if (playerVal === 21) {
+                bjMessage.textContent = 'You hit 21!';
+            }
+        }
+        
+        function bjStand() {
+            if (!bjGameActive) return;
+            
+            bjPlayerStood = true;
+            bjHitButton.style.display = 'none';
+            bjStandButton.style.display = 'none';
+            
+            displayBjHands();
+            
+            // Dealer must hit on 16 or less
+            while (calculateHandValue(bjDealerHand) < 17) {
+                bjDealerHand.push(drawBjCard());
+                displayBjHands();
+            }
+            
+            determineBjWinner();
+        }
+        
+        function determineBjWinner() {
+            const playerVal = calculateHandValue(bjPlayerHand);
+            const dealerVal = calculateHandValue(bjDealerHand);
+            
+            let winnings = 0;
+            let message = '';
+            
+            if (dealerVal > 21) {
+                message = 'Dealer bust! You won!';
+                winnings = bjCurrentBet * 2;
+            } else if (playerVal > dealerVal) {
+                message = 'You won!';
+                winnings = bjCurrentBet * 2;
+            } else if (playerVal === dealerVal) {
+                message = 'Push! Bet returned.';
+                winnings = bjCurrentBet;
+            } else {
+                message = 'Dealer won. You lost.';
+                winnings = 0;
+            }
+            
+            bjCoins += winnings;
+            updateBjCoinsDisplay();
+            saveBjCoins();
+            bjMessage.textContent = message;
+        }
+        
+        function finishBjGame() {
+            bjGameActive = false;
+            bjPlayerStood = true;
+            bjHitButton.style.display = 'none';
+            bjStandButton.style.display = 'none';
+            
+            // Dealer plays out hand if player didn't bust
+            const playerVal = calculateHandValue(bjPlayerHand);
+            if (playerVal <= 21) {
+                while (calculateHandValue(bjDealerHand) < 17) {
+                    bjDealerHand.push(drawBjCard());
+                }
+                determineBjWinner();
+            }
+            
+            displayBjHands();
+            
+            // Reset for next game
+            setTimeout(() => {
+                bjDealButton.style.display = 'inline-block';
+                bjBetInput.focus();
+            }, 1500);
+        }
+        
+        // Event listeners for blackjack
+        bjDealButton.addEventListener('click', dealBjGame);
+        bjHitButton.addEventListener('click', bjHit);
+        bjStandButton.addEventListener('click', bjStand);
+        
+        // Initialize deck on page load
+        initBjDeck();
+        loadBjCoins();
+        updateBjCoinsDisplay();
+        
+        // Blackjack window minimize/restore (matching solitaire pattern)
+        openBlackjackIcon.addEventListener('click', () => {
+            if (isMobile) {
+                blackjackWindow.classList.add('mobile-fullscreen');
+                blackjackWindow.style.left = '0px';
+                blackjackWindow.style.top = '0px';
+                blackjackWindow.style.width = '100%';
+                blackjackWindow.style.height = '100%';
+                showMobileCloseFor('blackjack-window');
+            }
+            blackjackWindow.style.display = 'flex';
+            openBlackjackIcon.style.display = 'none';
+            minimizedBlackjackIcon.style.display = 'none';
+            if (!isMobile) bringWindowToFront(blackjackWindow);
+        });
+        
+        minimizeBlackjackButton.addEventListener('click', () => {
+            if (isMobile) {
+                blackjackWindow.classList.remove('mobile-fullscreen');
+                hideMobileClose();
+            }
+            blackjackWindow.style.display = 'none';
+            minimizedBlackjackIcon.style.display = 'flex';
+            openBlackjackIcon.style.display = 'none';
+        });
+        
+        minimizedBlackjackIcon.addEventListener('click', () => {
+            if (isMobile) {
+                blackjackWindow.classList.add('mobile-fullscreen');
+                blackjackWindow.style.left = '0px';
+                blackjackWindow.style.top = '0px';
+                blackjackWindow.style.width = '100%';
+                blackjackWindow.style.height = '100%';
+            }
+            blackjackWindow.style.display = 'flex';
+            minimizedBlackjackIcon.style.display = 'none';
+            openBlackjackIcon.style.display = 'none';
+            if (!isMobile) bringWindowToFront(blackjackWindow);
+        });
+        
+        // Handle closing blackjack window
+        document.querySelectorAll('.close-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const targetWindowId = e.target.dataset.target;
+                if (targetWindowId === 'blackjack-window') {
+                    if (bjCooldownInterval) clearInterval(bjCooldownInterval);
+                }
+            });
+        });
         
         // Init Solitaire
         initSolitaireGame();
