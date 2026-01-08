@@ -1311,6 +1311,25 @@
              border-bottom: 2px solid #fff;
          }
 
+        /* --- Game Tab Styles (Solitaire & Blackjack) --- */
+        .game-tab-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        
+        .game-tab-content.active {
+            display: flex;
+        }
+
+        .games-tab {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            min-width: 70px;
+        }
+        
         /* --- Solitaire Game Styles --- */
         #solitaire-window {
             width: 620px;
@@ -2443,93 +2462,90 @@
     <!-- Solitaire Window (NEW) -->
     <div id="solitaire-window" class="window" style="display: none;">
         <div class="title-bar">
-            <span class="title-bar-text">♦️ Solitaire</span>
+            <span class="title-bar-text">♦️ Games</span>
+            <div id="games-tabs" class="title-bar-buttons" style="margin-right: auto;">
+                <button class="visualizer-tab games-tab active" data-tab="solitaire" style="margin-right: 3px;">Solitaire</button>
+                <button class="visualizer-tab games-tab" data-tab="blackjack">Blackjack</button>
+            </div>
             <div class="title-bar-buttons">
                 <button class="window-button" id="minimize-solitaire-button">_</button>
                 <button class="window-button close-button" data-target="solitaire-window">X</button>
             </div>
         </div>
         <div class="content" id="solitaire-content">
-            <div id="solitaire-menu">
-                <button id="solitaire-new-game" class="window-button">New Game</button>
-            </div>
-            <div id="solitaire-game-board">
-                <!-- Top section: Stock, Waste, Foundations -->
-                <div id="solitaire-top-panel">
-                    <div class="solitaire-stack" id="solitaire-stock"></div>
-                    <div class="solitaire-stack" id="solitaire-waste"></div>
-                    <div class="solitaire-spacer"></div>
-                    <div class="solitaire-stack foundation-stack" id="foundation-0" data-suit="spades"></div>
-                    <div class="solitaire-stack foundation-stack" id="foundation-1" data-suit="hearts"></div>
-                    <div class="solitaire-stack foundation-stack" id="foundation-2" data-suit="clubs"></div>
-                    <div class="solitaire-stack foundation-stack" id="foundation-3" data-suit="diamonds"></div>
+            <!-- Solitaire Tab -->
+            <div id="solitaire-tab-content" class="game-tab-content active">
+                <div id="solitaire-menu">
+                    <button id="solitaire-new-game" class="window-button">New Game</button>
                 </div>
-                <!-- Bottom section: Tableau -->
-                <div id="solitaire-tableau">
-                    <div class="solitaire-stack tableau-stack" id="tableau-0"></div>
-                    <div class="solitaire-stack tableau-stack" id="tableau-1"></div>
-                    <div class="solitaire-stack tableau-stack" id="tableau-2"></div>
-                    <div class="solitaire-stack tableau-stack" id="tableau-3"></div>
-                    <div class="solitaire-stack tableau-stack" id="tableau-4"></div>
-                    <div class="solitaire-stack tableau-stack" id="tableau-5"></div>
-                    <div class="solitaire-stack tableau-stack" id="tableau-6"></div>
-                </div>
-            </div>
-        </div>
-        <div class="resize-handle"></div>
-    </div>
-
-    <!-- Blackjack Window -->
-    <div id="blackjack-window" class="window" style="display: none;">
-        <div class="title-bar">
-            <span class="title-bar-text">♠️ Blackjack</span>
-            <div class="title-bar-buttons">
-                <button class="window-button" id="minimize-blackjack-button">_</button>
-                <button class="window-button close-button" data-target="blackjack-window">X</button>
-            </div>
-        </div>
-        <div class="content" id="blackjack-content" style="display: flex; flex-direction: column; gap: 10px;">
-            <!-- Coin display and cooldown timer -->
-            <div id="blackjack-stats" style="text-align: center; font-weight: 700; font-size: 1rem;">
-                <div>Coins: <span id="bj-coins">100</span></div>
-                <div id="bj-cooldown-display" style="color: #c00; display: none;">Cooldown: <span id="bj-cooldown-timer">60</span>s</div>
-            </div>
-            
-            <!-- Dealer and Player hands -->
-            <div id="blackjack-game-area" style="display: flex; flex-direction: column; gap: 10px; flex-grow: 1;">
-                <!-- Dealer Hand -->
-                <div style="text-align: center;">
-                    <div style="font-weight: 700; margin-bottom: 5px;">Dealer</div>
-                    <div id="bj-dealer-cards" style="display: flex; gap: 5px; justify-content: center; min-height: 80px; align-items: center;">
-                        <!-- Dealer cards go here -->
+                <div id="solitaire-game-board">
+                    <!-- Top section: Stock, Waste, Foundations -->
+                    <div id="solitaire-top-panel">
+                        <div class="solitaire-stack" id="solitaire-stock"></div>
+                        <div class="solitaire-stack" id="solitaire-waste"></div>
+                        <div class="solitaire-spacer"></div>
+                        <div class="solitaire-stack foundation-stack" id="foundation-0" data-suit="spades"></div>
+                        <div class="solitaire-stack foundation-stack" id="foundation-1" data-suit="hearts"></div>
+                        <div class="solitaire-stack foundation-stack" id="foundation-2" data-suit="clubs"></div>
+                        <div class="solitaire-stack foundation-stack" id="foundation-3" data-suit="diamonds"></div>
                     </div>
-                    <div id="bj-dealer-total" style="font-weight: 700; margin-top: 5px;">Total: 0</div>
-                </div>
-                
-                <!-- Game messages -->
-                <div id="bj-message" style="text-align: center; font-weight: 700; font-size: 0.95rem; min-height: 20px; color: #008080;"></div>
-                
-                <!-- Player Hand -->
-                <div style="text-align: center;">
-                    <div style="font-weight: 700; margin-bottom: 5px;">Your Hand</div>
-                    <div id="bj-player-cards" style="display: flex; gap: 5px; justify-content: center; min-height: 80px; align-items: center;">
-                        <!-- Player cards go here -->
+                    <!-- Bottom section: Tableau -->
+                    <div id="solitaire-tableau">
+                        <div class="solitaire-stack tableau-stack" id="tableau-0"></div>
+                        <div class="solitaire-stack tableau-stack" id="tableau-1"></div>
+                        <div class="solitaire-stack tableau-stack" id="tableau-2"></div>
+                        <div class="solitaire-stack tableau-stack" id="tableau-3"></div>
+                        <div class="solitaire-stack tableau-stack" id="tableau-4"></div>
+                        <div class="solitaire-stack tableau-stack" id="tableau-5"></div>
+                        <div class="solitaire-stack tableau-stack" id="tableau-6"></div>
                     </div>
-                    <div id="bj-player-total" style="font-weight: 700; margin-top: 5px;">Total: 0</div>
                 </div>
             </div>
             
-            <!-- Betting and controls -->
-            <div id="blackjack-controls" style="display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; gap: 5px; align-items: center; justify-content: center;">
-                    <label for="bj-bet-input" style="font-weight: 700;">Bet:</label>
-                    <input type="number" id="bj-bet-input" min="1" value="10" style="width: 60px; padding: 4px; border: 1px solid #000;">
-                    <span id="bj-bet-max" style="font-size: 0.85rem;">(max: <span id="bj-max-bet">100</span>)</span>
+            <!-- Blackjack Tab -->
+            <div id="blackjack-tab-content" class="game-tab-content" style="display: none; flex-direction: column; gap: 8px;">
+                <!-- Coin display and cooldown timer -->
+                <div id="blackjack-stats" style="text-align: center; font-weight: 700; font-size: 0.95rem;">
+                    <div>Coins: <span id="bj-coins">100</span></div>
+                    <div id="bj-cooldown-display" style="color: #c00; display: none; font-size: 0.9rem;">Cooldown: <span id="bj-cooldown-timer">60</span>s</div>
                 </div>
-                <div style="display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
-                    <button id="bj-deal-button" class="window-button" style="padding: 6px 12px; font-weight: 700;">Deal</button>
-                    <button id="bj-hit-button" class="window-button" style="padding: 6px 12px; font-weight: 700; display: none;">Hit</button>
-                    <button id="bj-stand-button" class="window-button" style="padding: 6px 12px; font-weight: 700; display: none;">Stand</button>
+                
+                <!-- Dealer and Player hands -->
+                <div id="blackjack-game-area" style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1;">
+                    <!-- Dealer Hand -->
+                    <div style="text-align: center;">
+                        <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 3px;">Dealer</div>
+                        <div id="bj-dealer-cards" style="display: flex; gap: 3px; justify-content: center; min-height: 60px; align-items: center; flex-wrap: wrap;">
+                            <!-- Dealer cards go here -->
+                        </div>
+                        <div id="bj-dealer-total" style="font-weight: 700; font-size: 0.85rem; margin-top: 3px;">Total: 0</div>
+                    </div>
+                    
+                    <!-- Game messages -->
+                    <div id="bj-message" style="text-align: center; font-weight: 700; font-size: 0.9rem; min-height: 18px; color: #008000; margin: 2px 0;"></div>
+                    
+                    <!-- Player Hand -->
+                    <div style="text-align: center;">
+                        <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 3px;">Your Hand</div>
+                        <div id="bj-player-cards" style="display: flex; gap: 3px; justify-content: center; min-height: 60px; align-items: center; flex-wrap: wrap;">
+                            <!-- Player cards go here -->
+                        </div>
+                        <div id="bj-player-total" style="font-weight: 700; font-size: 0.85rem; margin-top: 3px;">Total: 0</div>
+                    </div>
+                </div>
+                
+                <!-- Betting and controls -->
+                <div id="blackjack-controls" style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; gap: 4px; align-items: center; justify-content: center; flex-wrap: wrap; font-size: 0.9rem;">
+                        <label for="bj-bet-input" style="font-weight: 700;">Bet:</label>
+                        <input type="number" id="bj-bet-input" min="1" value="10" style="width: 50px; padding: 3px; border: 1px solid #000; font-size: 0.85rem;">
+                        <span id="bj-bet-max" style="font-size: 0.8rem;">(max: <span id="bj-max-bet">100</span>)</span>
+                    </div>
+                    <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                        <button id="bj-deal-button" class="window-button" style="padding: 4px 10px; font-size: 0.8rem; font-weight: 700; min-width: 50px;">Deal</button>
+                        <button id="bj-hit-button" class="window-button" style="padding: 4px 10px; font-size: 0.8rem; font-weight: 700; min-width: 50px; display: none;">Hit</button>
+                        <button id="bj-stand-button" class="window-button" style="padding: 4px 10px; font-size: 0.8rem; font-weight: 700; min-width: 50px; display: none;">Stand</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2563,13 +2579,6 @@
         </div>
         <div id="minimized-tr808-icon" title="Restore TR-808" style="display: none;">
             <i class="fas fa-th-large"></i>
-        </div>
-        <!-- Blackjack Icons -->
-        <div id="open-blackjack-icon" title="Open Blackjack">
-            <i class="fas fa-spade"></i> 
-        </div>
-        <div id="minimized-blackjack-icon" title="Restore Blackjack" style="display: none;">
-            <i class="fas fa-spade"></i> 
         </div>
         <!-- Visual mode toggle moved to bottom-left clock controls -->
     </div>
@@ -2867,10 +2876,6 @@
         const newGameButton = document.getElementById('solitaire-new-game');
         
         // Blackjack (NEW)
-        const blackjackWindow = document.getElementById('blackjack-window');
-        const openBlackjackIcon = document.getElementById('open-blackjack-icon');
-        const minimizeBlackjackButton = document.getElementById('minimize-blackjack-button');
-        const minimizedBlackjackIcon = document.getElementById('minimized-blackjack-icon');
         const bjCoinsDisplay = document.getElementById('bj-coins');
         const bjCooldownDisplay = document.getElementById('bj-cooldown-display');
         const bjCooldownTimer = document.getElementById('bj-cooldown-timer');
@@ -4782,9 +4787,8 @@
                     } else if (targetWindowId === 'solitaire-window') { // NEW
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
-                    } else if (targetWindowId === 'blackjack-window') {
-                        minimizedBlackjackIcon.style.display = 'none';
-                        openBlackjackIcon.style.display = 'flex';
+                        // Clear cooldown interval if closing while active
+                        if (bjCooldownInterval) clearInterval(bjCooldownInterval);
                     } else if (targetWindowId === 'tr808-window') {
                         // When the TR-808 window is closed, minimize it to the bottom bar
                         minimizedTr808Icon.style.display = 'flex';
@@ -4968,6 +4972,29 @@
             if (!isMobile) bringWindowToFront(solitaireWindow);
         });
 
+        // Games tab switching (Solitaire/Blackjack)
+        document.querySelectorAll('.games-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const clickedTab = e.target.closest('.games-tab');
+                if (clickedTab) {
+                    const tabName = clickedTab.dataset.tab;
+                    document.querySelectorAll('.games-tab').forEach(t => t.classList.remove('active'));
+                    clickedTab.classList.add('active');
+                    
+                    document.querySelectorAll('.game-tab-content').forEach(content => {
+                        content.style.display = 'none';
+                        content.classList.remove('active');
+                    });
+                    
+                    const contentId = tabName === 'solitaire' ? 'solitaire-tab-content' : 'blackjack-tab-content';
+                    const content = document.getElementById(contentId);
+                    if (content) {
+                        content.style.display = 'flex';
+                        content.classList.add('active');
+                    }
+                }
+            });
+        });
 
         // Visualizer tab switching
         visualizerTabs.addEventListener('click', (e) => {
@@ -6151,11 +6178,9 @@
             
             displayBjHands();
             
-            // Reset for next game
-            setTimeout(() => {
-                bjDealButton.style.display = 'inline-block';
-                bjBetInput.focus();
-            }, 1500);
+            // Immediately show Deal button for continuous play
+            bjDealButton.style.display = 'inline-block';
+            bjBetInput.focus();
         }
         
         // Event listeners for blackjack
@@ -6167,56 +6192,6 @@
         initBjDeck();
         loadBjCoins();
         updateBjCoinsDisplay();
-        
-        // Blackjack window minimize/restore (matching solitaire pattern)
-        openBlackjackIcon.addEventListener('click', () => {
-            if (isMobile) {
-                blackjackWindow.classList.add('mobile-fullscreen');
-                blackjackWindow.style.left = '0px';
-                blackjackWindow.style.top = '0px';
-                blackjackWindow.style.width = '100%';
-                blackjackWindow.style.height = '100%';
-                showMobileCloseFor('blackjack-window');
-            }
-            blackjackWindow.style.display = 'flex';
-            openBlackjackIcon.style.display = 'none';
-            minimizedBlackjackIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(blackjackWindow);
-        });
-        
-        minimizeBlackjackButton.addEventListener('click', () => {
-            if (isMobile) {
-                blackjackWindow.classList.remove('mobile-fullscreen');
-                hideMobileClose();
-            }
-            blackjackWindow.style.display = 'none';
-            minimizedBlackjackIcon.style.display = 'flex';
-            openBlackjackIcon.style.display = 'none';
-        });
-        
-        minimizedBlackjackIcon.addEventListener('click', () => {
-            if (isMobile) {
-                blackjackWindow.classList.add('mobile-fullscreen');
-                blackjackWindow.style.left = '0px';
-                blackjackWindow.style.top = '0px';
-                blackjackWindow.style.width = '100%';
-                blackjackWindow.style.height = '100%';
-            }
-            blackjackWindow.style.display = 'flex';
-            minimizedBlackjackIcon.style.display = 'none';
-            openBlackjackIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(blackjackWindow);
-        });
-        
-        // Handle closing blackjack window
-        document.querySelectorAll('.close-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const targetWindowId = e.target.dataset.target;
-                if (targetWindowId === 'blackjack-window') {
-                    if (bjCooldownInterval) clearInterval(bjCooldownInterval);
-                }
-            });
-        });
         
         // Init Solitaire
         initSolitaireGame();
