@@ -1620,65 +1620,6 @@
             content: '';
         }
 
-        /* Blackjack Button Styles */
-        .bj-button {
-            padding: 8px 16px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            min-width: 70px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-        }
-
-        .bj-button-primary {
-            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
-            color: #333;
-            border: 2px solid #cc9900;
-        }
-
-        .bj-button-primary:hover {
-            background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(255,215,0,0.4);
-        }
-
-        .bj-button-primary:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .bj-button-secondary {
-            background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-            color: #fff;
-            border: 2px solid #2a5aa0;
-        }
-
-        .bj-button-secondary:hover {
-            background: linear-gradient(135deg, #357abd 0%, #4a90e2 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(74,144,226,0.4);
-        }
-
-        .bj-button-secondary:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        }
-
-        .bj-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .bj-game-container {
-            background: linear-gradient(135deg, #1a6b2e 0%, #0d4620 100%);
-        }
-
         /* Blackjack icon styles (matching solitaire pattern) */
         #open-blackjack-icon {
             width: 25px;
@@ -6097,13 +6038,6 @@
             
             if (isFaceDown) {
                 cardEl.classList.add('facedown');
-                // Use image for card back
-                const img = document.createElement('img');
-                img.src = './playingcard.png';
-                img.style.width = '100%';
-                img.style.height = '100%';
-                img.style.borderRadius = '6px';
-                cardEl.appendChild(img);
             } else {
                 if (card.suit === '♥' || card.suit === '♦') cardEl.classList.add('red');
                 else cardEl.classList.add('black');
@@ -6143,10 +6077,7 @@
                 return;
             }
             
-            if (bjGameActive) {
-                console.warn('Game already active, ignoring deal');
-                return;
-            }
+            if (bjGameActive) return;
             
             const bet = parseInt(bjBetInput.value) || 10;
             if (bet > bjCoins || bet < 1) {
@@ -6174,27 +6105,24 @@
             
             displayBjHands();
             
-            // Update button states FIRST
-            bjDealButton.textContent = 'Deal';
-            bjDealButton.style.display = 'none';
-            bjDealButton.disabled = false;
-            bjHitButton.style.display = 'block';
-            bjHitButton.disabled = false;
-            bjStandButton.style.display = 'block';
-            bjStandButton.disabled = false;
-            
-            // Check for blackjack or bust
+            // Check for blackjack
             const playerVal = calculateHandValue(bjPlayerHand);
+            const dealerVal = calculateHandValue(bjDealerHand);
+            
+            bjHitButton.style.display = 'block';
+            bjStandButton.style.display = 'block';
+            bjDealButton.style.display = 'none';
+            bjDealButton.textContent = 'Deal';
             
             if (playerVal === 21 && bjPlayerHand.length === 2) {
-                bjMessage.textContent = 'Blackjack! 🎉';
-                setTimeout(() => finishBjGame(), 800);
+                bjMessage.textContent = 'Blackjack!';
+                finishBjGame();
                 return;
             }
             
             if (playerVal > 21) {
-                bjMessage.textContent = 'Bust! You lost. 😢';
-                setTimeout(() => finishBjGame(), 800);
+                bjMessage.textContent = 'Bust! You lost.';
+                finishBjGame();
             }
         }
         
@@ -6206,10 +6134,10 @@
             
             const playerVal = calculateHandValue(bjPlayerHand);
             if (playerVal > 21) {
-                bjMessage.textContent = 'Bust! You lost. 😢';
-                setTimeout(() => finishBjGame(), 600);
+                bjMessage.textContent = 'Bust! You lost.';
+                finishBjGame();
             } else if (playerVal === 21) {
-                bjMessage.textContent = 'You hit 21! Stand or hit again?';
+                bjMessage.textContent = 'You hit 21!';
             }
         }
         
@@ -6217,16 +6145,10 @@
             if (!bjGameActive) return;
             
             bjPlayerStood = true;
-            bjHitButton.disabled = true;
-            bjStandButton.disabled = true;
             bjHitButton.style.display = 'none';
             bjStandButton.style.display = 'none';
             
             displayBjHands();
-            
-            // Small delay before dealer plays
-            setTimeout(() => finishBjGame(), 400);
-        }
             
             // Dealer must hit on 16 or less
             while (calculateHandValue(bjDealerHand) < 17) {
@@ -6267,8 +6189,6 @@
         function finishBjGame() {
             bjGameActive = false;
             bjPlayerStood = true;
-            bjHitButton.disabled = true;
-            bjStandButton.disabled = true;
             bjHitButton.style.display = 'none';
             bjStandButton.style.display = 'none';
             
@@ -6283,16 +6203,10 @@
             
             displayBjHands();
             
-            // Show Deal button for next hand
+            // Immediately show Deal button for continuous play
             bjDealButton.textContent = 'Deal Again';
             bjDealButton.style.display = 'block';
             bjDealButton.style.visibility = 'visible';
-            bjDealButton.disabled = false;
-            
-            // Give user time to see result before allowing new deal
-            setTimeout(() => {
-                bjBetInput.focus();
-            }, 500);
         }
         
         // Event listeners for blackjack
