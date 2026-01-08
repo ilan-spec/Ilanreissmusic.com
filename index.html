@@ -1609,9 +1609,12 @@
         }
 
         .blackjack-card.facedown {
-            background-color: #1a4d7a;
-            background-image: 
-                repeating-linear-gradient(45deg, #1a4d7a, #1a4d7a 10px, #0d2640 10px, #0d2640 20px);
+            /* Use the playingcard image for the back of the card */
+            background-color: transparent;
+            background-image: url('playingcard.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             color: transparent;
         }
         
@@ -1619,6 +1622,22 @@
         .blackjack-card.facedown::after {
             content: '';
         }
+
+        /* Blackjack button styles (local to blackjack area) */
+        .bj-button {
+            padding: 8px 12px;
+            font-weight: 700;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            min-width: 72px;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+            transition: transform 80ms ease;
+        }
+        .bj-button:active { transform: translateY(1px); }
+        .bj-button[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .bj-button-primary { background: linear-gradient(180deg,#ffd54d,#ffb300); color: #000; }
+        .bj-button-secondary { background: linear-gradient(180deg,#ffffff,#e6e6e6); color: #000; }
 
         /* Blackjack icon styles (matching solitaire pattern) */
         #open-blackjack-icon {
@@ -6207,6 +6226,7 @@
             bjDealButton.textContent = 'Deal Again';
             bjDealButton.style.display = 'block';
             bjDealButton.style.visibility = 'visible';
+            bjDealButton.disabled = false;
         }
         
         // Event listeners for blackjack
