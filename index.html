@@ -2131,7 +2131,7 @@
             <p><em>(You can edit this text in the index.html file)</em></p>
             <!-- Animated GIF shown only when the Info window is opened -->
             <div class="load-info-container" style="justify-content:center; margin-top:8px;">
-                <img id="info-gif" data-src="ilan%20animation.gif" alt="Ilan animation" style="display:none; width:100%; max-width:360px; height:auto; border:1px solid #808080;" />
+                <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:none; width:100%; max-width:720px; height:auto; border:1px solid #808080; object-fit:contain;" />
             </div>
         </div>
         <div class="resize-handle"></div>
@@ -4516,10 +4516,22 @@
             const _infoGif = document.getElementById('info-gif');
             if (_infoGif) {
                 // Use the data-src attribute so the GIF doesn't load until requested
-                const src = _infoGif.dataset.src || '';
-                _infoGif.src = src ? encodeURI(src) : '';
+                // Prepend ./ to ensure relative path and encode spaces
+                const raw = _infoGif.dataset.src || '';
+                _infoGif.src = raw ? './' + encodeURI(raw) : '';
                 _infoGif.style.display = 'block';
+                _infoGif.style.width = '100%';
+                _infoGif.style.maxWidth = '720px';
             }
+            // Make sure the info window is large enough and centered so GIF is visible
+            try {
+                const winW = 460;
+                const winH = 460;
+                infoWindow.style.width = winW + 'px';
+                infoWindow.style.height = winH + 'px';
+                infoWindow.style.left = Math.max(12, (window.innerWidth - winW) / 2) + 'px';
+                infoWindow.style.top = Math.max(12, (window.innerHeight - winH) / 2) + 'px';
+            } catch (e) {}
         });
         
         // --- Window Button Listeners (Close, Minimize, Restore) ---
@@ -4585,6 +4597,11 @@
                             _infoGif.src = '';
                             _infoGif.style.display = 'none';
                         }
+                        // Reset size if it was expanded
+                        try {
+                            infoWindow.style.width = '';
+                            infoWindow.style.height = '';
+                        } catch (e) {}
                     } else if (targetWindowId === 'solitaire-window') { // NEW
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
