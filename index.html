@@ -1489,9 +1489,12 @@
         }
 
         .solitaire-card.facedown {
-            background-color: #000080;
-            background-image: linear-gradient(135deg, #000080 25%, #1084d0 25%, #1084d0 50%, #000080 50%, #000080 75%, #1084d0 75%, #1084d0 100%);
-            background-size: 20px 20px;
+            /* Use same playing card back image as blackjack for consistency */
+            background-color: transparent;
+            background-image: url('playingcard.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             color: transparent;
             padding: 0;
         }
@@ -5947,6 +5950,10 @@
                 } else if (cooldown !== null) {
                     localStorage.removeItem('bjCooldownTime');
                 }
+            } catch (e) {}
+            // Ensure deal button is enabled when not in cooldown
+            try {
+                if (!bjCooldownActive && typeof bjDealButton !== 'undefined' && bjDealButton) bjDealButton.disabled = false;
             } catch (e) {}
         }
         
