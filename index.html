@@ -323,7 +323,19 @@
              height: 34px; 
              padding: 0;
              font-weight: 700;
-             font-size: 11px; 
+             font-size: 11px;
+             transition: all 150ms ease;
+             min-width: 40px;
+        }
+        
+        .sort-button:hover {
+            background: #e0f7ff;
+            border-color: #008080;
+            transform: translateY(-1px);
+        }
+        
+        .sort-button:active {
+            transform: translateY(1px);
         }
 
         #search-bar::placeholder {
@@ -437,6 +449,16 @@
 
         #audio-player {
             width: 100%;
+            cursor: pointer;
+        }
+        
+        #audio-player::-webkit-media-controls-panel {
+            background: linear-gradient(180deg, #f0f0f0, #e0e0e0);
+        }
+        
+        #audio-player::-webkit-media-controls-play-button {
+            background: #008080;
+            border-radius: 3px;
         }
 
         /* --- Custom Scrollbar --- */
@@ -1716,6 +1738,12 @@
             .resize-handle { display: none; } /* No resizing on mobile */
             .title-bar { cursor: default; } /* No dragging on mobile */
             
+            .window-button {
+                min-width: 40px;
+                min-height: 40px;
+                line-height: 36px;
+            }
+            
             .player-container {
                 min-height: 0; 
                 height: auto;
@@ -1723,6 +1751,13 @@
 
             .file-browser {
                 min-height: 300px; /* Ensure file list is usable */
+            }
+            
+            #file-list li, #mix-list li {
+                min-height: 70px;
+                padding: 12px 8px;
+                border: 2px solid #ddd;
+                height: auto;
             }
 
             /* DJ App Mobile Layout: */
@@ -2216,8 +2251,9 @@
             <div class="content-inner">
                 <div class="search-sort-container">
                     <input type="text" id="search-bar" placeholder="Search tracks...">
-                    <button id="sort-az" class="window-button sort-button">A-Z</button>
-                    <button id="sort-za" class="window-button sort-button">Z-A</button>
+                    <button id="clear-search" class="window-button sort-button" title="Clear search">⊗</button>
+                    <button id="sort-az" class="window-button sort-button" title="Sort A-Z">A-Z</button>
+                    <button id="sort-za" class="window-button sort-button" title="Sort Z-A">Z-A</button>
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
                 </div>
 
@@ -2283,7 +2319,16 @@
         </div>
         <div class="content">
             <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
-            <p>Version 3.6 (Visualizer Update)</p> <!-- Updated Version -->
+            <p>Version 3.7 (UX Improvements)</p>
+            <br>
+            <p><strong>💡 Quick Tips:</strong></p>
+            <ul style="margin-left: 20px; line-height: 1.6;">
+                <li><strong>SPACE:</strong> Play/Pause</li>
+                <li><strong>↑/↓:</strong> Volume Control</li>
+                <li><strong>F:</strong> Star favorite tracks</li>
+                <li><strong>Ctrl+Click:</strong> Add track to playlist</li>
+                <li><strong>?:</strong> Help</li>
+            </ul>
             <br>
             <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
@@ -2860,6 +2905,37 @@
         let selectedDjTrack = null; 
         let djSortAscending = true; 
         let currentMainPlayerTab = 'tracks'; // State for main player tabs
+        
+        // Favorites storage (localStorage)
+        let favorites = new Set();
+        function loadFavorites() {
+            try {
+                const saved = JSON.parse(localStorage.getItem('musicPlayerFavorites') || '[]');
+                favorites = new Set(saved);
+            } catch (e) { favorites = new Set(); }
+        }
+        function saveFavorites() {
+            try {
+                localStorage.setItem('musicPlayerFavorites', JSON.stringify(Array.from(favorites)));
+            } catch (e) { console.warn('Could not save favorites'); }
+        }
+        function toggleFavorite(trackName) {
+            if (favorites.has(trackName)) {
+                favorites.delete(trackName);
+            } else {
+                favorites.add(trackName);
+            }
+            saveFavorites();
+            // Update UI
+            document.querySelectorAll(`li[data-filename="${CSS.escape(trackName)}"]`).forEach(li => {
+                if (favorites.has(trackName)) {
+                    li.classList.add('favorite');
+                } else {
+                    li.classList.remove('favorite');
+                }
+            });
+        }
+        loadFavorites(); // Load on init
 
         // --- Element References ---
         // Main Player
@@ -3734,8 +3810,19 @@
             // If we have a remote URL (from GitHub raw), store it for playback
             li.dataset.url = fileObj.url || '';
             
+            // Add favorite class if in favorites
+            if (favorites.has(fileObj.name)) {
+                li.classList.add('favorite');
+            }
+            
             // Add click listener to play
-            li.addEventListener('click', () => {
+            li.addEventListener('click', (e) => {
+                // Check if user clicked on the star (favorite)
+                if (e.target === li && e.ctrlKey) {
+                    toggleFavorite(fileObj.name);
+                    return;
+                }
+                
                 const filename = li.dataset.filename;
                 const fileUrl = li.dataset.url && li.dataset.url.length ? li.dataset.url : (li.dataset.isMix === 'true' ? 'mixes/' + filename : 'audio/' + filename);
 
@@ -3937,7 +4024,22 @@
                 );
                 populateMixList(filteredList);
             }
+            // Show/hide clear button
+            const clearBtn = document.getElementById('clear-search');
+            if (clearBtn) {
+                clearBtn.style.opacity = searchTerm ? '1' : '0.5';
+            }
         });
+        
+        // Clear search button
+        const clearSearchBtn = document.getElementById('clear-search');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                searchBar.value = '';
+                searchBar.dispatchEvent(new Event('input'));
+                searchBar.focus();
+            });
+        }
 
         // --- TR-808 Sequencer Implementation ---
         const tr808Samples = []; // { name, url, buffer }
@@ -5918,6 +6020,54 @@
             bgImage.addEventListener('mousedown', onPointerDown);
             bgImage.addEventListener('touchstart', onPointerDown, { passive: false });
         })();
+        
+        // ==================== KEYBOARD SHORTCUTS ====================
+        document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts if user is typing in a text input
+            if (e.target.matches('input[type="text"], input[type="number"], textarea')) {
+                return;
+            }
+            
+            switch(e.key.toLowerCase()) {
+                case ' ':
+                    // Space: Play/Pause main player
+                    e.preventDefault();
+                    if (audioPlayer.paused) {
+                        audioPlayer.play().catch(() => {});
+                        tryStartSilentAudio();
+                    } else {
+                        audioPlayer.pause();
+                    }
+                    break;
+                    
+                case 'arrowup':
+                    // Up arrow: Volume up
+                    e.preventDefault();
+                    audioPlayer.volume = Math.min(1, audioPlayer.volume + 0.1);
+                    break;
+                    
+                case 'arrowdown':
+                    // Down arrow: Volume down
+                    e.preventDefault();
+                    audioPlayer.volume = Math.max(0, audioPlayer.volume - 0.1);
+                    break;
+                    
+                case 'f':
+                    // F: Toggle favorites for now-playing track
+                    if (audioPlayer.src) {
+                        const url = new URL(audioPlayer.src, window.location);
+                        const filename = url.pathname.split('/').pop();
+                        if (filename) toggleFavorite(filename);
+                    }
+                    break;
+                    
+                case '?':
+                    // ?: Show keyboard shortcuts help
+                    e.preventDefault();
+                    customAlert('⌨️ KEYBOARD SHORTCUTS\\n\\nSPACE: Play/Pause\\nUP/DOWN: Volume\\nF: Toggle Favorite\\n\\nRight-click (or Ctrl+Click) tracks to add to playlists.');
+                    break;
+            }
+        });
         
         // ==================== BLACKJACK GAME ====================
         // Coin system state
