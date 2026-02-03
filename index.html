@@ -450,15 +450,8 @@
         #audio-player {
             width: 100%;
             cursor: pointer;
-        }
-        
-        #audio-player::-webkit-media-controls-panel {
-            background: linear-gradient(180deg, #f0f0f0, #e0e0e0);
-        }
-        
-        #audio-player::-webkit-media-controls-play-button {
-            background: #008080;
-            border-radius: 3px;
+            appearance: auto;
+            -webkit-appearance: auto;
         }
 
         /* --- Custom Scrollbar --- */
@@ -2333,8 +2326,8 @@
             <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
             <!-- Animated GIF shown only when the Info window is opened -->
-            <div class="load-info-container" style="justify-content:center; margin-top:8px;">
-                <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:none; width:100%; max-width:720px; height:auto; border:1px solid #808080; object-fit:contain;" />
+            <div class="load-info-container" style="justify-content:center; margin-top:12px; flex-grow: 1; min-height: 200px;">
+                <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:block; width:100%; max-width:100%; height:auto; border:1px solid #808080; object-fit:contain;" />
             </div>
         </div>
         <div class="resize-handle"></div>
