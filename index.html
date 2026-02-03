@@ -2247,6 +2247,7 @@
                     <button id="clear-search" class="window-button sort-button" title="Clear search">⊗</button>
                     <button id="sort-az" class="window-button sort-button" title="Sort A-Z">A-Z</button>
                     <button id="sort-za" class="window-button sort-button" title="Sort Z-A">Z-A</button>
+                    <button id="sort-date" class="window-button sort-button" title="Sort by Date Added">📅</button>
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
                 </div>
 
@@ -2310,7 +2311,7 @@
                 <button class="window-button close-button" data-target="info-window">X</button>
             </div>
         </div>
-        <div class="content">
+        <div class="content" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
             <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
             <p>Version 3.7 (UX Improvements)</p>
             <br>
@@ -2326,7 +2327,7 @@
             <p>Follow me on Instagram: <a href="https://www.instagram.com/ilanreiss/" target="_blank">@ilanreiss</a></p>
             <br>
             <!-- Animated GIF shown only when the Info window is opened -->
-            <div class="load-info-container" style="justify-content:center; margin-top:12px; flex-grow: 1; min-height: 200px;">
+            <div class="load-info-container" style="justify-content:center; margin-top:12px; margin-bottom:20px;">
                 <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:block; width:100%; max-width:100%; height:auto; border:1px solid #808080; object-fit:contain;" />
             </div>
         </div>
@@ -2880,16 +2881,18 @@
 
         // Create objects for tracks, assigning BPM or a default
         // Use `let` so we can replace this list with files fetched from GitHub later.
-        let audioFileObjects = audioFiles.map(file => ({
+        let audioFileObjects = audioFiles.map((file, index) => ({
             name: file,
             bpm: bpmMap.get(file) || 120.00,
-            url: null // will be populated when files are fetched or built locally
+            url: null, // will be populated when files are fetched or built locally
+            dateIndex: index // Track position for "date added" sorting
         }));
         
         // Create objects for mixes (no BPM)
-        const mixFileObjects = mixFiles.map(file => ({
+        const mixFileObjects = mixFiles.map((file, index) => ({
             name: file,
-            bpm: 0 // BPM not applicable for mixes
+            bpm: 0, // BPM not applicable for mixes
+            dateIndex: index // Track position for "date added" sorting
         }));
         
         let currentTracklist = [...audioFileObjects]; // For main player
@@ -4004,6 +4007,20 @@
             }
         });
         
+        // Sort by Date Added (reverse chronological - newest first)
+        const sortDateBtn = document.getElementById('sort-date');
+        if (sortDateBtn) {
+            sortDateBtn.addEventListener('click', () => {
+                if (currentMainPlayerTab === 'tracks') {
+                    currentTracklist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
+                    populateFileList(currentTracklist);
+                } else {
+                    currentMixlist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
+                    populateMixList(currentMixlist);
+                }
+            });
+        }
+        
         searchBar.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
             if (currentMainPlayerTab === 'tracks') {
@@ -4847,8 +4864,8 @@
             }
             // Make sure the info window is large enough and centered so GIF is visible
             try {
-                const winW = 460;
-                const winH = 460;
+                const winW = 600;
+                const winH = 700;
                 infoWindow.style.width = winW + 'px';
                 infoWindow.style.height = winH + 'px';
                 infoWindow.style.left = Math.max(12, (window.innerWidth - winW) / 2) + 'px';
