@@ -3890,7 +3890,12 @@
                         bpm: bpmMap.get(item.name) || 120.00
                     }));
                 if (files.length > 0) {
-                    audioFileObjects = files.map(f => ({ name: f.name, bpm: f.bpm, url: f.url }));
+                    audioFileObjects = files.map((f, index) => ({ 
+                        name: f.name, 
+                        bpm: f.bpm, 
+                        url: f.url,
+                        dateIndex: index // Preserve order as "date added"
+                    }));
                     currentTracklist = [...audioFileObjects];
                     currentDjTracklist = [...audioFileObjects];
                     populateFileList(currentTracklist);
@@ -4007,19 +4012,17 @@
             }
         });
         
-        // Sort by Date Added (reverse chronological - newest first)
-        const sortDateBtn = document.getElementById('sort-date');
-        if (sortDateBtn) {
-            sortDateBtn.addEventListener('click', () => {
-                if (currentMainPlayerTab === 'tracks') {
-                    currentTracklist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
-                    populateFileList(currentTracklist);
-                } else {
-                    currentMixlist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
-                    populateMixList(currentMixlist);
-                }
-            });
-        }
+        // Sort by Date Added (newest/most recent first)
+        document.getElementById('sort-date').addEventListener('click', () => {
+            if (currentMainPlayerTab === 'tracks') {
+                // Sort by dateIndex in descending order (higher index = more recent)
+                currentTracklist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
+                populateFileList(currentTracklist);
+            } else {
+                currentMixlist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
+                populateMixList(currentMixlist);
+            }
+        });
         
         searchBar.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
