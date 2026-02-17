@@ -2747,6 +2747,8 @@
 
     <!-- Silent audio element for background playback fix (NEW) -->
     <audio id="silent-audio-loop" loop playsinline webkit-playsinline src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"></audio>
+    <!-- Hidden audio used to preload the next track (keeps network buffer warm) -->
+    <audio id="preload-audio" preload="auto" style="display:none" crossorigin="anonymous"></audio>
 
     <!-- Resume prompt shown when AudioContext is suspended and user needs to tap to resume -->
     <div id="resume-prompt" style="display:none; position:fixed; left:50%; transform:translateX(-50%); bottom:20px; z-index:9999; background:rgba(0,0,0,0.85); color:#fff; padding:8px 12px; border-radius:8px; align-items:center; gap:8px;">
@@ -4892,6 +4894,49 @@
                 navigator.mediaSession.setActionHandler('nexttrack', () => playNextTrack());
             }
         }
+
+        // --- Pre-load next track (buffer ahead) ---
+        // Uses a hidden audio element (`#preload-audio`) to let the browser fetch
+        // the next file before the current one ends so playback is smooth on iOS.
+        const preloadAudio = document.getElementById('preload-audio');
+        let preloadedFor = null;
+
+        function ensurePreloadNext() {
+            try {
+                const nextLi = getTrackElement(1);
+                if (!nextLi) return;
+                const filename = nextLi.dataset.filename;
+                if (!filename) return;
+                if (preloadedFor === filename) return; // already preloaded
+
+                const fileUrl = nextLi.dataset.url && nextLi.dataset.url.length ? nextLi.dataset.url : (nextLi.dataset.isMix === 'true' ? 'mixes/' + filename : 'audio/' + filename);
+                preloadAudio.src = fileUrl;
+                // Request the browser to begin fetching the resource
+                preloadAudio.load();
+                preloadedFor = filename;
+                console.log('Preloading next track:', filename);
+            } catch (e) {
+                console.warn('Preload next failed:', e && e.message);
+            }
+        }
+
+        // Trigger preload when the current track is near its end
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (!audioPlayer.duration || audioPlayer.paused) return;
+            const remaining = audioPlayer.duration - audioPlayer.currentTime;
+            // Start preloading when 12 seconds remain (adjustable)
+            if (remaining <= 12) ensurePreloadNext();
+        });
+
+        // When a track starts playing, if it was preloaded, clear the flag so the
+        // next track can be preloaded later.
+        audioPlayer.addEventListener('playing', () => {
+            try {
+                const url = new URL(audioPlayer.src, location);
+                const filename = url.pathname.split('/').pop();
+                if (preloadedFor === filename) preloadedFor = null;
+            } catch (e) {}
+        });
 
         
         // Info button
