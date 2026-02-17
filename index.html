@@ -2236,6 +2236,9 @@
     <!-- Floating background/logo image (keeps behind windows and is draggable) -->
     <img id="background1" src="background1.png" alt="background logo" draggable="false">
 
+    <!-- Particle canvas (behind windows, interactive visual background) -->
+    <canvas id="particle-canvas" style="position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;"></canvas>
+
     <!-- Desktop icons (playful / fidget apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
         
@@ -2358,6 +2361,11 @@
             <!-- Animated GIF shown only when the Info window is opened -->
             <div class="load-info-container" style="justify-content:center; margin-top:12px; margin-bottom:20px;">
                 <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:block; width:100%; max-width:100%; height:auto; border:1px solid #808080; object-fit:contain;" />
+            </div>
+
+            <div style="margin-top:8px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                <label style="font-weight:600;">Particles:</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="particles-toggle"> Enable background particles</label>
             </div>
         </div>
         <div class="resize-handle"></div>
@@ -2988,6 +2996,7 @@
         const vizBgPicker = document.getElementById('viz-bg-picker');
         const visualizerTabs = document.getElementById('visualizer-tabs');
         const vizFullscreenBtn = document.getElementById('visualizer-fullscreen-button');
+        const particlesToggle = document.getElementById('particles-toggle');
         const minimizePlayerButton = document.getElementById('minimize-player-button');
         const minimizedPlayerIcon = document.getElementById('minimized-player-icon');
         
@@ -6003,6 +6012,155 @@
                 if (canvas) canvas.style.background = vizBgColor;
             }
         } catch(e) {}
+
+        // --- Particle System (behind windows) ---
+        const particleCanvas = document.getElementById('particle-canvas');
+        let pctx = null;
+        let particles = [];
+        const particlePool = [];
+        const MAX_PARTICLES = 1200;
+        let particleRAF = null;
+        let particleEnabled = false; // default OFF per user request
+        let lastParticleTime = performance.now();
+        let devicePR = window.devicePixelRatio || 1;
+
+        function resizeParticleCanvas() {
+            if (!particleCanvas) return;
+            devicePR = window.devicePixelRatio || 1;
+            const w = Math.max(1, Math.floor(window.innerWidth * devicePR));
+            const h = Math.max(1, Math.floor(window.innerHeight * devicePR));
+            if (particleCanvas.width !== w || particleCanvas.height !== h) {
+                particleCanvas.width = w;
+                particleCanvas.height = h;
+                particleCanvas.style.width = window.innerWidth + 'px';
+                particleCanvas.style.height = window.innerHeight + 'px';
+            }
+            if (pctx) pctx.setTransform(devicePR, 0, 0, devicePR, 0, 0);
+        }
+
+        function createParticle(x, y, volume) {
+            let p = particlePool.pop();
+            if (!p) p = {};
+            p.x = x;
+            p.y = y;
+            // size reacts to audio volume
+            p.size = Math.max(1, 2 + volume * 18 + (Math.random() * 6));
+            // upward float: negative vy
+            p.vx = (Math.random() - 0.5) * (0.2 + volume * 6);
+            p.vy = - (0.03 + volume * 0.25) - Math.random() * 0.25;
+            p.life = 2000; // ms
+            p.age = 0;
+            p.alpha = 1;
+            // color use visualizerColor as base but slightly desaturated
+            p.color = visualizerColor || '#FFFFFF';
+            particles.push(p);
+        }
+
+        function spawnAt(x, y, burst = 1) {
+            // map client coords to canvas coords
+            const rect = particleCanvas.getBoundingClientRect();
+            const cx = (x - rect.left);
+            const cy = (y - rect.top);
+            // Get audio-driven volume 0..1
+            let volume = 0;
+            try {
+                if (analyser && frequencyData) {
+                    analyser.getByteFrequencyData(frequencyData);
+                    let s = 0;
+                    for (let i = 0; i < frequencyData.length; i++) s += frequencyData[i];
+                    volume = (s / (frequencyData.length * 255)) || 0;
+                }
+            } catch (e) { volume = 0; }
+            const count = Math.min(40, Math.max(1, Math.round(burst * (1 + volume * 6))));
+            for (let i = 0; i < count; i++) {
+                if (particles.length + particlePool.length >= MAX_PARTICLES) break;
+                createParticle(cx, cy, volume);
+            }
+        }
+
+        function stepParticles(now) {
+            if (!particleEnabled) return;
+            const dt = Math.min(40, now - lastParticleTime);
+            lastParticleTime = now;
+            // Clear with transparent
+            pctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            // Update and draw
+            const gravity = 0.00035; // upward acceleration (negative vy increases upwards)
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.age += dt;
+                if (p.age >= p.life) {
+                    // recycle
+                    particles.splice(i, 1);
+                    particlePool.push(p);
+                    continue;
+                }
+                // Apply upward 'gravity' (float up faster)
+                p.vy -= gravity * dt;
+                p.x += p.vx * dt * devicePR;
+                p.y += p.vy * dt * devicePR;
+                p.alpha = 1 - (p.age / p.life);
+
+                // draw
+                pctx.beginPath();
+                pctx.fillStyle = hexToRGBA(p.color, p.alpha);
+                pctx.arc(p.x, p.y, Math.max(0.2, p.size), 0, Math.PI * 2);
+                pctx.fill();
+            }
+            particleRAF = requestAnimationFrame(stepParticles);
+        }
+
+        function startParticles() {
+            if (!particleCanvas) return;
+            if (!pctx) pctx = particleCanvas.getContext('2d', { alpha: true });
+            resizeParticleCanvas();
+            particleEnabled = true;
+            lastParticleTime = performance.now();
+            // start RAF
+            if (!particleRAF) particleRAF = requestAnimationFrame(stepParticles);
+            window.addEventListener('resize', resizeParticleCanvas);
+            // spawn on pointer move and pointerdown
+            window.addEventListener('pointermove', particlePointerMove);
+            window.addEventListener('pointerdown', particlePointerDown);
+        }
+
+        function stopParticles() {
+            particleEnabled = false;
+            if (particleRAF) { cancelAnimationFrame(particleRAF); particleRAF = null; }
+            window.removeEventListener('resize', resizeParticleCanvas);
+            window.removeEventListener('pointermove', particlePointerMove);
+            window.removeEventListener('pointerdown', particlePointerDown);
+            // clear canvas
+            if (pctx && particleCanvas) pctx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            // recycle arrays
+            while (particles.length) particlePool.push(particles.pop());
+        }
+
+        // Debounced pointer spawn to limit rate
+        let lastPointerSpawn = 0;
+        function particlePointerMove(e) {
+            if (!particleEnabled) return;
+            const now = performance.now();
+            if (now - lastPointerSpawn < 30) return; // ~33 spawns/sec max
+            lastPointerSpawn = now;
+            spawnAt(e.clientX, e.clientY, 1);
+        }
+
+        function particlePointerDown(e) {
+            if (!particleEnabled) return;
+            // burst
+            spawnAt(e.clientX, e.clientY, 8);
+        }
+
+        // Wire up toggle control (default OFF)
+        try {
+            if (particlesToggle) {
+                particlesToggle.checked = false;
+                particlesToggle.addEventListener('change', (ev) => {
+                    if (ev.target.checked) startParticles(); else stopParticles();
+                });
+            }
+        } catch (e) {}
 
         // Preload cover image for lock screen
         const lockScreenImage = new Image();
