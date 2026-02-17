@@ -449,7 +449,7 @@
 
         #audio-player {
             width: 100%;
-            height: 32px;
+            height: 40px;
             cursor: pointer;
             appearance: none;
             -webkit-appearance: none;
@@ -458,48 +458,120 @@
             border-left: 2px solid #dfdfdf;
             border-right: 2px solid #808080;
             border-bottom: 2px solid #808080;
-            padding: 2px;
+            padding: 4px;
+            margin: 0;
+            box-sizing: border-box;
             font-family: 'MS Sans Serif', Arial, sans-serif;
             font-size: 11px;
             color: #000;
+            outline: none;
         }
         
-        /* Style the audio player controls (play button, timeline, volume) */
+        /* Ensure panel is always visible and properly styled */
         #audio-player::-webkit-media-controls-panel {
+            display: flex;
+            align-items: center;
             background-color: #c0c0c0;
-            border: 1px solid #808080;
+            border: none;
+            padding: 2px 4px;
+            height: 32px;
         }
         
-        #audio-player::-webkit-media-controls-mute-button {
-            background: #c0c0c0;
-            border: 1px solid #dfdfdf;
-            border-right: 1px solid #808080;
-            border-bottom: 1px solid #808080;
-        }
-        
+        /* Make play button visible */
         #audio-player::-webkit-media-controls-play-button {
+            display: flex;
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
             background: #c0c0c0;
             border: 1px solid #dfdfdf;
-            border-right: 1px solid #808080;
-            border-bottom: 1px solid #808080;
+            border-right-color: #808080;
+            border-bottom-color: #808080;
+            cursor: pointer;
+            flex-shrink: 0;
         }
         
+        /* Style mute button */
+        #audio-player::-webkit-media-controls-mute-button {
+            display: flex;
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #c0c0c0;
+            border: 1px solid #dfdfdf;
+            border-right-color: #808080;
+            border-bottom-color: #808080;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        /* Timeline with proper styling */
         #audio-player::-webkit-media-controls-timeline {
+            flex: 1;
+            height: 16px;
             background: #808080;
             border: 1px inset #dfdfdf;
-            margin: 0 4px;
-            height: 16px;
+            margin: 0 6px;
+            -webkit-appearance: none;
+            appearance: none;
         }
         
+        #audio-player::-webkit-media-controls-timeline::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 16px;
+            background: #c0c0c0;
+            border: 1px solid #dfdfdf;
+            border-right-color: #808080;
+            border-bottom-color: #808080;
+            cursor: pointer;
+        }
+        
+        /* Time displays - centered and visible */
         #audio-player::-webkit-media-controls-current-time-display,
         #audio-player::-webkit-media-controls-time-remaining-display {
             color: #000;
             font-size: 11px;
+            text-align: center;
+            min-width: 40px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Volume controls - visible */
+        #audio-player::-webkit-media-controls-volume-slider-container {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            margin-left: 4px;
         }
         
         #audio-player::-webkit-media-controls-volume-slider {
+            display: flex;
+            width: 60px;
+            height: 12px;
+            background: #808080;
+            border: 1px inset #dfdfdf;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        #audio-player::-webkit-media-controls-volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
             background: #c0c0c0;
             border: 1px solid #dfdfdf;
+            border-right-color: #808080;
+            border-bottom-color: #808080;
+            cursor: pointer;
         }
 
         /* --- Custom Scrollbar --- */
@@ -2918,33 +2990,40 @@
             // Mirror play/pause state to media element UI if present (best-effort)
             const visibleAudioEl = document.getElementById('audio-player');
             if (visibleAudioEl) {
-                // When user interacts with visible controls, sync with musicPlayer
-                // The visible element will play the actual audio (unmuted)
+                // The visible audio element is now the primary playback source
+                // musicPlayer is kept in sync for iOS background audio support
                 visibleAudioEl.addEventListener('play', (e) => {
                     if (!musicPlayer) initPlayersOnGesture();
                     try {
-                        if (visibleAudioEl.src && visibleAudioEl.src !== musicPlayer.src) musicPlayer.src = visibleAudioEl.src;
-                        // Only play the visible element (don't create double playback)
-                        musicPlayer.play().catch(()=>{});
+                        // Sync the src if needed
+                        if (visibleAudioEl.src && visibleAudioEl.src !== musicPlayer.src) {
+                            musicPlayer.src = visibleAudioEl.src;
+                        }
+                        // Only sync musicPlayer playback without causing double playback
+                        if (musicPlayer.paused) {
+                            musicPlayer.play().catch(()=>{});
+                        }
                     } catch(e){}
                 });
                 visibleAudioEl.addEventListener('pause', () => {
-                    if (musicPlayer) musicPlayer.pause();
-                    try { visibleAudioEl.pause(); } catch(e){}
+                    if (musicPlayer && !musicPlayer.paused) {
+                        musicPlayer.pause();
+                    }
                 });
-                // Handle seeking/scrubbing
                 visibleAudioEl.addEventListener('seeking', () => {
-                    if (musicPlayer) {
-                        try { musicPlayer.currentTime = visibleAudioEl.currentTime; } catch(e){}
-                    }
-                });
-                visibleAudioEl.addEventListener('timeupdate', () => {
-                    if (musicPlayer && visibleAudioEl.paused === musicPlayer.paused) {
-                        // Keep audio elements in sync
-                        if (Math.abs(musicPlayer.currentTime - visibleAudioEl.currentTime) > 0.5) {
-                            try { musicPlayer.currentTime = visibleAudioEl.currentTime; } catch(e){}
+                    try {
+                        if (musicPlayer) {
+                            musicPlayer.currentTime = visibleAudioEl.currentTime;
                         }
-                    }
+                    } catch(e){}
+                });
+                // Sync time periodically
+                visibleAudioEl.addEventListener('timeupdate', () => {
+                    try {
+                        if (musicPlayer && Math.abs(musicPlayer.currentTime - visibleAudioEl.currentTime) > 1) {
+                            musicPlayer.currentTime = visibleAudioEl.currentTime;
+                        }
+                    } catch(e){}
                 });
             }
             // Wire musicPlayer-specific events (media session, visualizer sync)
@@ -5124,11 +5203,12 @@
                 }
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
-                // sync visible element with musicPlayer (unmuted for actual playback)
+                // Sync visible element if it's not already playing from user interaction
                 try {
-                    if (visibleAudioEl) {
+                    if (visibleAudioEl && visibleAudioEl.paused) {
                         if (visibleAudioEl.src !== musicPlayer.src) visibleAudioEl.src = musicPlayer.src || visibleAudioEl.src;
                         visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
+                        visibleAudioEl.play().catch(()=>{});
                     }
                 } catch (e) {}
             });
