@@ -2344,6 +2344,10 @@
             </div>
         </div>
         <div class="content" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
+            <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center;">
+                <label style="font-weight:700;">Particles:</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="particles-toggle"> Enable background particles</label>
+            </div>
             <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
             <p>Version 3.7 (UX Improvements)</p>
             <br>
@@ -2363,10 +2367,7 @@
                 <img id="info-gif" data-src="ilan animation.gif" alt="Ilan animation" style="display:block; width:100%; max-width:100%; height:auto; border:1px solid #808080; object-fit:contain;" />
             </div>
 
-            <div style="margin-top:8px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-                <label style="font-weight:600;">Particles:</label>
-                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="particles-toggle"> Enable background particles</label>
-            </div>
+            
         </div>
         <div class="resize-handle"></div>
     </div>
@@ -6038,6 +6039,31 @@
             if (pctx) pctx.setTransform(devicePR, 0, 0, devicePR, 0, 0);
         }
 
+        // Return inverted hex color for contrast (handles #RGB, #RRGGBB, and rgb(...) strings)
+        function invertHexColor(input) {
+            try {
+                let hex = input || '';
+                if (!hex) return '#ffffff';
+                hex = hex.toString().trim();
+                if (hex.startsWith('rgb')) {
+                    const nums = hex.match(/\d+/g);
+                    if (nums && nums.length >= 3) {
+                        const r = 255 - parseInt(nums[0], 10);
+                        const g = 255 - parseInt(nums[1], 10);
+                        const b = 255 - parseInt(nums[2], 10);
+                        return ('#' + [r, g, b].map(n => n.toString(16).padStart(2, '0')).join('')).toUpperCase();
+                    }
+                }
+                if (hex.startsWith('#')) hex = hex.slice(1);
+                if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+                if (hex.length !== 6) return '#FFFFFF';
+                const r = (255 - parseInt(hex.substring(0, 2), 16)).toString(16).padStart(2, '0');
+                const g = (255 - parseInt(hex.substring(2, 4), 16)).toString(16).padStart(2, '0');
+                const b = (255 - parseInt(hex.substring(4, 6), 16)).toString(16).padStart(2, '0');
+                return ('#' + r + g + b).toUpperCase();
+            } catch (e) { return '#FFFFFF'; }
+        }
+
         function createParticle(x, y, volume) {
             let p = particlePool.pop();
             if (!p) p = {};
@@ -6051,8 +6077,10 @@
             p.life = 2000; // ms
             p.age = 0;
             p.alpha = 1;
-            // color use visualizerColor as base but slightly desaturated
-            p.color = visualizerColor || '#FFFFFF';
+            // color: inverse of the page background for contrast
+            let baseBg = '#000000';
+            try { baseBg = (bgColorPicker && bgColorPicker.value) ? bgColorPicker.value : window.getComputedStyle(document.body).backgroundColor; } catch(e) {}
+            p.color = invertHexColor(baseBg);
             particles.push(p);
         }
 
