@@ -2800,7 +2800,74 @@
         
         // --- Configuration & Elements ---
         
-        // List of all track .mp3 files
+        // Main player objects (created on first user gesture)
+        let musicPlayer = null; // will be `new Audio()` initialized on gesture
+        let silentWarmup = null; // short silent audio to unlock mobile audio once
+        let warmupPlayed = false;
+
+        function initPlayersOnGesture() {
+            if (musicPlayer) return;
+            musicPlayer = new Audio();
+            musicPlayer.crossOrigin = "anonymous";
+            musicPlayer.preload = 'metadata';
+
+            silentWarmup = new Audio();
+            silentWarmup.crossOrigin = "anonymous";
+            silentWarmup.preload = 'auto';
+            silentWarmup.loop = false; // play only once
+            // tiny silent wav (very short) — same data URI as before
+            silentWarmup.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+
+            // Mirror play/pause state to media element UI if present (best-effort)
+            const visibleAudioEl = document.getElementById('audio-player');
+            if (visibleAudioEl) {
+                // When user interacts with visible controls, proxy to musicPlayer
+                visibleAudioEl.addEventListener('play', (e) => {
+                    if (!musicPlayer) initPlayersOnGesture();
+                    // If visible element was used, ensure musicPlayer has same src
+                    try { if (visibleAudioEl.src && visibleAudioEl.src !== musicPlayer.src) musicPlayer.src = visibleAudioEl.src; } catch(e){}
+                    musicPlayer.play().catch(()=>{});
+                    // Pause the visible element to avoid double audio
+                    try { visibleAudioEl.pause(); } catch(e){}
+                });
+                visibleAudioEl.addEventListener('pause', () => {
+                    if (musicPlayer) musicPlayer.pause();
+                    try { visibleAudioEl.pause(); } catch(e){}
+                });
+            }
+            // Wire musicPlayer-specific events (media session, visualizer sync)
+            try { wireMusicPlayerEvents(); } catch (e) {}
+        }
+
+        // Initialize players on first user gesture so Safari grants background play
+        document.addEventListener('touchstart', initPlayersOnGesture, { once: true, passive: true });
+        document.addEventListener('click', initPlayersOnGesture, { once: true });
+
+        // Helper to play the one-time silent warmup (only once)
+        function tryStartSilentAudio() {
+            if (!silentWarmup) return;
+            if (warmupPlayed) return;
+            silentWarmup.play().then(() => {
+                warmupPlayed = true;
+                // let the short file end naturally; do not loop or keep it playing
+                console.log('Silent warmup played once to unlock audio');
+            }).catch(e => {
+                // Will likely fail without user gesture; ignore silently
+                console.warn('Silent warmup play failed:', e && e.message);
+            });
+        }
+
+        // Central toggle used by media session handlers to avoid accidental play
+        function togglePlay() {
+            if (!musicPlayer) return;
+            if (musicPlayer.paused) {
+                musicPlayer.play().catch(()=>{});
+            } else {
+                musicPlayer.pause();
+            }
+        }
+
+        // --- List of all track .mp3 files
         // UPDATED: Added new tracks from the image
         const audioFiles = [
             "2 part shit.mp3", "42 cent.mp3", "67.mp3", "808 beat sample.mp3",
@@ -2976,8 +3043,8 @@
         loadFavorites(); // Load on init
 
         // --- Element References ---
-        // Main Player
-        const audioPlayer = document.getElementById('audio-player');
+        // Main Player (visible DOM element for UI only)
+        const visibleAudioEl = document.getElementById('audio-player');
         const fileListElement = document.getElementById('file-list');
         const mixListElement = document.getElementById('mix-list'); // Mixes list
         const playerTabs = document.querySelectorAll('#player-tabs .visualizer-tab'); // Player tabs
@@ -3255,23 +3322,6 @@
         let delayA, feedbackA, wetMixA; // Deck A Echo
         let delayB, feedbackB, wetMixB; // Deck B Echo
         
-        // NEW: Get silent audio element for background playback fix
-        const silentAudio = document.getElementById('silent-audio-loop');
-        let hasPlayedOnce = false; // Flag to only start silent audio once
-
-        // NEW: Function to start silent audio loop
-        function tryStartSilentAudio() {
-            if (!hasPlayedOnce && silentAudio.paused) {
-                silentAudio.play().then(() => {
-                    hasPlayedOnce = true;
-                    console.log("Silent audio loop started for background playback.");
-                }).catch(e => {
-                    // This often fails on first load without user gesture, which is fine.
-                    // The main audio play() will trigger it again.
-                    console.warn("Silent audio play failed (will retry):", e.message);
-                });
-            }
-        }
         
         function setupAudioContext() {
             if (audioContext) return;
@@ -3288,7 +3338,8 @@
             analyser.smoothingTimeConstant = 0.8; 
             
             // Create sources from HTML audio elements
-            sourceMain = audioContext.createMediaElementSource(audioPlayer);
+            if (!musicPlayer) initPlayersOnGesture();
+            sourceMain = audioContext.createMediaElementSource(musicPlayer);
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -3473,9 +3524,8 @@
             tryStartSilentAudio();
             // Try to nudge the main player if it's present and paused
             try { 
-                const ap = document.getElementById('audio-player');
-                if (ap && ap.paused) {
-                    ap.play().catch(() => {});
+                if (musicPlayer && musicPlayer.paused) {
+                    musicPlayer.play().catch(() => {});
                 }
             } catch (e) {}
         }
@@ -3495,7 +3545,7 @@
                 } catch (e) {}
                 tryStartSilentAudio();
             } else {
-                const anyAudioPlaying = !audioPlayer.paused || 
+                const anyAudioPlaying = (musicPlayer && !musicPlayer.paused) ||
                                       (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
                                       (document.getElementById('deck-b-audio') && !document.getElementById('deck-b-audio').paused);
                 if (anyAudioPlaying) {
@@ -3872,12 +3922,15 @@
                 document.getElementById('deck-a-audio').pause();
                 document.getElementById('deck-b-audio').pause();
 
-                audioPlayer.src = fileUrl;
+                initPlayersOnGesture();
+                // keep visible element's src in sync for UI
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
 
                 if (!audioContext) setupAudioContext(); 
 
-                audioPlayer.play();
-                tryStartSilentAudio(); // NEW: Try to start silent audio
+                musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(()=>{});
+                tryStartSilentAudio();
 
                 nowPlayingElement.textContent = li.querySelector('.file-name').textContent;
                 
@@ -3998,9 +4051,11 @@
                 const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
                 document.getElementById('deck-a-audio').pause();
                 document.getElementById('deck-b-audio').pause();
-                audioPlayer.src = fileUrl;
+                initPlayersOnGesture();
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
                 if (!audioContext) setupAudioContext();
-                audioPlayer.play().catch(() => {});
+                musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
                 nowPlayingElement.textContent = track.name.replace('.mp3','');
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
@@ -4569,7 +4624,7 @@
                     if (!audioContext) setupAudioContext(); 
                     
                     // Stop other audio
-                    audioPlayer.pause();
+                    initPlayersOnGesture(); if (musicPlayer) musicPlayer.pause();
                     const otherDeckId = (deckId === 'deck-a') ? 'deck-b' : 'deck-a';
                     // document.getElementById(`${otherDeckId}-audio`).pause(); // Keep other deck playing
                     
@@ -4626,7 +4681,7 @@
                  if (!audioContext) setupAudioContext(); 
                  
                  // Stop main player
-                 audioPlayer.pause();
+                 initPlayersOnGesture(); if (musicPlayer) musicPlayer.pause();
                  
                  // Ensure nodes are assigned (if not loaded first)
                  if (!deckNodes) { 
@@ -4819,22 +4874,37 @@
             toggleBitcrusher();
         });
 
-        // Audio player event listeners for visualizer and media session
-        audioPlayer.addEventListener('pause', () => { 
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'paused';
-            }
-        });
-        audioPlayer.addEventListener('play', () => {
-            if (audioContext) {
-                audioContext.resume();
-                startVisualizer();
-            }
-            if ('mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-            tryStartSilentAudio(); // NEW: Try to start silent audio
-        });
+        // Wire musicPlayer events when it's created so playback state and visualizer stay in sync
+        function wireMusicPlayerEvents() {
+            if (!musicPlayer) return;
+            musicPlayer.addEventListener('pause', () => { 
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+            });
+            musicPlayer.addEventListener('play', () => {
+                if (audioContext) {
+                    audioContext.resume();
+                    startVisualizer();
+                }
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                tryStartSilentAudio();
+            });
+            musicPlayer.addEventListener('ended', () => {
+                playNextTrack();
+            });
+            // Preload handling: start fetching next track when current is nearly finished
+            musicPlayer.addEventListener('timeupdate', () => {
+                if (!musicPlayer.duration || musicPlayer.paused) return;
+                const remaining = musicPlayer.duration - musicPlayer.currentTime;
+                if (remaining <= 12) ensurePreloadNext();
+            });
+            musicPlayer.addEventListener('playing', () => {
+                try {
+                    const url = new URL(musicPlayer.src, location);
+                    const filename = url.pathname.split('/').pop();
+                    if (preloadedFor === filename) preloadedFor = null;
+                } catch (e) {}
+            });
+        }
 
         
         // --- Lock Screen Controls Logic (Media Session API) ---
@@ -4870,10 +4940,7 @@
             if (prevTrackLi) prevTrackLi.click();
         }
 
-        // Auto-play next track
-        audioPlayer.addEventListener('ended', () => {
-            playNextTrack(); 
-        });
+        // Auto-play next track handled in wired musicPlayer events (see wireMusicPlayerEvents())
         
         // Update lock screen info
         function updateMediaSession(trackName, isMix) {
@@ -4888,8 +4955,8 @@
                 });
 
                 // Set handlers
-                navigator.mediaSession.setActionHandler('play', () => audioPlayer.play());
-                navigator.mediaSession.setActionHandler('pause', () => audioPlayer.pause());
+                navigator.mediaSession.setActionHandler('play', () => { if (musicPlayer) musicPlayer.play(); });
+                navigator.mediaSession.setActionHandler('pause', () => { togglePlay(); });
                 navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousTrack());
                 navigator.mediaSession.setActionHandler('nexttrack', () => playNextTrack());
             }
@@ -4920,23 +4987,7 @@
             }
         }
 
-        // Trigger preload when the current track is near its end
-        audioPlayer.addEventListener('timeupdate', () => {
-            if (!audioPlayer.duration || audioPlayer.paused) return;
-            const remaining = audioPlayer.duration - audioPlayer.currentTime;
-            // Start preloading when 12 seconds remain (adjustable)
-            if (remaining <= 12) ensurePreloadNext();
-        });
-
-        // When a track starts playing, if it was preloaded, clear the flag so the
-        // next track can be preloaded later.
-        audioPlayer.addEventListener('playing', () => {
-            try {
-                const url = new URL(audioPlayer.src, location);
-                const filename = url.pathname.split('/').pop();
-                if (preloadedFor === filename) preloadedFor = null;
-            } catch (e) {}
-        });
+        // Trigger preload/timeupdate handlers are wired when musicPlayer is created
 
         
         // Info button
@@ -6371,33 +6422,37 @@
                 case ' ':
                     // Space: Play/Pause main player
                     e.preventDefault();
-                    if (audioPlayer.paused) {
-                        audioPlayer.play().catch(() => {});
+                    initPlayersOnGesture();
+                    if (!musicPlayer || musicPlayer.paused) {
+                        if (musicPlayer) musicPlayer.play().catch(() => {});
                         tryStartSilentAudio();
                     } else {
-                        audioPlayer.pause();
+                        if (musicPlayer) musicPlayer.pause();
                     }
                     break;
                     
                 case 'arrowup':
                     // Up arrow: Volume up
                     e.preventDefault();
-                    audioPlayer.volume = Math.min(1, audioPlayer.volume + 0.1);
+                    initPlayersOnGesture(); if (musicPlayer) musicPlayer.volume = Math.min(1, musicPlayer.volume + 0.1);
                     break;
                     
                 case 'arrowdown':
                     // Down arrow: Volume down
                     e.preventDefault();
-                    audioPlayer.volume = Math.max(0, audioPlayer.volume - 0.1);
+                    initPlayersOnGesture(); if (musicPlayer) musicPlayer.volume = Math.max(0, musicPlayer.volume - 0.1);
                     break;
                     
                 case 'f':
                     // F: Toggle favorites for now-playing track
-                    if (audioPlayer.src) {
-                        const url = new URL(audioPlayer.src, window.location);
-                        const filename = url.pathname.split('/').pop();
-                        if (filename) toggleFavorite(filename);
-                    }
+                    try {
+                        const src = (musicPlayer && musicPlayer.src) ? musicPlayer.src : (document.getElementById('audio-player') && document.getElementById('audio-player').src);
+                        if (src) {
+                            const url = new URL(src, window.location);
+                            const filename = url.pathname.split('/').pop();
+                            if (filename) toggleFavorite(filename);
+                        }
+                    } catch (e) {}
                     break;
                     
                 case '?':
