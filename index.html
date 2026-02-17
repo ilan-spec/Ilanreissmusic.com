@@ -2925,21 +2925,10 @@
                 // Play/Pause handler
                 if (playPauseBtn) {
                     playPauseBtn.addEventListener('click', () => {
-                        if (visibleAudioEl.src && visibleAudioEl.src.length > 0) {
-                            // Track is loaded, play/pause normally
-                            if (visibleAudioEl.paused) {
-                                visibleAudioEl.play();
-                            } else {
-                                visibleAudioEl.pause();
-                            }
+                        if (visibleAudioEl.paused) {
+                            visibleAudioEl.play();
                         } else {
-                            // No track selected, play first track
-                            const firstTrack = fileListElement.querySelector('li:first-child');
-                            if (firstTrack) {
-                                firstTrack.click();
-                            } else {
-                                customAlert('No tracks available');
-                            }
+                            visibleAudioEl.pause();
                         }
                     });
                 }
@@ -2979,35 +2968,30 @@
                     }
                 });
                 
-                // Update play/pause button and sync musicPlayer (muted, for iOS background)
+                // Update play/pause button
                 visibleAudioEl.addEventListener('play', () => {
                     if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     if (!musicPlayer) initPlayersOnGesture();
-                    // Sync musicPlayer state without playing it (keep it muted)
-                    if (musicPlayer) {
-                        musicPlayer.src = visibleAudioEl.src;
-                        musicPlayer.currentTime = visibleAudioEl.currentTime;
-                        musicPlayer.muted = true; // Keep musicPlayer muted to prevent double playback
+                    if (musicPlayer && musicPlayer.paused) {
+                        musicPlayer.play().catch(()=>{});
                     }
-                    if (audioContext) {
-                        audioContext.resume();
-                        startVisualizer();
-                    }
-                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                    tryStartSilentAudio();
                 });
                 
                 visibleAudioEl.addEventListener('pause', () => {
                     if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    if (musicPlayer) musicPlayer.pause();
-                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-                });
-                // Sync musicPlayer time when user scrubs
-                visibleAudioEl.addEventListener('seeking', () => {
-                    if (musicPlayer) {
-                        musicPlayer.currentTime = visibleAudioEl.currentTime;
+                    if (musicPlayer && !musicPlayer.paused) {
+                        musicPlayer.pause();
                     }
                 });
+                
+                // Format time helper
+                function formatTime(seconds) {
+                    if (!seconds || isNaN(seconds)) return '0:00';
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+                    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+                }
+            }
             // Wire musicPlayer-specific events (media session, visualizer sync)
             try { wireMusicPlayerEvents(); } catch (e) {}
         }
@@ -4231,18 +4215,16 @@
                 document.getElementById('deck-a-audio').pause();
                 document.getElementById('deck-b-audio').pause();
                 initPlayersOnGesture();
-                const audioEl = document.getElementById('audio-player');
-                audioEl.src = fileUrl;
-                audioEl.load();
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
                 if (!audioContext) setupAudioContext();
                 musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
                 nowPlayingElement.textContent = track.name.replace('.mp3','');
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
                 const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
                 if (match) match.classList.add('active');
                 updateMediaSession(track.name.replace('.mp3',''), false);
-                audioEl.play().catch(() => {});
             }
         }
 
@@ -4294,18 +4276,16 @@
                 document.getElementById('deck-a-audio').pause();
                 document.getElementById('deck-b-audio').pause();
                 initPlayersOnGesture();
-                const audioEl = document.getElementById('audio-player');
-                audioEl.src = fileUrl;
-                audioEl.load();
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
                 if (!audioContext) setupAudioContext();
                 musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
                 nowPlayingElement.textContent = track.name.replace('.mp3','');
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
                 const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
                 if (match) match.classList.add('active');
                 updateMediaSession(track.name.replace('.mp3',''), false);
-                audioEl.play().catch(() => {});
             }
         }
 
@@ -4354,18 +4334,16 @@
                 document.getElementById('deck-a-audio').pause();
                 document.getElementById('deck-b-audio').pause();
                 initPlayersOnGesture();
-                const audioEl = document.getElementById('audio-player');
-                audioEl.src = fileUrl;
-                audioEl.load();
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
                 if (!audioContext) setupAudioContext();
                 musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
                 nowPlayingElement.textContent = track.name.replace('.mp3','');
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
                 const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
                 if (match) match.classList.add('active');
                 updateMediaSession(track.name.replace('.mp3',''), false);
-                audioEl.play().catch(() => {});
             }
         }
 
