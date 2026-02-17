@@ -2938,7 +2938,6 @@
                     scrubberBar.addEventListener('input', (e) => {
                         if (visibleAudioEl.duration) {
                             visibleAudioEl.currentTime = (parseFloat(e.target.value) / 100) * visibleAudioEl.duration;
-                            if (musicPlayer) musicPlayer.currentTime = visibleAudioEl.currentTime;
                         }
                     });
                 }
@@ -2972,16 +2971,10 @@
                 visibleAudioEl.addEventListener('play', () => {
                     if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     if (!musicPlayer) initPlayersOnGesture();
-                    if (musicPlayer && musicPlayer.paused) {
-                        musicPlayer.play().catch(()=>{});
-                    }
                 });
                 
                 visibleAudioEl.addEventListener('pause', () => {
                     if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    if (musicPlayer && !musicPlayer.paused) {
-                        musicPlayer.pause();
-                    }
                 });
                 
                 // Format time helper
