@@ -2922,23 +2922,25 @@
                 const volumeBtn = document.getElementById('volume-btn');
                 const timeDisplay = document.getElementById('time-display');
                 
-                // Play/Pause handler
+                // Play/Pause handler - control musicPlayer (the actual playback source)
                 if (playPauseBtn) {
                     playPauseBtn.addEventListener('click', () => {
-                        if (visibleAudioEl.paused) {
-                            visibleAudioEl.play();
+                        if (musicPlayer.paused) {
+                            musicPlayer.play().catch(()=>{});
                         } else {
-                            visibleAudioEl.pause();
+                            musicPlayer.pause();
                         }
                     });
                 }
                 
-                // Scrubber handler
+                // Scrubber handler - sync both players
                 if (scrubberBar) {
                     scrubberBar.addEventListener('input', (e) => {
-                        if (visibleAudioEl.duration) {
-                            visibleAudioEl.currentTime = (parseFloat(e.target.value) / 100) * visibleAudioEl.duration;
-                            if (musicPlayer) musicPlayer.currentTime = visibleAudioEl.currentTime;
+                        const duration = musicPlayer.duration || visibleAudioEl.duration;
+                        if (duration) {
+                            const newTime = (parseFloat(e.target.value) / 100) * duration;
+                            musicPlayer.currentTime = newTime;
+                            visibleAudioEl.currentTime = newTime;
                         }
                     });
                 }
@@ -2952,37 +2954,47 @@
                     });
                 }
                 
-                // Update UI on time change
-                visibleAudioEl.addEventListener('timeupdate', () => {
-                    if (visibleAudioEl.duration) {
-                        const pct = (visibleAudioEl.currentTime / visibleAudioEl.duration) * 100;
+                // Update UI on time change - listen to visibleAudioEl and musicPlayer
+                const updateTimeDisplay = () => {
+                    // Use musicPlayer as source of truth for currentTime/duration
+                    const timeEl = musicPlayer || visibleAudioEl;
+                    if (timeEl && timeEl.duration) {
+                        const pct = (timeEl.currentTime / timeEl.duration) * 100;
                         if (scrubberBar && !scrubberBar.closest(':active')) {
                             scrubberBar.value = pct;
                         }
                         // Update time display
                         if (timeDisplay) {
-                            const cur = formatTime(visibleAudioEl.currentTime);
-                            const dur = formatTime(visibleAudioEl.duration);
+                            const cur = formatTime(timeEl.currentTime);
+                            const dur = formatTime(timeEl.duration);
                             timeDisplay.textContent = cur + ' / ' + dur;
                         }
                     }
-                });
+                };
                 
-                // Update play/pause button
-                visibleAudioEl.addEventListener('play', () => {
-                    if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    if (!musicPlayer) initPlayersOnGesture();
-                    if (musicPlayer && musicPlayer.paused) {
-                        musicPlayer.play().catch(()=>{});
-                    }
-                });
+                visibleAudioEl.addEventListener('timeupdate', updateTimeDisplay);
                 
-                visibleAudioEl.addEventListener('pause', () => {
-                    if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    if (musicPlayer && !musicPlayer.paused) {
-                        musicPlayer.pause();
+                // Also sync the time display when musicPlayer updates (since it's the actual playback source)
+                if (musicPlayer) {
+                    musicPlayer.addEventListener('timeupdate', updateTimeDisplay);
+                }
+                
+                // Update play/pause button based on musicPlayer state
+                const updatePlayPauseButton = () => {
+                    const isPlaying = musicPlayer && !musicPlayer.paused;
+                    if (playPauseBtn) {
+                        playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
                     }
-                });
+                };
+                
+                visibleAudioEl.addEventListener('play', updatePlayPauseButton);
+                visibleAudioEl.addEventListener('pause', updatePlayPauseButton);
+                
+                // Also update button when musicPlayer play/pause events fire
+                if (musicPlayer) {
+                    musicPlayer.addEventListener('play', updatePlayPauseButton);
+                    musicPlayer.addEventListener('pause', updatePlayPauseButton);
+                }
                 
                 // Format time helper
                 function formatTime(seconds) {
@@ -4081,12 +4093,9 @@
 
                 initPlayersOnGesture();
                 
-                // Load into the visible audio element (primary playback)
+                // Load into both elements for sync, but only musicPlayer will actually play (connected to Web Audio API for visualizer)
                 const audioEl = document.getElementById('audio-player');
                 audioEl.src = fileUrl;
-                audioEl.load();
-
-                // Sync musicPlayer for iOS background support (but don't play it yet)
                 musicPlayer.src = fileUrl;
 
                 if (!audioContext) setupAudioContext(); 
@@ -4100,8 +4109,8 @@
                 
                 updateMediaSession(filename.replace('.mp3', ''), isMix); // Update lock screen
                 
-                // Auto-play the track
-                audioEl.play().catch(()=>{});
+                // Play musicPlayer (connected to Web Audio API and visualizer)
+                musicPlayer.play().catch(()=>{});
             });
 
             // Context menu listeners (only for tracks, not mixes)
