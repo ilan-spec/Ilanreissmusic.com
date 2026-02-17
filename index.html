@@ -507,6 +507,18 @@
             display: block;
         }
 
+        /* Fullscreen adjustments for visualizer window */
+        #visualizer-window:fullscreen, #visualizer-window:-webkit-full-screen {
+            width: 100% !important;
+            height: 100% !important;
+            top: 0 !important;
+            left: 0 !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            border-radius: 0 !important;
+            z-index: 99999 !important;
+        }
+
         #visualizer-tabs {
             display: flex;
             flex-grow: 1; 
@@ -637,6 +649,22 @@
         #bg-color-picker::-webkit-color-swatch {
             border: none;
         }
+
+        /* Visualizer background color picker (small square) */
+        #viz-bg-picker {
+            width: 40px;
+            height: 25px;
+            background: #000;
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 6px;
+        }
+        #viz-bg-picker::-webkit-color-swatch-wrapper { padding: 0; }
+        #viz-bg-picker::-webkit-color-swatch { border: none; }
 
         /* Minimized icon "buttons" */
         #minimized-player-icon {
@@ -2294,6 +2322,7 @@
                 <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
             </div>
             <div class="title-bar-buttons">
+                <button class="window-button" id="visualizer-fullscreen-button" title="Toggle Visualizer Fullscreen">⛶</button>
                 <button class="window-button close-button" data-target="visualizer-window">X</button>
             </div>
         </div>
@@ -2640,6 +2669,8 @@
     <div id="color-picker-container">
         <label for="bg-color-picker">BG:</label>
         <input type="color" id="bg-color-picker" value="#008080">
+        <label for="viz-bg-picker">Viz:</label>
+        <input type="color" id="viz-bg-picker" value="#000000" title="Visualizer background color">
         
         <div id="minimized-player-icon" title="Restore Music Player">
             <i class="fas fa-headphones"></i> 
@@ -2954,7 +2985,9 @@
         const infoButton = document.getElementById('info-button');
         const digitalClock = document.getElementById('digital-clock');
         const bgColorPicker = document.getElementById('bg-color-picker');
+        const vizBgPicker = document.getElementById('viz-bg-picker');
         const visualizerTabs = document.getElementById('visualizer-tabs');
+        const vizFullscreenBtn = document.getElementById('visualizer-fullscreen-button');
         const minimizePlayerButton = document.getElementById('minimize-player-button');
         const minimizedPlayerIcon = document.getElementById('minimized-player-icon');
         
@@ -3186,6 +3219,7 @@
         // State variables
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
+        let vizBgColor = '#000000';
         let activeVisualizer = 'rain'; // UPDATED: Default visualizer
         let playlists = [];
         let selectedPlaylistId = null;
@@ -3579,7 +3613,7 @@
                 if (canvas.width === 0) return; // Don't draw if canvas isn't sized
             }
 
-            ctx.fillStyle = 'black';
+            ctx.fillStyle = vizBgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const speed = bassAvg * 10 + 1; // Speed reacts to bass
@@ -3622,7 +3656,7 @@
 
         // 3. Retro Waveform
         function drawRetroWaveformVisualizer(timeDomainData) {
-            ctx.fillStyle = '#000';
+            ctx.fillStyle = vizBgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.lineWidth = 3; ctx.strokeStyle = visualizerColor;
             ctx.shadowColor = visualizerColor; ctx.shadowBlur = 10;
@@ -5218,6 +5252,42 @@
             secondaryColor = newColor;
         });
 
+        // Visualizer background picker: changes only the visualizer canvas background
+        if (vizBgPicker) {
+            vizBgPicker.addEventListener('input', (e) => {
+                const newVizBg = e.target.value;
+                vizBgColor = newVizBg;
+                try { if (canvas) canvas.style.background = newVizBg; } catch(e){}
+            });
+        }
+
+        // Fullscreen toggle for visualizer window
+        function toggleVisualizerFullscreen() {
+            try {
+                if (!document.fullscreenElement) {
+                    if (visualizerWindow.requestFullscreen) visualizerWindow.requestFullscreen();
+                    else if (visualizerWindow.webkitRequestFullscreen) visualizerWindow.webkitRequestFullscreen();
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                }
+            } catch (e) { console.warn('Fullscreen toggle failed', e); }
+        }
+
+        if (vizFullscreenBtn) {
+            vizFullscreenBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleVisualizerFullscreen(); });
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                if (vizFullscreenBtn) vizFullscreenBtn.classList.remove('active');
+            } else {
+                if (document.fullscreenElement === visualizerWindow) {
+                    if (vizFullscreenBtn) vizFullscreenBtn.classList.add('active');
+                }
+            }
+        });
+
         // --- Digital Clock ---
         function updateClock() {
             const now = new Date();
@@ -5924,6 +5994,15 @@
         const initialBgColor = bgColorPicker.value;
         visualizerColor = initialBgColor;
         secondaryColor = initialBgColor;
+        // Initialize visualizer background color
+        try {
+            if (vizBgPicker) {
+                vizBgColor = vizBgPicker.value;
+                if (canvas) canvas.style.background = vizBgColor;
+            } else {
+                if (canvas) canvas.style.background = vizBgColor;
+            }
+        } catch(e) {}
 
         // Preload cover image for lock screen
         const lockScreenImage = new Image();
