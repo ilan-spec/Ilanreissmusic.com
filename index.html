@@ -2936,9 +2936,11 @@
                 // Scrubber handler - sync both players
                 if (scrubberBar) {
                     scrubberBar.addEventListener('input', (e) => {
-                        if (visibleAudioEl.duration) {
-                            visibleAudioEl.currentTime = (parseFloat(e.target.value) / 100) * visibleAudioEl.duration;
-                            if (musicPlayer) musicPlayer.currentTime = visibleAudioEl.currentTime;
+                        const duration = musicPlayer.duration || visibleAudioEl.duration;
+                        if (duration) {
+                            const newTime = (parseFloat(e.target.value) / 100) * duration;
+                            musicPlayer.currentTime = newTime;
+                            visibleAudioEl.currentTime = newTime;
                         }
                     });
                 }
@@ -4091,12 +4093,9 @@
 
                 initPlayersOnGesture();
                 
-                // Load into the visible audio element (primary playback)
+                // Load into both elements for sync, but only musicPlayer will actually play (connected to Web Audio API for visualizer)
                 const audioEl = document.getElementById('audio-player');
                 audioEl.src = fileUrl;
-                audioEl.load();
-
-                // Sync musicPlayer for iOS background support (but don't play it yet)
                 musicPlayer.src = fileUrl;
 
                 if (!audioContext) setupAudioContext(); 
@@ -4110,8 +4109,8 @@
                 
                 updateMediaSession(filename.replace('.mp3', ''), isMix); // Update lock screen
                 
-                // Auto-play the track
-                audioEl.play().catch(()=>{});
+                // Play musicPlayer (connected to Web Audio API and visualizer)
+                musicPlayer.play().catch(()=>{});
             });
 
             // Context menu listeners (only for tracks, not mixes)
