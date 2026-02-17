@@ -3032,12 +3032,11 @@
 
         // Central toggle used by media session handlers to avoid accidental play
         function togglePlay() {
-            const audioEl = document.getElementById('audio-player');
-            if (!audioEl) return;
-            if (audioEl.paused) {
-                audioEl.play().catch(()=>{});
+            if (!musicPlayer) return;
+            if (musicPlayer.paused) {
+                musicPlayer.play().catch(()=>{});
             } else {
-                audioEl.pause();
+                musicPlayer.pause();
             }
         }
 
@@ -3698,9 +3697,8 @@
             tryStartSilentAudio();
             // Try to nudge the main player if it's present and paused
             try { 
-                const audioEl = document.getElementById('audio-player');
-                if (audioEl && audioEl.paused) {
-                    audioEl.play().catch(() => {});
+                if (musicPlayer && musicPlayer.paused) {
+                    musicPlayer.play().catch(() => {});
                 }
             } catch (e) {}
         }
@@ -4934,9 +4932,7 @@
                     if (!audioContext) setupAudioContext(); 
                     
                     // Stop other audio
-                    initPlayersOnGesture(); 
-                    const audioEl = document.getElementById('audio-player');
-                    if (audioEl) audioEl.pause();
+                    initPlayersOnGesture(); if (musicPlayer) musicPlayer.pause();
                     const otherDeckId = (deckId === 'deck-a') ? 'deck-b' : 'deck-a';
                     // document.getElementById(`${otherDeckId}-audio`).pause(); // Keep other deck playing
                     
@@ -4993,9 +4989,7 @@
                  if (!audioContext) setupAudioContext(); 
                  
                  // Stop main player
-                 initPlayersOnGesture();
-                 const audioEl = document.getElementById('audio-player');
-                 if (audioEl) audioEl.pause();
+                 initPlayersOnGesture(); if (musicPlayer) musicPlayer.pause();
                  
                  // Ensure nodes are assigned (if not loaded first)
                  if (!deckNodes) { 
@@ -5193,7 +5187,16 @@
             if (!musicPlayer) return;
             musicPlayer.addEventListener('pause', () => { 
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-                // Keep musicPlayer muted and synced - don't need to reflect in visibleAudioEl since it's controlling playback
+                // reflect in visible element UI
+                try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
+            });
+            musicPlayer.addEventListener('play', () => {
+                if (audioContext) {
+                    audioContext.resume();
+                    startVisualizer();
+                }
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                tryStartSilentAudio();
             });
             musicPlayer.addEventListener('ended', () => {
                 playNextTrack();
@@ -5262,10 +5265,7 @@
                 });
 
                 // Set handlers
-                navigator.mediaSession.setActionHandler('play', () => { 
-                    const audioEl = document.getElementById('audio-player');
-                    if (audioEl && audioEl.paused) audioEl.play().catch(() => {});
-                });
+                navigator.mediaSession.setActionHandler('play', () => { if (musicPlayer) musicPlayer.play(); });
                 navigator.mediaSession.setActionHandler('pause', () => { togglePlay(); });
                 navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousTrack());
                 navigator.mediaSession.setActionHandler('nexttrack', () => playNextTrack());
@@ -6733,12 +6733,11 @@
                     // Space: Play/Pause main player
                     e.preventDefault();
                     initPlayersOnGesture();
-                    const audioEl = document.getElementById('audio-player');
-                    if (!audioEl || audioEl.paused) {
-                        if (audioEl) audioEl.play().catch(() => {});
+                    if (!musicPlayer || musicPlayer.paused) {
+                        if (musicPlayer) musicPlayer.play().catch(() => {});
                         tryStartSilentAudio();
                     } else {
-                        if (audioEl) audioEl.pause();
+                        if (musicPlayer) musicPlayer.pause();
                     }
                     break;
                     
