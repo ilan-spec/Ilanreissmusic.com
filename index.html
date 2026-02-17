@@ -572,7 +572,7 @@
         }
         
         /* Buttons at the bottom of the main player */
-        #info-button, #open-playlists-button, #add-track-now-playing {
+        #info-button, #open-playlists-button, #add-track-now-playing, #feeling-lucky-button {
             width: 25px;
             height: 25px;
             background: #c0c0c0;
@@ -591,7 +591,7 @@
             min-width: 32px; /* Ensure 44px minimum touch target on mobile with padding */
             min-height: 32px; /* Ensure 44px minimum touch target on mobile with padding */
         }
-        #info-button:active, #open-playlists-button:active, #add-track-now-playing:active {
+        #info-button:active, #open-playlists-button:active, #add-track-now-playing:active, #feeling-lucky-button:active {
             border-top: 2px solid #404040;
             border-left: 2px solid #404040;
             border-right: 2px solid #fff;
@@ -603,6 +603,45 @@
         #add-track-now-playing {
             font-size: 16px; /* Plus icon */
             line-height: 22px;
+        }
+        #feeling-lucky-button {
+            font-size: 13px; /* Dice icon */
+            line-height: 21px;
+        }
+        
+        /* Skip/Previous track buttons in player controls */
+        #skip-prev-button, #skip-next-button {
+            width: 25px;
+            height: 25px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-right: 2px solid #404040;
+            border-bottom: 2px solid #404040;
+            font-family: "Arial Black", sans-serif;
+            font-size: 14px;
+            font-weight: 900;
+            color: #000080;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+            flex-shrink: 0;
+            min-width: 32px;
+            min-height: 32px;
+        }
+        #skip-prev-button:active, #skip-next-button:active {
+            border-top: 2px solid #404040;
+            border-left: 2px solid #404040;
+            border-right: 2px solid #fff;
+            border-bottom: 2px solid #fff;
+        }
+        
+        /* Container for track control buttons */
+        .track-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            flex-shrink: 0;
         }
 
         /* --- Bottom Bar Elements (clock is handled in #clock-controls) --- */
@@ -2266,7 +2305,17 @@
         
         <div class="content">
             <div class="player-controls">
-                <span id="now-playing">Select a track to play</span>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span id="now-playing" style="flex-grow: 1; margin: 0;">Select a track to play</span>
+                    <div class="track-controls">
+                        <button id="skip-prev-button" class="window-button" title="Previous Track">
+                            <i class="fas fa-step-backward"></i>
+                        </button>
+                        <button id="skip-next-button" class="window-button" title="Next Track">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                </div>
                 <!-- Standard HTML audio element -->
                 <!-- Added 'playsinline' for iOS background audio compatibility -->
                 <audio id="audio-player" controls crossorigin="anonymous" playsinline webkit-playsinline></audio>
@@ -4076,6 +4125,129 @@
 
         const feelingLuckyBtn = document.getElementById('feeling-lucky-button');
         if (feelingLuckyBtn) feelingLuckyBtn.addEventListener('click', playRandomTrack);
+
+        // --- Skip to Next Track ---
+        function skipToNextTrack() {
+            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            if (!tracks || tracks.length === 0) return;
+
+            // Find the currently playing track
+            const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+            let currentIndex = -1;
+            
+            if (activeItem && activeItem.dataset.filename) {
+                const filename = activeItem.dataset.filename;
+                currentIndex = tracks.findIndex(t => t.name === filename);
+            }
+
+            // Get next track index
+            const nextIndex = (currentIndex + 1) % tracks.length;
+            const track = tracks[nextIndex];
+
+            // Ensure main tab is shown if playing from tracks
+            if (currentMainPlayerTab !== 'mixes' && !currentMainPlayerTab === 'tracks') {
+                currentMainPlayerTab = 'tracks';
+                playerTabs.forEach(t => t.classList.remove('active'));
+                const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
+                if (tracksTabBtn) tracksTabBtn.classList.add('active');
+                playerTabContents.forEach(content => {
+                    if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
+                    else { content.style.display = 'none'; content.classList.remove('active'); }
+                });
+            }
+
+            // Try to find the DOM list item and trigger its click
+            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (!li) {
+                populateFileList(currentTracklist);
+                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            }
+
+            if (li) {
+                li.click();
+            } else {
+                // Fallback: directly set audio src and update UI
+                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
+                document.getElementById('deck-a-audio').pause();
+                document.getElementById('deck-b-audio').pause();
+                initPlayersOnGesture();
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
+                if (!audioContext) setupAudioContext();
+                musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(() => {});
+                tryStartSilentAudio();
+                nowPlayingElement.textContent = track.name.replace('.mp3','');
+                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+                if (match) match.classList.add('active');
+                updateMediaSession(track.name.replace('.mp3',''), false);
+            }
+        }
+
+        // --- Skip to Previous Track ---
+        function skipToPreviousTrack() {
+            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            if (!tracks || tracks.length === 0) return;
+
+            // Find the currently playing track
+            const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+            let currentIndex = 0;
+            
+            if (activeItem && activeItem.dataset.filename) {
+                const filename = activeItem.dataset.filename;
+                currentIndex = tracks.findIndex(t => t.name === filename);
+            }
+
+            // Get previous track index
+            const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
+            const track = tracks[prevIndex];
+
+            // Ensure main tab is shown if playing from tracks
+            if (currentMainPlayerTab !== 'mixes' && !currentMainPlayerTab === 'tracks') {
+                currentMainPlayerTab = 'tracks';
+                playerTabs.forEach(t => t.classList.remove('active'));
+                const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
+                if (tracksTabBtn) tracksTabBtn.classList.add('active');
+                playerTabContents.forEach(content => {
+                    if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
+                    else { content.style.display = 'none'; content.classList.remove('active'); }
+                });
+            }
+
+            // Try to find the DOM list item and trigger its click
+            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (!li) {
+                populateFileList(currentTracklist);
+                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            }
+
+            if (li) {
+                li.click();
+            } else {
+                // Fallback: directly set audio src and update UI
+                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
+                document.getElementById('deck-a-audio').pause();
+                document.getElementById('deck-b-audio').pause();
+                initPlayersOnGesture();
+                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
+                if (!audioContext) setupAudioContext();
+                musicPlayer.src = fileUrl;
+                musicPlayer.play().catch(() => {});
+                tryStartSilentAudio();
+                nowPlayingElement.textContent = track.name.replace('.mp3','');
+                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+                if (match) match.classList.add('active');
+                updateMediaSession(track.name.replace('.mp3',''), false);
+            }
+        }
+
+        // Add event listeners for skip next and skip prev buttons
+        const skipNextBtn = document.getElementById('skip-next-button');
+        const skipPrevBtn = document.getElementById('skip-prev-button');
+        
+        if (skipNextBtn) skipNextBtn.addEventListener('click', skipToNextTrack);
+        if (skipPrevBtn) skipPrevBtn.addEventListener('click', skipToPreviousTrack);
         
         // Handle switching between "Tracks" and "Mixes" tabs
         playerTabs.forEach(tab => {
