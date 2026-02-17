@@ -2822,13 +2822,22 @@
             const visibleAudioEl = document.getElementById('audio-player');
             if (visibleAudioEl) {
                 // When user interacts with visible controls, proxy to musicPlayer
+                // but keep the visible element muted and playing so the native UI
+                // play/pause icon updates correctly.
                 visibleAudioEl.addEventListener('play', (e) => {
                     if (!musicPlayer) initPlayersOnGesture();
-                    // If visible element was used, ensure musicPlayer has same src
-                    try { if (visibleAudioEl.src && visibleAudioEl.src !== musicPlayer.src) musicPlayer.src = visibleAudioEl.src; } catch(e){}
-                    musicPlayer.play().catch(()=>{});
-                    // Pause the visible element to avoid double audio
-                    try { visibleAudioEl.pause(); } catch(e){}
+                    try {
+                        if (visibleAudioEl.src && visibleAudioEl.src !== musicPlayer.src) musicPlayer.src = visibleAudioEl.src;
+                        // sync time and start both: musicPlayer audible, visible element muted for UI
+                        visibleAudioEl.muted = true;
+                        // align currentTime if possible
+                        if (musicPlayer && !isNaN(musicPlayer.currentTime) && Math.abs((musicPlayer.currentTime || 0) - (visibleAudioEl.currentTime || 0)) > 0.5) {
+                            try { visibleAudioEl.currentTime = musicPlayer.currentTime; } catch(e){}
+                        }
+                        musicPlayer.play().catch(()=>{});
+                        // Ensure visible element is playing (muted) so the control icon updates
+                        visibleAudioEl.play().catch(()=>{});
+                    } catch(e){}
                 });
                 visibleAudioEl.addEventListener('pause', () => {
                     if (musicPlayer) musicPlayer.pause();
@@ -4879,6 +4888,8 @@
             if (!musicPlayer) return;
             musicPlayer.addEventListener('pause', () => { 
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+                // reflect in visible element UI
+                try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
             });
             musicPlayer.addEventListener('play', () => {
                 if (audioContext) {
@@ -4887,6 +4898,15 @@
                 }
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
+                // ensure visible element shows playing state (muted)
+                try {
+                    if (visibleAudioEl) {
+                        visibleAudioEl.muted = true;
+                        if (visibleAudioEl.src !== musicPlayer.src) visibleAudioEl.src = musicPlayer.src || visibleAudioEl.src;
+                        visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
+                        visibleAudioEl.play().catch(()=>{});
+                    }
+                } catch (e) {}
             });
             musicPlayer.addEventListener('ended', () => {
                 playNextTrack();
