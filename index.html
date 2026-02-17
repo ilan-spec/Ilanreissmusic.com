@@ -3518,7 +3518,7 @@
         const maxRainDrops = 300;
 
         function drawRainVisualizer(bassAvg, midsAvg, highsAvg) {
-            ctx.fillStyle = 'rgba(0, 0, 10, 0.15)'; // Fade background
+            ctx.fillStyle = hexToRGBA(visualizerColor, 0.15); // Fade background using selected color
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.shadowBlur = 0;
 
@@ -3611,7 +3611,7 @@
                 const size = ((canvas.width - star.z) / canvas.width) * 4 * pulse;
                 const opacity = 0.5 + highsAvg * 0.5; // Brightness reacts to highs
 
-                ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                    ctx.fillStyle = hexToRGBA(visualizerColor, opacity);
                 ctx.beginPath();
                 ctx.arc(sx, sy, Math.max(0.1, size / 2), 0, Math.PI * 2);
                 ctx.fill();
@@ -5191,14 +5191,31 @@
             return {h, s, l};
         }
 
+        // Convert hex color to rgba string with given alpha
+        function hexToRGBA(hex, alpha = 1) {
+            if (!hex) return `rgba(0,0,0,${alpha})`;
+            // Expand shorthand form (#03F) to full form (#0033FF)
+            const h = hex.replace('#', '');
+            let r = 0, g = 0, b = 0;
+            if (h.length === 3) {
+                r = parseInt(h[0] + h[0], 16);
+                g = parseInt(h[1] + h[1], 16);
+                b = parseInt(h[2] + h[2], 16);
+            } else if (h.length === 6) {
+                r = parseInt(h.substring(0,2), 16);
+                g = parseInt(h.substring(2,4), 16);
+                b = parseInt(h.substring(4,6), 16);
+            }
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
         // --- Background Color Picker ---
         bgColorPicker.addEventListener('input', (e) => {
             const newColor = e.target.value;
             document.body.style.background = newColor;
-            // Update visualizer colors based on background
-            const hsl = hexToHSL(newColor);
-            visualizerColor = `hsl(${hsl.h}, 100%, 65%)`;
-            secondaryColor = `hsl(${(hsl.h + 180) % 360}, 100%, 65%)`;
+            // Use the exact selected background color for visualizer elements
+            visualizerColor = newColor;
+            secondaryColor = newColor;
         });
 
         // --- Digital Clock ---
@@ -5903,11 +5920,10 @@
         // --- Final Setup ---
         loadPlaylists(); // Load saved playlists on start
         
-        // Initial visualizer color sync
+        // Initial visualizer color sync - use the exact picker color
         const initialBgColor = bgColorPicker.value;
-        const initialHsl = hexToHSL(initialBgColor);
-        visualizerColor = `hsl(${initialHsl.h}, 100%, 65%)`;
-        secondaryColor = `hsl(${(initialHsl.h + 180) % 360}, 100%, 65%)`;
+        visualizerColor = initialBgColor;
+        secondaryColor = initialBgColor;
 
         // Preload cover image for lock screen
         const lockScreenImage = new Image();
