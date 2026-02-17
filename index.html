@@ -2904,6 +2904,7 @@
             musicPlayer = new Audio();
             musicPlayer.crossOrigin = "anonymous";
             musicPlayer.preload = 'metadata';
+            musicPlayer.muted = true; // Always keep musicPlayer muted - for iOS lock screen sync only
 
             silentWarmup = new Audio();
             silentWarmup.crossOrigin = "anonymous";
@@ -2925,10 +2926,21 @@
                 // Play/Pause handler
                 if (playPauseBtn) {
                     playPauseBtn.addEventListener('click', () => {
-                        if (visibleAudioEl.paused) {
-                            visibleAudioEl.play();
+                        if (visibleAudioEl.src && visibleAudioEl.src.length > 0) {
+                            // Track is loaded, play/pause normally
+                            if (visibleAudioEl.paused) {
+                                visibleAudioEl.play();
+                            } else {
+                                visibleAudioEl.pause();
+                            }
                         } else {
-                            visibleAudioEl.pause();
+                            // No track selected, play first track
+                            const firstTrack = fileListElement.querySelector('li:first-child');
+                            if (firstTrack) {
+                                firstTrack.click();
+                            } else {
+                                customAlert('No tracks available');
+                            }
                         }
                     });
                 }
@@ -2968,30 +2980,35 @@
                     }
                 });
                 
-                // Update play/pause button
+                // Update play/pause button and sync musicPlayer (muted, for iOS background)
                 visibleAudioEl.addEventListener('play', () => {
                     if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     if (!musicPlayer) initPlayersOnGesture();
-                    if (musicPlayer && musicPlayer.paused) {
-                        musicPlayer.play().catch(()=>{});
+                    // Sync musicPlayer state without playing it (keep it muted)
+                    if (musicPlayer) {
+                        musicPlayer.src = visibleAudioEl.src;
+                        musicPlayer.currentTime = visibleAudioEl.currentTime;
+                        musicPlayer.muted = true; // Keep musicPlayer muted to prevent double playback
                     }
+                    if (audioContext) {
+                        audioContext.resume();
+                        startVisualizer();
+                    }
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                    tryStartSilentAudio();
                 });
                 
                 visibleAudioEl.addEventListener('pause', () => {
                     if (playPauseBtn) playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    if (musicPlayer && !musicPlayer.paused) {
-                        musicPlayer.pause();
+                    if (musicPlayer) musicPlayer.pause();
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+                });
+                // Sync musicPlayer time when user scrubs
+                visibleAudioEl.addEventListener('seeking', () => {
+                    if (musicPlayer) {
+                        musicPlayer.currentTime = visibleAudioEl.currentTime;
                     }
                 });
-                
-                // Format time helper
-                function formatTime(seconds) {
-                    if (!seconds || isNaN(seconds)) return '0:00';
-                    const mins = Math.floor(seconds / 60);
-                    const secs = Math.floor(seconds % 60);
-                    return mins + ':' + (secs < 10 ? '0' : '') + secs;
-                }
-            }
             // Wire musicPlayer-specific events (media session, visualizer sync)
             try { wireMusicPlayerEvents(); } catch (e) {}
         }
@@ -3016,11 +3033,12 @@
 
         // Central toggle used by media session handlers to avoid accidental play
         function togglePlay() {
-            if (!musicPlayer) return;
-            if (musicPlayer.paused) {
-                musicPlayer.play().catch(()=>{});
+            const audioEl = document.getElementById('audio-player');
+            if (!audioEl) return;
+            if (audioEl.paused) {
+                audioEl.play().catch(()=>{});
             } else {
-                musicPlayer.pause();
+                audioEl.pause();
             }
         }
 
@@ -3681,8 +3699,9 @@
             tryStartSilentAudio();
             // Try to nudge the main player if it's present and paused
             try { 
-                if (musicPlayer && musicPlayer.paused) {
-                    musicPlayer.play().catch(() => {});
+                const audioEl = document.getElementById('audio-player');
+                if (audioEl && audioEl.paused) {
+                    audioEl.play().catch(() => {});
                 }
             } catch (e) {}
         }
@@ -4916,7 +4935,9 @@
                     if (!audioContext) setupAudioContext(); 
                     
                     // Stop other audio
-                    initPlayersOnGesture(); if (musicPlayer) musicPlayer.pause();
+                    initPlayersOnGesture(); 
+                    const audioEl = document.getElementById('audio-player');
+                    if (audioEl) audioEl.pause();
                     const otherDeckId = (deckId === 'deck-a') ? 'deck-b' : 'deck-a';
                     // document.getElementById(`${otherDeckId}-audio`).pause(); // Keep other deck playing
                     
@@ -4973,7 +4994,9 @@
                  if (!audioContext) setupAudioContext(); 
                  
                  // Stop main player
-                 initPlayersOnGesture(); if (musicPlayer) musicPlayer.pause();
+                 initPlayersOnGesture();
+                 const audioEl = document.getElementById('audio-player');
+                 if (audioEl) audioEl.pause();
                  
                  // Ensure nodes are assigned (if not loaded first)
                  if (!deckNodes) { 
@@ -5171,16 +5194,7 @@
             if (!musicPlayer) return;
             musicPlayer.addEventListener('pause', () => { 
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-                // reflect in visible element UI
-                try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
-            });
-            musicPlayer.addEventListener('play', () => {
-                if (audioContext) {
-                    audioContext.resume();
-                    startVisualizer();
-                }
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                tryStartSilentAudio();
+                // Keep musicPlayer muted and synced - don't need to reflect in visibleAudioEl since it's controlling playback
             });
             musicPlayer.addEventListener('ended', () => {
                 playNextTrack();
@@ -5249,7 +5263,10 @@
                 });
 
                 // Set handlers
-                navigator.mediaSession.setActionHandler('play', () => { if (musicPlayer) musicPlayer.play(); });
+                navigator.mediaSession.setActionHandler('play', () => { 
+                    const audioEl = document.getElementById('audio-player');
+                    if (audioEl && audioEl.paused) audioEl.play().catch(() => {});
+                });
                 navigator.mediaSession.setActionHandler('pause', () => { togglePlay(); });
                 navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousTrack());
                 navigator.mediaSession.setActionHandler('nexttrack', () => playNextTrack());
@@ -6717,11 +6734,12 @@
                     // Space: Play/Pause main player
                     e.preventDefault();
                     initPlayersOnGesture();
-                    if (!musicPlayer || musicPlayer.paused) {
-                        if (musicPlayer) musicPlayer.play().catch(() => {});
+                    const audioEl = document.getElementById('audio-player');
+                    if (!audioEl || audioEl.paused) {
+                        if (audioEl) audioEl.play().catch(() => {});
                         tryStartSilentAudio();
                     } else {
-                        if (musicPlayer) musicPlayer.pause();
+                        if (audioEl) audioEl.pause();
                     }
                     break;
                     
