@@ -519,8 +519,8 @@
         
         /* --- Visualizer Window --- */
         #visualizer-window {
-            width: 350px;
-            height: 200px;
+            width: 500px;
+            height: 350px;
             top: 20px;
             left: 20px;
             display: none; /* Hidden by default */
@@ -3929,16 +3929,16 @@
         let vuCurrentAngle = 0; // Current needle angle in radians
         let vuVelocity = 0; // Needle velocity for physics
         let vuTargetAngle = 0; // Target angle
-        let vuStiffness = 0.3; // Spring constant (higher = more sensitive)
-        let vuDampingRise = 0.7; // Damping when rising (lower = more overshoot)
-        let vuDampingFall = 0.9; // Damping when falling (higher = heavier feel)
+        let vuStiffness = 0.4; // Spring constant (higher = more sensitive)
+        let vuDampingRise = 0.6; // Damping when rising (lower = more overshoot)
+        let vuDampingFall = 0.95; // Damping when falling (higher = heavier feel)
         
         function drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg) {
-            // Calculate overall audio level (0.0 to 1.0)
-            const rawLevel = (bassAvg + midsAvg + highsAvg) / 3;
+            // Calculate overall audio level (0.0 to 1.0) - weighted towards mids/highs for better VU response
+            const rawLevel = (bassAvg * 0.3 + midsAvg * 0.4 + highsAvg * 0.3);
             
-            // Convert to dB with high sensitivity
-            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 2.0 : -60; // 2.0x sensitivity for high response
+            // Convert to dB with higher sensitivity for more precise needle movement
+            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 3.0 : -60; // 3.0x sensitivity for precise response
             const clampedDb = Math.max(-20, Math.min(20, dbLevel));
             
             // Map dB to angle using logarithmic spacing (matching TEAC proportions)
@@ -3970,7 +3970,7 @@
             
             const canvas = ctx.canvas;
             const centerX = canvas.width / 2;
-            const pivotY = canvas.height * 0.95; // Pivot at 95% from top (bottom of frame)
+            const pivotY = canvas.height * 0.05; // Pivot at 5% from top (top of frame)
             const arcRadius = canvas.height * 0.85; // 85% of total height
             
             // Clear canvas
@@ -3980,7 +3980,7 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Rounded inner area for the meter face - centered
+            // Rounded inner area for the meter face - centered with adjusted height for top pivot
             const faceMargin = 20;
             const faceWidth = canvas.width - faceMargin * 2;
             const faceHeight = canvas.height - faceMargin * 2;
@@ -4031,15 +4031,14 @@
                 ctx.lineTo(centerX + Math.cos(angle) * (arcRadius + 5), pivotY + Math.sin(angle) * (arcRadius + 5));
                 ctx.stroke();
                 
-                // Draw numbers
-                const textRadius = arcRadius - 30;
-                const textX = centerX + Math.cos(angle) * textRadius;
-                const textY = pivotY + Math.sin(angle) * textRadius;
+                // Draw numbers - positioned above the arc for better visibility
+                const textY = pivotY - arcRadius + 20; // Above the arc
+                const textX = centerX + Math.cos(angle) * (arcRadius * 0.8); // Slightly inside the arc
                 
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = (db > 0) ? '#D32F2F' : '#000000';
-                ctx.fillText(db.toString(), textX, textY + 4);
+                ctx.fillText(db.toString(), textX, textY);
             }
             
             // Reset line width
@@ -4060,11 +4059,11 @@
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('VU', centerX, pivotY - arcRadius * 0.3);
+            ctx.fillText('VU', centerX, pivotY + arcRadius * 0.2);
             
             // 6. "PEAK" label and LED
             ctx.font = '10px Arial';
-            ctx.fillText('PEAK', centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1);
+            ctx.fillText('PEAK', centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3);
             
             // Peak LED with glow effect
             const isClipping = vuCurrentAngle >= 25 * Math.PI/180; // Clipping at +25° (around 0dB)
@@ -4072,20 +4071,20 @@
             
             // LED glow
             const glowGradient = ctx.createRadialGradient(
-                centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, 0,
-                centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, isClipping ? 12 : 8
+                centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, 0,
+                centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, isClipping ? 12 : 8
             );
             glowGradient.addColorStop(0, isClipping ? 'rgba(255, 68, 68, 0.8)' : 'rgba(211, 47, 47, 0.6)');
             glowGradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
             ctx.fillStyle = glowGradient;
             ctx.beginPath();
-            ctx.arc(centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, isClipping ? 12 : 8, 0, Math.PI * 2);
+            ctx.arc(centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, isClipping ? 12 : 8, 0, Math.PI * 2);
             ctx.fill();
             
             // LED itself
             ctx.fillStyle = ledColor;
             ctx.beginPath();
-            ctx.arc(centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, 4, 0, Math.PI * 2);
+            ctx.arc(centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, 4, 0, Math.PI * 2);
             ctx.fill();
             
             // 7. TEAC logo and serial number
