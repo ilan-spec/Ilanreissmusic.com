@@ -3940,261 +3940,187 @@
             const rawLevel = (bassAvg * 0.3 + midsAvg * 0.4 + highsAvg * 0.3);
 
             // Convert to dB with higher sensitivity for more precise needle movement
-            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 3.0 : -60; // 3.0x sensitivity for precise response
+            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 3.0 : -60;
             const clampedDb = Math.max(-20, Math.min(20, dbLevel));
 
-            // PROPER LOGARITHMIC MAPPING: Piece-wise function for accurate TEAC scale
-            // dB to angle mapping: -20dB = -45°, 0dB = +25°, +3dB = +35°, +20dB = +45°
+            // LOGARITHMIC MAPPING: Piece-wise function for accurate TEAC scale
             let targetAngle;
             if (clampedDb <= -10) {
-                // Wide spacing: -20dB to -10dB (-45° to -15°)
                 const normalized = (clampedDb + 20) / 10;
-                targetAngle = -45 * Math.PI/180 + normalized * 30 * Math.PI/180;
+                targetAngle = -45 + normalized * 30; // -45° to -15°
             } else if (clampedDb <= 0) {
-                // Medium spacing: -10dB to 0dB (-15° to +25°)
                 const normalized = (clampedDb + 10) / 10;
-                targetAngle = -15 * Math.PI/180 + normalized * 40 * Math.PI/180;
+                targetAngle = -15 + normalized * 40; // -15° to +25°
             } else if (clampedDb <= 3) {
-                // Tight spacing: 0dB to +3dB (+25° to +35°) - RED ZONE
                 const normalized = clampedDb / 3;
-                targetAngle = 25 * Math.PI/180 + normalized * 10 * Math.PI/180;
+                targetAngle = 25 + normalized * 10; // +25° to +35° (RED ZONE)
             } else {
-                // Expansion: +3dB to +20dB (+35° to +45°)
                 const normalized = (clampedDb - 3) / 17;
-                targetAngle = 35 * Math.PI/180 + normalized * 10 * Math.PI/180;
+                targetAngle = 35 + normalized * 10; // +35° to +45°
             }
 
-            // PEAK HOLD LOGIC: Hold LED active for minimum 200ms after peak
-            const currentPeakAngle = Math.max(vuCurrentAngle, vuCurrentAngle * 0.9); // Slight decay
-            if (currentPeakAngle >= 25 * Math.PI/180) { // Above 0dB
-                peakHoldTime = peakHoldDuration;
-            } else if (peakHoldTime > 0) {
-                peakHoldTime -= 16.67; // Decrement at 60fps (16.67ms per frame)
-            }
-            const isClipping = peakHoldTime > 0;
+            // PHYSICS: Smooth animation using requestAnimationFrame
+            // currentAngle += (targetAngle - currentAngle) * 0.1
+            vuCurrentAngle += (targetAngle - vuCurrentAngle) * 0.1;
 
-            // Alternative: Simple exponential smoothing for very smooth movement
-            // vuCurrentAngle = vuCurrentAngle * 0.9 + targetAngle * 0.1;
+            // Get or create SVG element
+            let svg = document.getElementById('vu-meter-svg');
+            if (!svg) {
+                svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.id = 'vu-meter-svg';
+                svg.setAttribute('viewBox', '0 0 800 450');
+                svg.style.width = '100%';
+                svg.style.height = '100%';
+                svg.style.backgroundColor = '#F5F2E1'; // Vintage cream background
 
-            const canvas = ctx.canvas;
-            // SVG-STYLE VIEWBOX: 16:9 aspect ratio for proper centering
-            const viewBoxWidth = 1600;
-            const viewBoxHeight = 900;
-            const scaleX = canvas.width / viewBoxWidth;
-            const scaleY = canvas.height / viewBoxHeight;
-            const scale = Math.min(scaleX, scaleY);
+                // Create static elements
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                svg.appendChild(defs);
 
-            // Center the viewbox in the canvas
-            const offsetX = (canvas.width - viewBoxWidth * scale) / 2;
-            const offsetY = (canvas.height - viewBoxHeight * scale) / 2;
+                // Main arc path
+                const arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                arcPath.id = 'vu-arc';
+                arcPath.setAttribute('d', describeArc(400, 400, 280, -45, 45));
+                arcPath.setAttribute('stroke', '#000000');
+                arcPath.setAttribute('stroke-width', '3');
+                arcPath.setAttribute('fill', 'none');
+                svg.appendChild(arcPath);
 
-            // SINGLE ANCHOR POINT: Bottom center pivot (SVG cx="50%" cy="95%")
-            const pivotX = offsetX + (viewBoxWidth * 0.5) * scale; // cx="50%"
-            const pivotY = offsetY + (viewBoxHeight * 0.95) * scale; // cy="95%"
+                // Red zone arc
+                const redArcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                redArcPath.id = 'vu-red-arc';
+                redArcPath.setAttribute('d', describeArc(400, 400, 280, 25, 35));
+                redArcPath.setAttribute('stroke', '#D32F2F');
+                redArcPath.setAttribute('stroke-width', '4');
+                redArcPath.setAttribute('fill', 'none');
+                svg.appendChild(redArcPath);
 
-            // METER FACE: 85% of viewbox area, centered
-            const meterWidth = viewBoxWidth * 0.85 * scale;
-            const meterHeight = viewBoxHeight * 0.85 * scale;
-            const meterLeft = offsetX + (viewBoxWidth * scale - meterWidth) / 2;
-            const meterTop = offsetY + (viewBoxHeight * scale - meterHeight) / 2;
+                // Ticks and numbers
+                const tickValues = [-20, -10, -7, -5, -3, 0, 3];
+                for (let i = 0; i < tickValues.length; i++) {
+                    const db = tickValues[i];
+                    let angle;
+                    if (db <= -10) {
+                        const normalized = (db + 20) / 10;
+                        angle = -45 + normalized * 30;
+                    } else if (db <= 0) {
+                        const normalized = (db + 10) / 10;
+                        angle = -15 + normalized * 40;
+                    } else if (db <= 3) {
+                        const normalized = db / 3;
+                        angle = 25 + normalized * 10;
+                    }
 
-            // ARC RADIUS: Based on meter dimensions for proper proportion
-            const arcRadius = Math.min(meterWidth, meterHeight) * 0.45;
-            
-            // 1. Black matte plastic frame (full canvas)
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    const angleRad = angle * Math.PI / 180;
+                    const innerX = 400 + Math.cos(angleRad) * 270;
+                    const innerY = 400 + Math.sin(angleRad) * 270;
+                    const outerX = 400 + Math.cos(angleRad) * 290;
+                    const outerY = 400 + Math.sin(angleRad) * 290;
 
-            // 2. LARGE CENTERED METER FACE: 85% of viewbox area
-            ctx.fillStyle = '#F5F2E1'; // Vintage cream background
-            ctx.fillRect(meterLeft, meterTop, meterWidth, meterHeight);
+                    // Tick line
+                    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    tick.setAttribute('x1', innerX);
+                    tick.setAttribute('y1', innerY);
+                    tick.setAttribute('x2', outerX);
+                    tick.setAttribute('y2', outerY);
+                    tick.setAttribute('stroke', (db >= 0 && db <= 3) ? '#D32F2F' : '#000000');
+                    tick.setAttribute('stroke-width', '2');
+                    svg.appendChild(tick);
 
-            // 3D inset effect for professional look
-            ctx.strokeStyle = '#D4D0C4';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(meterLeft + 2, meterTop + 2, meterWidth - 4, meterHeight - 4);
-
-            // 3. MAIN SCALE ARC: Single wide symmetrical arc at top section
-            const arcCenterY = meterTop + meterHeight * 0.35; // Position arc in upper third
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.arc(pivotX, arcCenterY, arcRadius, -Math.PI/4, Math.PI/4); // -45° to +45°
-            // 4. TICKS AND NUMBERS: Perfectly distributed along the arc
-            const tickValues = [-20, -10, -7, -5, -3, 0, 3, 7]; // Balanced logarithmic distribution
-
-            for (let i = 0; i < tickValues.length; i++) {
-                const db = tickValues[i];
-
-                // Calculate angle using the same logarithmic mapping
-                let angle;
-                if (db <= -10) {
-                    const normalized = (db + 20) / 10;
-                    angle = -45 * Math.PI/180 + normalized * 30 * Math.PI/180;
-                } else if (db <= 0) {
-                    const normalized = (db + 10) / 10;
-                    angle = -15 * Math.PI/180 + normalized * 40 * Math.PI/180;
-                } else if (db <= 3) {
-                    const normalized = db / 3;
-                    angle = 25 * Math.PI/180 + normalized * 10 * Math.PI/180;
-                } else {
-                    const normalized = (db - 3) / 4; // 3 to 7 range
-                    angle = 35 * Math.PI/180 + normalized * 10 * Math.PI/180;
+                    // Number text
+                    const textX = 400 + Math.cos(angleRad) * 310;
+                    const textY = 400 + Math.sin(angleRad) * 310;
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', textX);
+                    text.setAttribute('y', textY);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.setAttribute('font-family', 'Arial, sans-serif');
+                    text.setAttribute('font-size', '14');
+                    text.setAttribute('font-weight', 'bold');
+                    text.setAttribute('fill', (db >= 0 && db <= 3) ? '#D32F2F' : '#000000');
+                    text.textContent = db;
+                    svg.appendChild(text);
                 }
 
-                // Draw tick mark with appropriate weight
-                const isMajor = (db === -20 || db === -10 || db === 0 || db === 3 || db === 20);
-                const tickLength = isMajor ? 25 : 15;
-                const tickWidth = isMajor ? 2 : 1;
+                // VU text
+                const vuText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                vuText.setAttribute('x', '400');
+                vuText.setAttribute('y', '250');
+                vuText.setAttribute('text-anchor', 'middle');
+                vuText.setAttribute('font-family', 'Arial, sans-serif');
+                vuText.setAttribute('font-size', '36');
+                vuText.setAttribute('font-weight', 'bold');
+                vuText.setAttribute('fill', '#000000');
+                vuText.textContent = 'VU';
+                svg.appendChild(vuText);
 
-                ctx.lineWidth = tickWidth;
-                ctx.strokeStyle = (db >= 0 && db <= 3) ? '#D32F2F' : '#000000'; // Red zone coloring
-                ctx.beginPath();
-                ctx.moveTo(pivotX + Math.cos(angle) * (arcRadius - tickLength), arcCenterY + Math.sin(angle) * (arcRadius - tickLength));
-                ctx.lineTo(pivotX + Math.cos(angle) * (arcRadius + 10), arcCenterY + Math.sin(angle) * (arcRadius + 10));
-                ctx.stroke();
+                // TEAC text
+                const teacText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                teacText.setAttribute('x', '700');
+                teacText.setAttribute('y', '420');
+                teacText.setAttribute('text-anchor', 'end');
+                teacText.setAttribute('font-family', 'Arial, sans-serif');
+                teacText.setAttribute('font-size', '16');
+                teacText.setAttribute('font-weight', 'bold');
+                teacText.setAttribute('fill', '#000000');
+                teacText.textContent = 'TEAC';
+                svg.appendChild(teacText);
 
-                // Draw numbers - positioned above the arc
-                const textRadius = arcRadius - 45;
-                const textX = pivotX + Math.cos(angle) * textRadius;
-                const textY = arcCenterY + Math.sin(angle) * textRadius;
+                // Serial number
+                const serialText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                serialText.setAttribute('x', '100');
+                serialText.setAttribute('y', '420');
+                serialText.setAttribute('text-anchor', 'start');
+                serialText.setAttribute('font-family', 'Arial, sans-serif');
+                serialText.setAttribute('font-size', '12');
+                serialText.setAttribute('fill', '#000000');
+                serialText.textContent = '5206006101';
+                svg.appendChild(serialText);
 
-                ctx.font = 'bold 11px Arial'; // Clean Sans-Serif typography
-                ctx.textAlign = 'center';
-                ctx.fillStyle = (db >= 0 && db <= 3) ? '#D32F2F' : '#000000';
-                ctx.fillText(db.toString(), textX, textY + 4);
+                // Needle (will be animated)
+                const needle = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                needle.id = 'vu-needle';
+                needle.setAttribute('x1', '400');
+                needle.setAttribute('y1', '400');
+                needle.setAttribute('x2', '400');
+                needle.setAttribute('y2', '110'); // 400 - 290 = 110
+                needle.setAttribute('stroke', '#000000');
+                needle.setAttribute('stroke-width', '2');
+                needle.setAttribute('stroke-linecap', 'round');
+                needle.setAttribute('transform-origin', '400 400');
+                svg.appendChild(needle);
+
+                // Add SVG to canvas container
+                const canvas = ctx.canvas;
+                const container = canvas.parentElement;
+                container.appendChild(svg);
             }
-            
-            // Reset line width
-            ctx.lineWidth = 1;
-            
-            // 5. RED ZONE BACKGROUND: Only from 0 to +3 dB (TEAC specification)
-            const zeroAngle = 25 * Math.PI/180; // 0dB = +25°
-            const threeDbAngle = 35 * Math.PI/180; // +3dB = +35°
 
-            ctx.fillStyle = 'rgba(211, 47, 47, 0.15)'; // Subtle red tint
-            ctx.beginPath();
-            ctx.arc(pivotX, arcCenterY, arcRadius - 5, zeroAngle, threeDbAngle);
-            ctx.arc(pivotX, arcCenterY, arcRadius + 5, threeDbAngle, zeroAngle, true);
-            ctx.closePath();
-            ctx.fill();
+            // Update needle rotation
+            const needle = document.getElementById('vu-needle');
+            if (needle) {
+                needle.setAttribute('transform', `rotate(${vuCurrentAngle}, 400, 400)`);
+            }
+        }
 
-            // 6. "VU" label - large and centered below the scale
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 24px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('VU', pivotX, arcCenterY + arcRadius + 40);
+        // Helper function to describe SVG arc path
+        function describeArc(x, y, radius, startAngle, endAngle) {
+            const start = polarToCartesian(x, y, radius, endAngle);
+            const end = polarToCartesian(x, y, radius, startAngle);
+            const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+            return [
+                "M", start.x, start.y,
+                "A", radius, radius, 0, largeArcFlag, 0, end.x, end.y
+            ].join(" ");
+        }
 
-            // 7. "PEAK" label and LED - positioned on the far right
-            ctx.font = '10px Arial';
-            ctx.fillText('PEAK', meterLeft + meterWidth - 40, arcCenterY + arcRadius * 0.3);
-            
-            // Peak LED with glow effect (using peak hold logic)
-            const ledColor = isClipping ? '#FF4444' : '#D32F2F';
-            
-            // LED glow
-            const ledX = meterLeft + meterWidth - 25;
-            const ledY = arcCenterY + arcRadius * 0.3;
-            const glowGradient = ctx.createRadialGradient(
-                ledX, ledY, 0,
-                ledX, ledY, isClipping ? 12 : 8
-            );
-            glowGradient.addColorStop(0, isClipping ? 'rgba(255, 68, 68, 0.8)' : 'rgba(211, 47, 47, 0.6)');
-            glowGradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
-            ctx.fillStyle = glowGradient;
-            ctx.beginPath();
-            ctx.arc(ledX, ledY, isClipping ? 12 : 8, 0, Math.PI * 2);
-            ctx.fill();
-
-            // LED itself
-            ctx.fillStyle = ledColor;
-            ctx.beginPath();
-            ctx.arc(ledX, ledY, 4, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // 8. TEAC logo and serial number
-            ctx.font = 'bold 12px Arial';
-            ctx.fillStyle = '#000000';
-            ctx.textAlign = 'right';
-            ctx.fillText('TEAC', meterLeft + meterWidth - 10, meterTop + meterHeight - 10);
-            
-            ctx.font = '8px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText('5206006101', meterLeft + 10, meterTop + meterHeight - 10);
-            
-            // 9. THIN TAPERING NEEDLE with drop shadow (TEAC aesthetic)
-            const needleLength = arcRadius - 10; // Reach almost to the arc
-
-            // Save context for shadow
-            ctx.save();
-
-            // Needle drop shadow (subtle floating effect)
-            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-            ctx.lineWidth = 1.5;
-            ctx.lineCap = 'round';
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 3;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-            ctx.beginPath();
-            ctx.moveTo(pivotX, pivotY);
-            ctx.lineTo(
-                pivotX + Math.cos(vuCurrentAngle) * needleLength,
-                pivotY + Math.sin(vuCurrentAngle) * needleLength
-            );
-            ctx.stroke();
-
-            // Reset shadow for main needle
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-
-            // Main needle - thin and precise (1px-2px)
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 1.5;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(pivotX, pivotY);
-            ctx.lineTo(
-                pivotX + Math.cos(vuCurrentAngle) * needleLength,
-                pivotY + Math.sin(vuCurrentAngle) * needleLength
-            );
-            ctx.stroke();
-            
-            ctx.restore();
-            
-            // Enhanced pivot hub (flat-bottomed dome shape)
-            ctx.fillStyle = '#000000';
-            ctx.beginPath();
-            ctx.arc(pivotX, pivotY, 12, 0, Math.PI, false); // Flat bottom
-            ctx.closePath();
-            ctx.fill();
-
-            // Add a slight highlight to the hub
-            const hubGradient = ctx.createLinearGradient(
-                pivotX, pivotY - 12,
-                pivotX, pivotY + 12
-            );
-            hubGradient.addColorStop(0, '#333333');
-            hubGradient.addColorStop(1, '#000000');
-
-            ctx.fillStyle = hubGradient;
-            ctx.beginPath();
-            ctx.arc(pivotX, pivotY, 10, 0, Math.PI, false);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Glass reflection overlay
-            const glassGradient = ctx.createLinearGradient(
-                meterLeft, meterTop,
-                meterLeft + meterWidth, meterTop + meterHeight
-            );
-            glassGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
-            glassGradient.addColorStop(0.5, 'rgba(255,255,255,0.05)');
-            glassGradient.addColorStop(1, 'rgba(255,255,255,0)');
-            
-            ctx.fillStyle = glassGradient;
-            ctx.fillRect(meterLeft, meterTop, meterWidth, meterHeight);
+        function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+            return {
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
+            };
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
