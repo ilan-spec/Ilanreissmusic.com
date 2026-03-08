@@ -602,6 +602,7 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            padding: 0;
         }
 
         /* Scaling wrapper for the entire meter */
@@ -610,6 +611,9 @@
             height: 400px;
             position: relative;
             transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         /* Meter Outer Casing */
@@ -3960,6 +3964,11 @@
             feedbackB.connect(delayB);
             delayB.connect(wetMixB);
             wetMixB.connect(analyser);
+            
+            // --- Connect Main Player (via gainMain) ---
+            // sourceMain will be routed through gainMain -> either directly to analyser or through bitcrusher
+            // The actual connection is done in toggleBitcrusher()
+            sourceMain.connect(gainMain);
 
             // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
@@ -4291,6 +4300,36 @@
         }
 
         // 4. VU Meter
+        function resizeVUMeter() {
+            const vuContainer = document.getElementById('vu-container');
+            const meterWrapper = document.getElementById('meter-scale-wrapper');
+            
+            if (!vuContainer || !meterWrapper) return;
+            
+            // Get the actual container dimensions
+            const containerWidth = vuContainer.clientWidth;
+            const containerHeight = vuContainer.clientHeight;
+            
+            if (containerWidth === 0 || containerHeight === 0) return;
+            
+            // Calculate scale factor based on available space
+            // Original meter is 650x400 plus 25px padding on each side = 700x450
+            const targetWidth = containerWidth - 20; // Leave 10px margin on each side
+            const targetHeight = containerHeight - 20; // Leave 10px margin on each side
+            
+            // Determine scale based on which dimension is the bottleneck
+            const baseWidth = 650;
+            const baseHeight = 400;
+            const scaleX = targetWidth / baseWidth;
+            const scaleY = targetHeight / baseHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+            
+            // Apply transform to scale everything (meter, ticks, needle, etc)
+            meterWrapper.style.transform = `scale(${scale})`;
+            meterWrapper.style.width = (baseWidth * scale) + 'px';
+            meterWrapper.style.height = (baseHeight * scale) + 'px';
+        }
+        
         function drawVUMeterVisualizer() {
             // Initialize ticks on first call
             initVUMeterTicks();
@@ -6053,7 +6092,20 @@
         // Set the default active tab
         document.querySelector(`.visualizer-tab[data-visualizer="${activeVisualizer}"]`).classList.add('active');
 
+        // Add ResizeObserver to handle VU Meter scaling when window is resized
+        const vuContainer = document.getElementById('vu-container');
+        const meterWrapper = document.getElementById('meter-scale-wrapper');
+        if (vuContainer && meterWrapper && window.ResizeObserver) {
+            const resizeObserver = new ResizeObserver(() => {
+                if (activeVisualizer === 'vuMeter' && visualizerActive) {
+                    resizeVUMeter();
+                }
+            });
+            resizeObserver.observe(vuContainer);
+        }
+
         // --- Color Conversion Helper (Hex to HSL) ---
+
         function hexToHSL(H) {
             let r = 0, g = 0, b = 0;
             if (H.length == 4) { r = parseInt(H[1] + H[1], 16); g = parseInt(H[2] + H[2], 16); b = parseInt(H[3] + H[3], 16); }
