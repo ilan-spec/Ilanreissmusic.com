@@ -4301,17 +4301,33 @@
 
         // 4. VU Meter
         function resizeVUMeter() {
-            // Keep meter at fixed 650x400 size - no scaling
-            // Window can stretch around it
             const vuContainer = document.getElementById('vu-container');
             const meterWrapper = document.getElementById('meter-scale-wrapper');
             
             if (!vuContainer || !meterWrapper) return;
             
-            // Meter stays fixed size, no transform scaling
-            meterWrapper.style.transform = 'scale(1)';
-            meterWrapper.style.width = '650px';
-            meterWrapper.style.height = '400px';
+            // Get the actual container dimensions
+            const containerWidth = vuContainer.clientWidth;
+            const containerHeight = vuContainer.clientHeight;
+            
+            if (containerWidth === 0 || containerHeight === 0) return;
+            
+            // Calculate scale factor based on available space
+            // Original meter is 650x400 plus 25px padding on each side = 700x450
+            const targetWidth = containerWidth - 20; // Leave 10px margin on each side
+            const targetHeight = containerHeight - 20; // Leave 10px margin on each side
+            
+            // Determine scale based on which dimension is the bottleneck
+            const baseWidth = 650;
+            const baseHeight = 400;
+            const scaleX = targetWidth / baseWidth;
+            const scaleY = targetHeight / baseHeight;
+            const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+            
+            // Apply transform to scale everything (meter, ticks, needle, etc)
+            meterWrapper.style.transform = `scale(${scale})`;
+            meterWrapper.style.width = (baseWidth * scale) + 'px';
+            meterWrapper.style.height = (baseHeight * scale) + 'px';
         }
         
         function drawVUMeterVisualizer() {
@@ -4474,11 +4490,10 @@
             playerContainer.style.top = (window.innerHeight - playerContainer.offsetHeight) / 2 + 'px';
             djAppWindow.style.left = (window.innerWidth - 900) / 2 + 'px'; 
             djAppWindow.style.top = (window.innerHeight - 550) / 2 + 'px'; 
-            // Larger visualizer window by default
-            visualizerWindow.style.width = '900px';
-            visualizerWindow.style.height = '700px';
-            visualizerWindow.style.left = (window.innerWidth - 900) / 2 + 'px';
-            visualizerWindow.style.top = (window.innerHeight - 700) / 2 + 'px';
+            visualizerWindow.style.left = '20px';
+            visualizerWindow.style.top = '20px';
+            visualizerWindow.style.width = '850px';
+            visualizerWindow.style.height = '680px';
             infoWindow.style.left = '100px';
             infoWindow.style.top = '150px';
             playlistWindow.style.left = '50px';
