@@ -3938,17 +3938,13 @@
             ctx.fillStyle = '#222';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Meter dimensions (scalable) - expanded to fill more
-            const meterWidth = canvas.width * 0.95;
-            const meterHeight = canvas.height * 0.85;
+            // Meter dimensions (scalable) - expanded to fill almost entirely
+            const meterWidth = canvas.width * 0.98;
+            const meterHeight = canvas.height * 0.92;
             const meterX = (canvas.width - meterWidth) / 2;
             const meterY = (canvas.height - meterHeight) / 2;
             
-            // Header - moved higher to avoid overlap
-            ctx.fillStyle = '#AAA';
-            ctx.font = `${Math.max(14, canvas.height * 0.025)}px Inter, sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.fillText('ilanreissmusic.com | AUDIO STREAM MONITOR', canvas.width / 2, meterY + canvas.height * 0.03);
+            // Header removed as requested
             
             // Meter face gradient with orange glow
             ctx.shadowColor = 'rgba(255, 165, 0, 0.3)'; // slight orange glow
@@ -3968,13 +3964,13 @@
             // Arc parameters (horizontal at top)
             const centerX = meterX + meterWidth / 2;
             const centerY = meterY + meterHeight * 0.8;
-            const radius = meterHeight * 0.3; // increased to fill more
+            const radius = meterHeight * 0.4; // increased for larger elements
             const startAngle = Math.PI * 1.25; // 225 deg, top-left
             const endAngle = Math.PI * 1.75; // 315 deg, top-right
             
             // Draw arc
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(4, radius * 0.04);
+            ctx.lineWidth = Math.max(6, radius * 0.06);
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.stroke();
@@ -3988,9 +3984,9 @@
                 const ratio = (db - minDB) / (maxDB - minDB);
                 const angle = startAngle + (endAngle - startAngle) * ratio;
                 
-                const tickLength = (db >= 0) ? radius * 0.5 : radius * 0.4;
+                const tickLength = (db >= 0) ? radius * 0.6 : radius * 0.5; // larger ticks
                 const innerRadius = radius - tickLength;
-                const outerRadius = radius + radius * 0.05;
+                const outerRadius = radius + radius * 0.08;
                 
                 const x1 = centerX + Math.cos(angle) * innerRadius;
                 const y1 = centerY + Math.sin(angle) * innerRadius;
@@ -3998,7 +3994,7 @@
                 const y2 = centerY + Math.sin(angle) * outerRadius;
                 
                 ctx.strokeStyle = (db >= 0) ? '#C13232' : '#000';
-                ctx.lineWidth = Math.max(4, radius * 0.05);
+                ctx.lineWidth = Math.max(6, radius * 0.08); // thicker lines
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
@@ -4006,13 +4002,13 @@
                 
                 // Labels for major ticks - spread out for legibility
                 if (db % 10 === 0 || db === -7 || db === -5 || db === -3) {
-                    const labelRadius = radius - radius * 0.7; // further out to avoid overlap
+                    const labelRadius = radius - radius * 0.75; // further out
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = `${Math.max(24, meterHeight * 0.1)}px Inter, sans-serif`; // larger font
+                    ctx.font = `${Math.max(32, meterHeight * 0.15)}px Inter, sans-serif`; // much larger font
                     ctx.textAlign = 'center';
-                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.03);
+                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.04);
                 }
             }
             
@@ -4057,12 +4053,12 @@
             for (let g = 1; g <= 3; g++) {
                 const ghostAngle = needleAngle - g * 0.02;
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = Math.max(4, radius * 0.06);
+                ctx.lineWidth = Math.max(6, radius * 0.1);
                 ctx.globalAlpha = 0.1;
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
-                const gx = centerX + Math.cos(ghostAngle) * (radius * 0.95);
-                const gy = centerY + Math.sin(ghostAngle) * (radius * 0.95);
+                const gx = centerX + Math.cos(ghostAngle) * (radius * 0.98);
+                const gy = centerY + Math.sin(ghostAngle) * (radius * 0.98);
                 ctx.lineTo(gx, gy);
                 ctx.stroke();
             }
@@ -4070,18 +4066,18 @@
             
             // Draw main needle
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(6, radius * 0.08);
+            ctx.lineWidth = Math.max(8, radius * 0.12);
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            const needleX = centerX + Math.cos(needleAngle) * (radius * 0.95);
-            const needleY = centerY + Math.sin(needleAngle) * (radius * 0.95);
+            const needleX = centerX + Math.cos(needleAngle) * (radius * 0.98);
+            const needleY = centerY + Math.sin(needleAngle) * (radius * 0.98);
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
             // Peak LED - terracotta-red-brown, distinctly above
             const ledX = centerX;
-            const ledY = centerY - radius - radius * 0.25; // distinctly above
-            const ledRadius = Math.max(15, radius * 0.15);
+            const ledY = centerY - radius - radius * 0.3; // distinctly above
+            const ledRadius = Math.max(20, radius * 0.2);
             ctx.fillStyle = '#A0522D'; // terracotta-red-brown
             ctx.beginPath();
             ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI);
@@ -4090,7 +4086,7 @@
             // Glow if peaking
             if (vuPeak > 0) {
                 ctx.shadowColor = '#A0522D';
-                ctx.shadowBlur = Math.max(25, radius * 0.25);
+                ctx.shadowBlur = Math.max(30, radius * 0.3);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
