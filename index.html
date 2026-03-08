@@ -676,13 +676,24 @@
         .branding {
             position: absolute;
             bottom: 15px;
-            color: rgba(0,0,0,0.6);
-            font-size: 14px;
-            font-weight: bold;
+            color: rgba(0,0,0,0.65);
             z-index: 2;
         }
-        .branding.left { left: 20px; font-family: monospace; letter-spacing: 1px; }
-        .branding.right { right: 20px; letter-spacing: 3px; }
+        .branding.left { 
+            left: 25px; 
+            font-family: 'Consolas', 'Courier New', monospace; 
+            letter-spacing: 1px; 
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .branding.right { 
+            right: 25px; 
+            font-family: 'Arial Black', 'Impact', sans-serif; 
+            font-size: 18px;
+            letter-spacing: 2px;
+            transform: scaleX(1.6); /* Stretches the text to match TEAC's wide logo */
+            transform-origin: right bottom;
+        }
 
         /* Peak LED Container */
         .peak-led-container {
@@ -3720,11 +3731,11 @@
             { label: '', angle: 0, color: '#2c2c2c', minor: true },
             { label: '3', angle: 5, color: '#2c2c2c' },
             { label: '', angle: 12, color: '#2c2c2c', minor: true },
-            { label: '0', angle: 20, color: '#d83b00' }, // Start of red
-            { label: '', angle: 27, color: '#d83b00', minor: true },
-            { label: '3', angle: 35, color: '#d83b00' },
-            { label: '', angle: 40, color: '#d83b00', minor: true },
-            { label: '+', angle: 45, color: '#d83b00' }
+            { label: '0', angle: 20, color: '#e63925' }, // Start of red
+            { label: '', angle: 27, color: '#e63925', minor: true },
+            { label: '3', angle: 35, color: '#e63925' },
+            { label: '', angle: 40, color: '#e63925', minor: true },
+            { label: '+', angle: 45, color: '#e63925' }
         ];
 
         function initVUMeterTicks() {
@@ -3836,11 +3847,13 @@
         let delayA, feedbackA, wetMixA; // Deck A Echo
         let delayB, feedbackB, wetMixB; // Deck B Echo
 
-        // VU Meter variables
-        let vuNeedleAngle = -45;
-        let vuTicksInitialized = false;
-        const VU_ATTACK = 0.65;
-        const VU_DECAY = 0.15;
+        // Needle physics state for authentic spring-mass-damper movement
+        let currentAngle = -45; // Start at -20 position
+        let needleVelocity = 0; 
+        
+        // Analog ballistics settings - tweaked for slightly more "snap" on peaks
+        const STIFFNESS = 0.085; // Spring stiffness (pull towards target)
+        const DAMPING = 0.30;   // Resistance (stops bouncing, smooths motion)
         
         
         function setupAudioContext() {
@@ -4279,14 +4292,12 @@
 
         // 4. VU Meter
         function drawVUMeterVisualizer() {
-            if (!vuTicksInitialized) {
-                initVUMeterTicks();
-                vuTicksInitialized = true;
-            }
+            // Initialize ticks on first call
+            initVUMeterTicks();
+            resizeVUMeter();
 
             // Get volume
             analyser.getByteFrequencyData(frequencyData);
-            
             let sum = 0;
             // Only average the lower-to-mid frequencies
             const length = Math.floor(frequencyData.length * 0.5); 
@@ -4297,40 +4308,42 @@
             
             let average = sum / length;
             
-            // Gain (reduced for lower peaks)
-            average = average * 0.9; 
+            // Gain adjustment: Increased to drive it into the peaks nicely
+            average = average * 1.85; 
             if (average > 255) average = 255;
             
             const volume = average / 255; // 0.0 to 1.0
 
             // Map to angle
+            // Map volume (0.0 - 1.0) to Angle (-45 to +50 degrees)
             let targetAngle = -45;
-            
             if (volume > 0) {
-                const mappedVolume = Math.pow(volume, 0.7); 
+                // Adjusted power curve (0.70) so it grabs transients faster 
+                // but retains that vintage roll-off at the top end
+                const mappedVolume = Math.pow(volume, 0.70); 
                 targetAngle = -45 + (mappedVolume * 95); 
             }
             
-            if (targetAngle > 52) targetAngle = 52;
-            if (targetAngle < -48) targetAngle = -48;
+            // Authentic Analog Physics (Spring-Mass-Damper)
+            let force = (targetAngle - currentAngle) * STIFFNESS;
+            let acceleration = force - (needleVelocity * DAMPING);
+            needleVelocity += acceleration;
+            currentAngle += needleVelocity;
 
-            // Ballistics
-            if (targetAngle > vuNeedleAngle) {
-                vuNeedleAngle += (targetAngle - vuNeedleAngle) * VU_ATTACK;
-            } else {
-                vuNeedleAngle += (targetAngle - vuNeedleAngle) * VU_DECAY;
-            }
+            // Hard clamp angle so needle doesn't break the glass physically
+            if (currentAngle > 52) { currentAngle = 52; needleVelocity = 0; }
+            if (currentAngle < -48) { currentAngle = -48; needleVelocity = 0; }
 
-            // Update needle
+            // Apply to CSS (Hardware accelerated transform)
             const needle = document.getElementById('needle');
             if (needle) {
-                needle.style.transform = `translateX(-50%) rotate(${vuNeedleAngle}deg)`;
+                needle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
             }
 
-            // Peak LED
+            // Peak LED Logic
             const peakLed = document.getElementById('peak-led');
             if (peakLed) {
-                if (vuNeedleAngle > 20) {
+                if (currentAngle > 20) {
                     peakLed.classList.add('active');
                 } else {
                     peakLed.classList.remove('active');
