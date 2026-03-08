@@ -519,8 +519,8 @@
         
         /* --- Visualizer Window --- */
         #visualizer-window {
-            width: 350px;
-            height: 200px;
+            width: 550px;
+            height: 420px;
             top: 20px;
             left: 20px;
             display: none; /* Hidden by default */
@@ -577,6 +577,222 @@
              width: auto;
              height: auto;
              line-height: normal;
+        }
+
+        /* Analog VU Meter */
+        :root {
+            /* Vintage pale/beige background */
+            --meter-bg: radial-gradient(circle at 50% 100%, #f9f6ea 0%, #e8e4cf 70%, #d1ccb0 100%);
+            --meter-bezel: #1a1a1a;
+            --meter-text: #2c2c2c;
+            --needle-color: #111;
+            --danger-color: #e63925;
+        }
+
+        .vu-meter-container * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        .vu-meter-container {
+            width: 100%;
+            height: 100%;
+            background-color: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 0;
+        }
+
+        /* Scaling wrapper for the entire meter */
+        .meter-scale-wrapper {
+            width: 650px;
+            height: 400px;
+            position: relative;
+            transform-origin: center center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Meter Outer Casing */
+        .meter-casing {
+            background: var(--meter-bezel);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 
+                0 20px 50px rgba(0,0,0,0.8),
+                inset 0 2px 5px rgba(255,255,255,0.1),
+                inset 0 -2px 5px rgba(0,0,0,0.5);
+            position: relative;
+            margin: auto;
+        }
+
+        /* The glass/screen area */
+        .meter-window {
+            width: 600px;
+            height: 350px;
+            background: var(--meter-bg);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                inset 0 10px 20px rgba(0,0,0,0.5),
+                inset 0 -5px 15px rgba(0,0,0,0.2),
+                0 0 10px rgba(255, 152, 0, 0.2);
+            border: 4px solid #0f0f0f;
+        }
+
+        /* Glass reflection overlay */
+        .meter-window::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 40%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* SVG for the crisp scale and ticks */
+        .meter-scale {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* VU Text */
+        .vu-text {
+            position: absolute;
+            bottom: 90px;
+            width: 100%;
+            text-align: center;
+            font-size: 48px;
+            font-weight: normal;
+            letter-spacing: 2px;
+            color: var(--meter-text);
+            z-index: 2;
+        }
+
+        /* Branding Text */
+        .branding {
+            position: absolute;
+            bottom: 15px;
+            color: rgba(0,0,0,0.65);
+            z-index: 2;
+        }
+        .branding.left { 
+            left: 25px; 
+            font-family: 'Consolas', 'Courier New', monospace; 
+            letter-spacing: 1px; 
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .branding.right { 
+            right: 25px; 
+            font-family: 'Arial Black', 'Impact', sans-serif; 
+            font-size: 18px;
+            letter-spacing: 2px;
+            transform: scaleX(1.6); /* Stretches the text to match TEAC's wide logo */
+            transform-origin: right bottom;
+        }
+
+        /* Peak LED Container */
+        .peak-led-container {
+            position: absolute;
+            right: 40px;
+            top: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .peak-led {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #611818;
+            border: 2px solid rgba(0,0,0,0.3);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.5), inset 2px 2px 2px rgba(255,255,255,0.4);
+            margin-bottom: 8px;
+            transition: background-color 0.05s ease, box-shadow 0.05s ease;
+        }
+
+        .peak-led.active {
+            background-color: #ff3300;
+            box-shadow: 
+                inset 0 1px 2px rgba(255,255,255,0.4),
+                0 0 15px #ff3300,
+                0 0 30px #ff3300;
+        }
+
+        .peak-text {
+            font-size: 12px;
+            color: var(--meter-text);
+            font-weight: bold;
+        }
+
+        /* Needle mechanism */
+        .needle-container {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 300px;
+            z-index: 5;
+        }
+
+        .needle {
+            position: absolute;
+            bottom: 25px; /* Pivot point Y */
+            left: 50%;
+            width: 3px;
+            height: 240px;
+            background: var(--needle-color);
+            transform-origin: bottom center;
+            /* Start at -45 degrees */
+            transform: translateX(-50%) rotate(-45deg);
+            border-radius: 3px 3px 0 0;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.3);
+            /* Hardware acceleration for smooth 60fps */
+            will-change: transform;
+        }
+
+        /* The black pivot cover at the bottom */
+        .pivot-cover {
+            position: absolute;
+            bottom: 0px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 40px;
+            background: #111;
+            border-radius: 60px 60px 0 0;
+            z-index: 6;
+            box-shadow: 
+                inset 0 5px 10px rgba(255,255,255,0.1),
+                0 -2px 5px rgba(0,0,0,0.4);
+            border: 2px solid #2a2a2a;
+            border-bottom: none;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 5px;
+        }
+        
+        /* Silver screw on pivot */
+        .pivot-cover::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background: #666;
+            border-radius: 50%;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.8);
         }
 
         /* --- Info Window --- */
@@ -2417,6 +2633,7 @@
                 <button class="visualizer-tab window-button" data-visualizer="rain">Rain</button>
                 <button class="visualizer-tab window-button" data-visualizer="starfield">Starfield</button>
                 <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
+                <button class="visualizer-tab window-button" data-visualizer="vuMeter">VU Meter</button>
             </div>
             <div class="title-bar-buttons">
                 <button class="window-button" id="visualizer-fullscreen-button" title="Toggle Visualizer Fullscreen">⛶</button>
@@ -2425,6 +2642,39 @@
         </div>
         <div class="content" style="padding: 0; border: 2px inset #808080; border-top-color: #404040; border-left-color: #404040; border-right-color: #fff; border-bottom-color: #fff; background: #000;">
             <canvas id="visualizer-canvas"></canvas>
+            <div class="vu-meter-container" id="vu-container" style="display: none;">
+                <div class="meter-scale-wrapper" id="meter-scale-wrapper">
+                    <div class="meter-casing">
+                        <div class="meter-window">
+                            
+                            <!-- SVG used to draw the perfect arcs and ticks matching the TEAC style -->
+                            <svg class="meter-scale" viewBox="0 0 600 350">
+                                <defs>
+                                    <path id="text-path" d="M 120 220 A 230 230 0 0 1 480 220" />
+                                </defs>
+                                <!-- Generated Arcs and Ticks via JS will go here -->
+                                <g id="ticks-group"></g>
+                            </svg>
+
+                            <div class="vu-text">VU</div>
+                            
+                            <div class="peak-led-container">
+                                <div class="peak-led" id="peak-led"></div>
+                                <div class="peak-text">PEAK</div>
+                            </div>
+
+                            <div class="branding left">5306006101</div>
+                            <div class="branding right">TEAC</div>
+
+                            <div class="needle-container">
+                                <div class="needle" id="needle"></div>
+                            </div>
+                            <div class="pivot-cover"></div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="resize-handle"></div>
     </div>
@@ -3474,7 +3724,118 @@
         let contextMenuTrack = null;
         let contextMenuLongPressTimer = null;
 
-        // --- Audio Context Setup ---
+        // VU Meter tick data
+        const vuTicksData = [
+            { label: '- 20', angle: -45, color: '#2c2c2c' },
+            { label: '', angle: -35, color: '#2c2c2c', minor: true },
+            { label: '10', angle: -25, color: '#2c2c2c' },
+            { label: '', angle: -20, color: '#2c2c2c', minor: true },
+            { label: '7', angle: -15, color: '#2c2c2c' },
+            { label: '', angle: -10, color: '#2c2c2c', minor: true },
+            { label: '5', angle: -5, color: '#2c2c2c' },
+            { label: '', angle: 0, color: '#2c2c2c', minor: true },
+            { label: '3', angle: 5, color: '#2c2c2c' },
+            { label: '', angle: 12, color: '#2c2c2c', minor: true },
+            { label: '0', angle: 20, color: '#e63925' }, // Start of red
+            { label: '', angle: 27, color: '#e63925', minor: true },
+            { label: '3', angle: 35, color: '#e63925' },
+            { label: '', angle: 40, color: '#e63925', minor: true },
+            { label: '+', angle: 45, color: '#e63925' }
+        ];
+
+        function initVUMeterTicks() {
+            const cx = 300;
+            const cy = 320;
+            const radius = 200;
+            const textRadius = 230;
+            const ticksGroup = document.getElementById('ticks-group');
+            if (!ticksGroup) return;
+            // Clear existing
+            ticksGroup.innerHTML = '';
+            // Draw the solid red wedge for the overload zone
+            const wedge = createVUWedge(20, 48, 200, 185, '#d83b00');
+            ticksGroup.appendChild(wedge);
+            // Draw base arc
+            const arc = createVUArc(-45, 20, 200, '#2c2c2c', 2);
+            ticksGroup.appendChild(arc);
+            vuTicksData.forEach(tick => {
+                const rad = (tick.angle - 90) * (Math.PI / 180);
+                const tickLength = tick.minor ? 12 : 24;
+                const strokeWidth = tick.minor ? 2 : 3;
+                const x1 = cx + radius * Math.cos(rad);
+                const y1 = cy + radius * Math.sin(rad);
+                const x2 = cx + (radius - tickLength) * Math.cos(rad);
+                const y2 = cy + (radius - tickLength) * Math.sin(rad);
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                line.setAttribute('stroke', tick.color);
+                line.setAttribute('stroke-width', strokeWidth);
+                ticksGroup.appendChild(line);
+                if (tick.label) {
+                    const tx = cx + textRadius * Math.cos(rad);
+                    const ty = cy + textRadius * Math.sin(rad);
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', tx);
+                    text.setAttribute('y', ty);
+                    text.setAttribute('fill', tick.color);
+                    text.setAttribute('font-size', '20');
+                    text.setAttribute('font-family', 'Arial, sans-serif');
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.setAttribute('transform', `rotate(${tick.angle}, ${tx}, ${ty})`);
+                    text.textContent = tick.label;
+                    ticksGroup.appendChild(text);
+                }
+            });
+        }
+
+        function createVUArc(startAngle, endAngle, radius, color, width) {
+            const cx = 300;
+            const cy = 320;
+            const startRad = (startAngle - 90) * (Math.PI / 180);
+            const endRad = (endAngle - 90) * (Math.PI / 180);
+            const x1 = cx + radius * Math.cos(startRad);
+            const y1 = cy + radius * Math.sin(startRad);
+            const x2 = cx + radius * Math.cos(endRad);
+            const y2 = cy + radius * Math.sin(endRad);
+            const pathData = `M ${x1} ${y1} A ${radius} ${radius} 0 0 1 ${x2} ${y2}`;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', color);
+            path.setAttribute('stroke-width', width);
+            return path;
+        }
+
+        function createVUWedge(startAngle, endAngle, innerRad, outerRad, color) {
+            const cx = 300;
+            const cy = 320;
+            const startRad = (startAngle - 90) * (Math.PI / 180);
+            const endRad = (endAngle - 90) * (Math.PI / 180);
+            const x1 = cx + innerRad * Math.cos(startRad);
+            const y1 = cy + innerRad * Math.sin(startRad);
+            const x2 = cx + outerRad * Math.cos(startRad);
+            const y2 = cy + outerRad * Math.sin(startRad);
+            const x3 = cx + outerRad * Math.cos(endRad);
+            const y3 = cy + outerRad * Math.sin(endRad);
+            const x4 = cx + innerRad * Math.cos(endRad);
+            const y4 = cy + innerRad * Math.sin(endRad);
+            const pathData = `
+                M ${x1} ${y1}
+                L ${x2} ${y2}
+                A ${outerRad} ${outerRad} 0 0 1 ${x3} ${y3}
+                L ${x4} ${y4}
+                A ${innerRad} ${innerRad} 0 0 0 ${x1} ${y1}
+                Z
+            `;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData.trim());
+            path.setAttribute('fill', color);
+            return path;
+        }
         let audioContext, analyser;
         let bitCrusherNode; 
         let isBitcrushActive = false; 
@@ -3490,6 +3851,14 @@
         let filterAFilter, filterBFilter; // DJ Low-pass filters
         let delayA, feedbackA, wetMixA; // Deck A Echo
         let delayB, feedbackB, wetMixB; // Deck B Echo
+
+        // Needle physics state for authentic spring-mass-damper movement
+        let currentAngle = -45; // Start at -20 position
+        let needleVelocity = 0; 
+        
+        // Analog ballistics settings - tweaked for slightly more "snap" on peaks
+        const STIFFNESS = 0.085; // Spring stiffness (pull towards target)
+        const DAMPING = 0.30;   // Resistance (stops bouncing, smooths motion)
         
         
         function setupAudioContext() {
@@ -3596,6 +3965,11 @@
             feedbackB.connect(delayB);
             delayB.connect(wetMixB);
             wetMixB.connect(analyser);
+            
+            // --- Connect Main Player (via gainMain) ---
+            // sourceMain will be routed through gainMain -> either directly to analyser or through bitcrusher
+            // The actual connection is done in toggleBitcrusher()
+            sourceMain.connect(gainMain);
 
             // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
@@ -3614,6 +3988,7 @@
             bufferLength = analyser.frequencyBinCount;
             frequencyData = new Uint8Array(bufferLength);
             timeDomainData = new Uint8Array(bufferLength);
+            frequencyDataFloat = new Float32Array(bufferLength);
 
             // Initialize TR-808 FX chain (tube saturation + compressor)
             initTr808Fx();
@@ -3746,6 +4121,7 @@
             // Get audio data
             analyser.getByteFrequencyData(frequencyData);
             analyser.getByteTimeDomainData(timeDomainData);
+            analyser.getFloatFrequencyData(frequencyDataFloat);
             
             // Calculate average frequency levels
             let bass = 0, mids = 0, highs = 0;
@@ -3772,6 +4148,9 @@
                     break;
                 case 'retroWaveform':
                     drawRetroWaveformVisualizer(timeDomainData);
+                    break;
+                case 'vuMeter':
+                    drawVUMeterVisualizer();
                     break;
             }
         }
@@ -3919,6 +4298,97 @@
             ctx.lineTo(canvas.width, canvas.height);
             ctx.closePath(); ctx.fill();
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+        }
+
+        // 4. VU Meter
+        function resizeVUMeter() {
+            const vuContainer = document.getElementById('vu-container');
+            const meterWrapper = document.getElementById('meter-scale-wrapper');
+            
+            if (!vuContainer || !meterWrapper) return;
+            
+            // Get the actual container dimensions
+            const containerWidth = vuContainer.clientWidth;
+            const containerHeight = vuContainer.clientHeight;
+            
+            if (containerWidth === 0 || containerHeight === 0) return;
+            
+            // Calculate scale factor based on available space
+            // Original meter is 650x400 plus 25px padding on each side = 700x450
+            const targetWidth = containerWidth - 20; // Leave 10px margin on each side
+            const targetHeight = containerHeight - 20; // Leave 10px margin on each side
+            
+            // Determine scale based on which dimension is the bottleneck
+            const baseWidth = 650;
+            const baseHeight = 400;
+            const scaleX = targetWidth / baseWidth;
+            const scaleY = targetHeight / baseHeight;
+            const scale = Math.min(scaleX, scaleY); // Scale up or down to fit available space
+            
+            // Apply transform to scale everything (meter, ticks, needle, etc)
+            meterWrapper.style.transform = `scale(${scale})`;
+            meterWrapper.style.width = (baseWidth * scale) + 'px';
+            meterWrapper.style.height = (baseHeight * scale) + 'px';
+        }
+        
+        function drawVUMeterVisualizer() {
+            // Initialize ticks on first call
+            initVUMeterTicks();
+            resizeVUMeter();
+
+            // Get volume
+            analyser.getByteFrequencyData(frequencyData);
+            let sum = 0;
+            // Only average the lower-to-mid frequencies
+            const length = Math.floor(frequencyData.length * 0.5); 
+            
+            for (let i = 0; i < length; i++) {
+                sum += frequencyData[i];
+            }
+            
+            let average = sum / length;
+            
+            // Gain adjustment: Lower sensitivity for more subtle deflection
+            average = average * 1.3; 
+            if (average > 255) average = 255;
+            
+            const volume = average / 255; // 0.0 to 1.0
+
+            // Map to angle
+            // Map volume (0.0 - 1.0) to Angle (-45 to +50 degrees)
+            let targetAngle = -45;
+            if (volume > 0) {
+                // Adjusted power curve (0.70) so it grabs transients faster 
+                // but retains that vintage roll-off at the top end
+                const mappedVolume = Math.pow(volume, 0.70); 
+                targetAngle = -45 + (mappedVolume * 95); 
+            }
+            
+            // Authentic Analog Physics (Spring-Mass-Damper)
+            let force = (targetAngle - currentAngle) * STIFFNESS;
+            let acceleration = force - (needleVelocity * DAMPING);
+            needleVelocity += acceleration;
+            currentAngle += needleVelocity;
+
+            // Hard clamp angle so needle doesn't break the glass physically
+            if (currentAngle > 52) { currentAngle = 52; needleVelocity = 0; }
+            if (currentAngle < -48) { currentAngle = -48; needleVelocity = 0; }
+
+            // Apply to CSS (Hardware accelerated transform)
+            const needle = document.getElementById('needle');
+            if (needle) {
+                needle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+            }
+
+            // Peak LED Logic
+            const peakLed = document.getElementById('peak-led');
+            if (peakLed) {
+                if (currentAngle > 20) {
+                    peakLed.classList.add('active');
+                } else {
+                    peakLed.classList.remove('active');
+                }
+            }
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
@@ -5601,6 +6071,17 @@
                 clickedTab.classList.add('active');
                 activeVisualizer = clickedTab.dataset.visualizer;
                 
+                // Show/hide canvas or bar based on visualizer
+                const canvas = document.getElementById('visualizer-canvas');
+                const vuContainer = document.getElementById('vu-container');
+                if (activeVisualizer === 'vuMeter') {
+                    canvas.style.display = 'none';
+                    vuContainer.style.display = 'block';
+                } else {
+                    canvas.style.display = 'block';
+                    vuContainer.style.display = 'none';
+                }
+                
                 // Re-initialize stars if switching to starfield
                 if (activeVisualizer === 'starfield') {
                     initStars();
@@ -5612,7 +6093,20 @@
         // Set the default active tab
         document.querySelector(`.visualizer-tab[data-visualizer="${activeVisualizer}"]`).classList.add('active');
 
+        // Add ResizeObserver to handle VU Meter scaling when window is resized
+        const vuContainer = document.getElementById('vu-container');
+        const meterWrapper = document.getElementById('meter-scale-wrapper');
+        if (vuContainer && meterWrapper && window.ResizeObserver) {
+            const resizeObserver = new ResizeObserver(() => {
+                if (activeVisualizer === 'vuMeter' && visualizerActive) {
+                    resizeVUMeter();
+                }
+            });
+            resizeObserver.observe(vuContainer);
+        }
+
         // --- Color Conversion Helper (Hex to HSL) ---
+
         function hexToHSL(H) {
             let r = 0, g = 0, b = 0;
             if (H.length == 4) { r = parseInt(H[1] + H[1], 16); g = parseInt(H[2] + H[2], 16); b = parseInt(H[3] + H[3], 16); }
