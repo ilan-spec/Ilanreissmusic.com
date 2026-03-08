@@ -3938,17 +3938,17 @@
             ctx.fillStyle = '#222';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Meter dimensions (scalable)
-            const meterWidth = canvas.width * 0.9;
-            const meterHeight = canvas.height * 0.8;
+            // Meter dimensions (scalable) - expanded to fill more
+            const meterWidth = canvas.width * 0.95;
+            const meterHeight = canvas.height * 0.85;
             const meterX = (canvas.width - meterWidth) / 2;
             const meterY = (canvas.height - meterHeight) / 2;
             
-            // Header
+            // Header - moved higher to avoid overlap
             ctx.fillStyle = '#AAA';
-            ctx.font = `${Math.max(10, canvas.height * 0.02)}px Inter, sans-serif`;
+            ctx.font = `${Math.max(14, canvas.height * 0.025)}px Inter, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText('ilanreissmusic.com | AUDIO STREAM MONITOR', canvas.width / 2, meterY + canvas.height * 0.05);
+            ctx.fillText('ilanreissmusic.com | AUDIO STREAM MONITOR', canvas.width / 2, meterY + canvas.height * 0.03);
             
             // Meter face gradient with orange glow
             ctx.shadowColor = 'rgba(255, 165, 0, 0.3)'; // slight orange glow
@@ -3968,7 +3968,7 @@
             // Arc parameters (horizontal at top)
             const centerX = meterX + meterWidth / 2;
             const centerY = meterY + meterHeight * 0.8;
-            const radius = meterHeight * 0.25;
+            const radius = meterHeight * 0.3; // increased to fill more
             const startAngle = Math.PI * 1.25; // 225 deg, top-left
             const endAngle = Math.PI * 1.75; // 315 deg, top-right
             
@@ -4004,15 +4004,15 @@
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
                 
-                // Labels for major ticks
+                // Labels for major ticks - spread out for legibility
                 if (db % 10 === 0 || db === -7 || db === -5 || db === -3) {
-                    const labelRadius = radius - radius * 0.6;
+                    const labelRadius = radius - radius * 0.7; // further out to avoid overlap
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = `${Math.max(20, meterHeight * 0.08)}px Inter, sans-serif`;
+                    ctx.font = `${Math.max(24, meterHeight * 0.1)}px Inter, sans-serif`; // larger font
                     ctx.textAlign = 'center';
-                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.02);
+                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.03);
                 }
             }
             
@@ -4078,19 +4078,19 @@
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
-            // Peak LED
+            // Peak LED - terracotta-red-brown, distinctly above
             const ledX = centerX;
-            const ledY = centerY - radius - radius * 0.2;
-            const ledRadius = Math.max(12, radius * 0.12);
-            ctx.fillStyle = '#C13232';
+            const ledY = centerY - radius - radius * 0.25; // distinctly above
+            const ledRadius = Math.max(15, radius * 0.15);
+            ctx.fillStyle = '#A0522D'; // terracotta-red-brown
             ctx.beginPath();
             ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI);
             ctx.fill();
             
             // Glow if peaking
             if (vuPeak > 0) {
-                ctx.shadowColor = '#C13232';
-                ctx.shadowBlur = Math.max(20, radius * 0.2);
+                ctx.shadowColor = '#A0522D';
+                ctx.shadowBlur = Math.max(25, radius * 0.25);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
