@@ -581,12 +581,12 @@
 
         /* Analog VU Meter */
         :root {
-            /* Warm orange backlight requested */
-            --meter-bg: radial-gradient(circle at 50% 120%, #ffcc80 0%, #ff9800 60%, #e65100 100%);
+            /* Vintage pale/beige background */
+            --meter-bg: radial-gradient(circle at 50% 100%, #f9f6ea 0%, #e8e4cf 70%, #d1ccb0 100%);
             --meter-bezel: #1a1a1a;
             --meter-text: #2c2c2c;
             --needle-color: #111;
-            --danger-color: #d83b00;
+            --danger-color: #e63925;
         }
 
         .vu-meter-container * {
@@ -604,6 +604,14 @@
             overflow: hidden;
         }
 
+        /* Scaling wrapper for the entire meter */
+        .meter-scale-wrapper {
+            width: 650px;
+            height: 400px;
+            position: relative;
+            transform-origin: center center;
+        }
+
         /* Meter Outer Casing */
         .meter-casing {
             background: var(--meter-bezel);
@@ -614,10 +622,6 @@
                 inset 0 2px 5px rgba(255,255,255,0.1),
                 inset 0 -2px 5px rgba(0,0,0,0.5);
             position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
-            transform: scale(min(1, calc(100vw / 700)));
-            transform-origin: center;
         }
 
         /* The glass/screen area */
@@ -695,9 +699,9 @@
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background-color: #4a1500;
+            background-color: #611818;
             border: 2px solid rgba(0,0,0,0.3);
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.5), inset 2px 2px 2px rgba(255,255,255,0.4);
             margin-bottom: 8px;
             transition: background-color 0.05s ease, box-shadow 0.05s ease;
         }
@@ -2623,33 +2627,35 @@
         <div class="content" style="padding: 0; border: 2px inset #808080; border-top-color: #404040; border-left-color: #404040; border-right-color: #fff; border-bottom-color: #fff; background: #000;">
             <canvas id="visualizer-canvas"></canvas>
             <div class="vu-meter-container" id="vu-container" style="display: none;">
-                <div class="meter-casing">
-                    <div class="meter-window">
-                        
-                        <!-- SVG used to draw the perfect arcs and ticks matching the TEAC style -->
-                        <svg class="meter-scale" viewBox="0 0 600 350">
-                            <defs>
-                                <path id="text-path" d="M 120 220 A 230 230 0 0 1 480 220" />
-                            </defs>
-                            <!-- Generated Arcs and Ticks via JS will go here -->
-                            <g id="ticks-group"></g>
-                        </svg>
+                <div class="meter-scale-wrapper" id="meter-scale-wrapper">
+                    <div class="meter-casing">
+                        <div class="meter-window">
+                            
+                            <!-- SVG used to draw the perfect arcs and ticks matching the TEAC style -->
+                            <svg class="meter-scale" viewBox="0 0 600 350">
+                                <defs>
+                                    <path id="text-path" d="M 120 220 A 230 230 0 0 1 480 220" />
+                                </defs>
+                                <!-- Generated Arcs and Ticks via JS will go here -->
+                                <g id="ticks-group"></g>
+                            </svg>
 
-                        <div class="vu-text">VU</div>
-                        
-                        <div class="peak-led-container">
-                            <div class="peak-led" id="peak-led"></div>
-                            <div class="peak-text">PEAK</div>
+                            <div class="vu-text">VU</div>
+                            
+                            <div class="peak-led-container">
+                                <div class="peak-led" id="peak-led"></div>
+                                <div class="peak-text">PEAK</div>
+                            </div>
+
+                            <div class="branding left">5306006101</div>
+                            <div class="branding right">TEAC</div>
+
+                            <div class="needle-container">
+                                <div class="needle" id="needle"></div>
+                            </div>
+                            <div class="pivot-cover"></div>
+                            
                         </div>
-
-                        <div class="branding left">5306006101</div>
-                        <div class="branding right">TEAC</div>
-
-                        <div class="needle-container">
-                            <div class="needle" id="needle"></div>
-                        </div>
-                        <div class="pivot-cover"></div>
-                        
                     </div>
                 </div>
             </div>
@@ -3714,12 +3720,19 @@
             { label: '', angle: 0, color: '#2c2c2c', minor: true },
             { label: '3', angle: 5, color: '#2c2c2c' },
             { label: '', angle: 12, color: '#2c2c2c', minor: true },
-            { label: '0', angle: 20, color: '#d83b00' }, // Start of red
-            { label: '', angle: 27, color: '#d83b00', minor: true },
-            { label: '3', angle: 35, color: '#d83b00' },
-            { label: '', angle: 40, color: '#d83b00', minor: true },
-            { label: '+', angle: 45, color: '#d83b00' }
+            { label: '0', angle: 20, color: '#e63925' }, // Start of red
+            { label: '', angle: 27, color: '#e63925', minor: true },
+            { label: '3', angle: 35, color: '#e63925' },
+            { label: '', angle: 40, color: '#e63925', minor: true },
+            { label: '+', angle: 45, color: '#e63925' }
         ];
+
+        // VU Meter needle physics state for authentic spring-mass-damper movement
+        let vuCurrentAngle = -45;
+        let vuNeedleVelocity = 0;
+        let vuTicksInitialized = false;
+        const VU_STIFFNESS = 0.08;
+        const VU_DAMPING = 0.28;
 
         function initVUMeterTicks() {
             const cx = 300;
@@ -3731,7 +3744,7 @@
             // Clear existing
             ticksGroup.innerHTML = '';
             // Draw the solid red wedge for the overload zone
-            const wedge = createVUWedge(20, 48, 200, 185, '#d83b00');
+            const wedge = createVUWedge(20, 48, 200, 185, '#e63925');
             ticksGroup.appendChild(wedge);
             // Draw base arc
             const arc = createVUArc(-45, 20, 200, '#2c2c2c', 2);
@@ -3802,6 +3815,39 @@
             const x4 = cx + innerRad * Math.cos(endRad);
             const y4 = cy + innerRad * Math.sin(endRad);
             const pathData = `
+                M ${x1} ${y1}
+                L ${x2} ${y2}
+                A ${outerRad} ${outerRad} 0 0 1 ${x3} ${y3}
+                L ${x4} ${y4}
+                A ${innerRad} ${innerRad} 0 0 0 ${x1} ${y1}
+                Z
+            `;
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', pathData.trim());
+            path.setAttribute('fill', color);
+            return path;
+        }
+
+        // Handle window resizing to scale the meter evenly
+        function resizeVUMeter() {
+            const meterWrapper = document.getElementById('meter-scale-wrapper');
+            if (!meterWrapper) return;
+            
+            // Calculate available space (leaving room for other UI)
+            const availWidth = window.innerWidth * 0.9;
+            const availHeight = window.innerHeight * 0.7;
+            
+            // 650x400 is the base dimension of the meter casing
+            const scaleX = availWidth / 650;
+            const scaleY = availHeight / 400;
+            
+            // Keep aspect ratio by using the minimum scale, max scale 2.5
+            const scale = Math.min(scaleX, scaleY, 2.5);
+            
+            meterWrapper.style.transform = `scale(${scale})`;
+        }
+
+        window.addEventListener('resize', resizeVUMeter);
                 M ${x1} ${y1}
                 L ${x2} ${y2}
                 A ${outerRad} ${outerRad} 0 0 1 ${x3} ${y3}
@@ -4275,15 +4321,16 @@
         function drawVUMeterVisualizer() {
             if (!vuTicksInitialized) {
                 initVUMeterTicks();
+                resizeVUMeter(); // Initial scale on first display
                 vuTicksInitialized = true;
             }
 
-            // Get volume
+            // Calculate a volume metric from the frequency data
             analyser.getByteFrequencyData(frequencyData);
             
             let sum = 0;
-            // Only average the lower-to-mid frequencies
-            const length = Math.floor(frequencyData.length * 0.5); 
+            // Focus on low-mids for consistent VU driving
+            const length = Math.floor(frequencyData.length * 0.4); 
             
             for (let i = 0; i < length; i++) {
                 sum += frequencyData[i];
@@ -4291,40 +4338,39 @@
             
             let average = sum / length;
             
-            // Gain (reduced for lower peaks)
-            average = average * 0.9; 
+            // Gain adjustment
+            average = average * 1.25; 
             if (average > 255) average = 255;
             
             const volume = average / 255; // 0.0 to 1.0
 
-            // Map to angle
+            // Map volume (0.0 - 1.0) to Angle (-45 to +50 degrees)
             let targetAngle = -45;
-            
             if (volume > 0) {
-                const mappedVolume = Math.pow(volume, 0.7); 
+                const mappedVolume = Math.pow(volume, 0.85); 
                 targetAngle = -45 + (mappedVolume * 95); 
             }
             
-            if (targetAngle > 52) targetAngle = 52;
-            if (targetAngle < -48) targetAngle = -48;
+            // Authentic Analog Physics (Spring-Mass-Damper)
+            let force = (targetAngle - vuCurrentAngle) * VU_STIFFNESS;
+            let acceleration = force - (vuNeedleVelocity * VU_DAMPING);
+            vuNeedleVelocity += acceleration;
+            vuCurrentAngle += vuNeedleVelocity;
 
-            // Ballistics
-            if (targetAngle > vuNeedleAngle) {
-                vuNeedleAngle += (targetAngle - vuNeedleAngle) * VU_ATTACK;
-            } else {
-                vuNeedleAngle += (targetAngle - vuNeedleAngle) * VU_DECAY;
-            }
+            // Hard clamp angle so needle doesn't break the glass physically
+            if (vuCurrentAngle > 52) { vuCurrentAngle = 52; vuNeedleVelocity = 0; }
+            if (vuCurrentAngle < -48) { vuCurrentAngle = -48; vuNeedleVelocity = 0; }
 
-            // Update needle
+            // Apply to CSS (Hardware accelerated transform)
             const needle = document.getElementById('needle');
             if (needle) {
-                needle.style.transform = `translateX(-50%) rotate(${vuNeedleAngle}deg)`;
+                needle.style.transform = `translateX(-50%) rotate(${vuCurrentAngle}deg)`;
             }
 
-            // Peak LED
+            // Peak LED Logic
             const peakLed = document.getElementById('peak-led');
             if (peakLed) {
-                if (vuNeedleAngle > 20) {
+                if (vuCurrentAngle > 20) {
                     peakLed.classList.add('active');
                 } else {
                     peakLed.classList.remove('active');
