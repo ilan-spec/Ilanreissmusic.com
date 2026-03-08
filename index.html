@@ -3950,12 +3950,15 @@
             ctx.textAlign = 'center';
             ctx.fillText('ilanreissmusic.com | AUDIO STREAM MONITOR', canvas.width / 2, meterY + canvas.height * 0.05);
             
-            // Meter face gradient
+            // Meter face gradient with orange glow
+            ctx.shadowColor = 'rgba(255, 165, 0, 0.3)'; // slight orange glow
+            ctx.shadowBlur = 20;
             const grad = ctx.createLinearGradient(meterX, meterY, meterX, meterY + meterHeight);
             grad.addColorStop(0, '#F5F0DC');
             grad.addColorStop(1, '#E6E0C8');
             ctx.fillStyle = grad;
             ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
+            ctx.shadowBlur = 0;
             
             // Inset shadow (approximated)
             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
@@ -3971,20 +3974,19 @@
             
             // Draw arc
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(3, radius * 0.03);
+            ctx.lineWidth = Math.max(4, radius * 0.04);
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.stroke();
             
-            // Ticks and labels (at the top)
-            const minDB = -20;
-            const maxDB = 3;
-            const numTicks = 23;
-            for (let i = 0; i <= numTicks; i++) {
-                const db = minDB + (maxDB - minDB) * (i / numTicks);
-                const angle = startAngle + (endAngle - startAngle) * (i / numTicks);
+            // Ticks and labels (at the top) - spaced like real meter
+            const tickDBs = [-20, -10, -7, -5, -3, -1, 0, 1, 2, 3];
+            for (let i = 0; i < tickDBs.length; i++) {
+                const db = tickDBs[i];
+                const ratio = (db - minDB) / (maxDB - minDB);
+                const angle = startAngle + (endAngle - startAngle) * ratio;
                 
-                const tickLength = (db >= 0) ? radius * 0.3 : radius * 0.25;
+                const tickLength = (db >= 0) ? radius * 0.5 : radius * 0.4;
                 const innerRadius = radius - tickLength;
                 const outerRadius = radius + radius * 0.05;
                 
@@ -3994,15 +3996,15 @@
                 const y2 = centerY + Math.sin(angle) * outerRadius;
                 
                 ctx.strokeStyle = (db >= 0) ? '#C13232' : '#000';
-                ctx.lineWidth = Math.max(3, radius * 0.03);
+                ctx.lineWidth = Math.max(4, radius * 0.05);
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
                 
-                // Labels every 5 dB, positioned above the arc
-                if (i % 5 === 0) {
-                    const labelRadius = radius - radius * 0.5;
+                // Labels for major ticks
+                if (db % 10 === 0 || db === -7 || db === -5 || db === -3) {
+                    const labelRadius = radius - radius * 0.6;
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
@@ -4053,12 +4055,12 @@
             for (let g = 1; g <= 3; g++) {
                 const ghostAngle = needleAngle - g * 0.02;
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = Math.max(3, radius * 0.04);
+                ctx.lineWidth = Math.max(4, radius * 0.06);
                 ctx.globalAlpha = 0.1;
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
-                const gx = centerX + Math.cos(ghostAngle) * (radius - radius * 0.05);
-                const gy = centerY + Math.sin(ghostAngle) * (radius - radius * 0.05);
+                const gx = centerX + Math.cos(ghostAngle) * (radius * 0.95);
+                const gy = centerY + Math.sin(ghostAngle) * (radius * 0.95);
                 ctx.lineTo(gx, gy);
                 ctx.stroke();
             }
@@ -4066,11 +4068,11 @@
             
             // Draw main needle
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(5, radius * 0.06);
+            ctx.lineWidth = Math.max(6, radius * 0.08);
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            const needleX = centerX + Math.cos(needleAngle) * (radius - radius * 0.05);
-            const needleY = centerY + Math.sin(needleAngle) * (radius - radius * 0.05);
+            const needleX = centerX + Math.cos(needleAngle) * (radius * 0.95);
+            const needleY = centerY + Math.sin(needleAngle) * (radius * 0.95);
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
