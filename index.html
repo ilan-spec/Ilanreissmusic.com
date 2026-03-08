@@ -3971,7 +3971,7 @@
             
             // Draw arc
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = Math.max(2, radius * 0.02);
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.stroke();
@@ -3984,9 +3984,9 @@
                 const db = minDB + (maxDB - minDB) * (i / numTicks);
                 const angle = startAngle + (endAngle - startAngle) * (i / numTicks);
                 
-                const tickLength = (db >= 0) ? 15 : 10;
+                const tickLength = (db >= 0) ? radius * 0.2 : radius * 0.15;
                 const innerRadius = radius - tickLength;
-                const outerRadius = radius + 5;
+                const outerRadius = radius + radius * 0.05;
                 
                 const x1 = centerX + Math.cos(angle) * innerRadius;
                 const y1 = centerY + Math.sin(angle) * innerRadius;
@@ -3994,7 +3994,7 @@
                 const y2 = centerY + Math.sin(angle) * outerRadius;
                 
                 ctx.strokeStyle = (db >= 0) ? '#C13232' : '#000';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = Math.max(2, radius * 0.02);
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
@@ -4002,11 +4002,11 @@
                 
                 // Labels every 5 dB, positioned above the arc
                 if (i % 5 === 0) {
-                    const labelRadius = radius - 30;
+                    const labelRadius = radius - radius * 0.4;
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = `${Math.max(8, canvas.height * 0.015)}px Inter, sans-serif`;
+                    ctx.font = `${Math.max(12, canvas.height * 0.03)}px Inter, sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.fillText(db.toString(), lx, ly + 3);
                 }
@@ -4029,12 +4029,12 @@
                 sum += sample * sample;
             }
             const rms = Math.sqrt(sum / bufferLength);
-            const db = 20 * Math.log10(Math.max(rms, 0.0001));
+            const db = 20 * Math.log10(Math.max(rms, 0.0001)) + 5; // shift up for more sensitivity
             const clampedDB = Math.max(minDB, Math.min(maxDB, db));
             
-            // VU filtering (attack/release)
-            const attack = 0.05; // fast attack
-            const release = 0.01; // slow release
+            // VU filtering (attack/release) - more sensitive
+            const attack = 0.2; // faster attack
+            const release = 0.1; // faster release
             if (clampedDB > vuLevel) {
                 vuLevel += (clampedDB - vuLevel) * attack;
             } else {
@@ -4043,7 +4043,7 @@
             
             // Update peak
             if (vuLevel > vuPeak) vuPeak = vuLevel;
-            vuPeak = Math.max(minDB, vuPeak - 0.005); // slow decay
+            vuPeak = Math.max(minDB, vuPeak - 0.02); // faster decay
             
             // Needle angle
             const ratio = (vuLevel - minDB) / (maxDB - minDB);
@@ -4053,12 +4053,12 @@
             for (let g = 1; g <= 3; g++) {
                 const ghostAngle = needleAngle - g * 0.02;
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = Math.max(2, radius * 0.02);
                 ctx.globalAlpha = 0.1;
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
-                const gx = centerX + Math.cos(ghostAngle) * (radius - 10);
-                const gy = centerY + Math.sin(ghostAngle) * (radius - 10);
+                const gx = centerX + Math.cos(ghostAngle) * (radius - radius * 0.1);
+                const gy = centerY + Math.sin(ghostAngle) * (radius - radius * 0.1);
                 ctx.lineTo(gx, gy);
                 ctx.stroke();
             }
@@ -4066,26 +4066,27 @@
             
             // Draw main needle
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = Math.max(3, radius * 0.03);
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            const needleX = centerX + Math.cos(needleAngle) * (radius - 10);
-            const needleY = centerY + Math.sin(needleAngle) * (radius - 10);
+            const needleX = centerX + Math.cos(needleAngle) * (radius - radius * 0.1);
+            const needleY = centerY + Math.sin(needleAngle) * (radius - radius * 0.1);
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
             // Peak LED
             const ledX = centerX;
-            const ledY = centerY - radius - 20;
+            const ledY = centerY - radius - radius * 0.2;
+            const ledRadius = Math.max(8, radius * 0.08);
             ctx.fillStyle = '#C13232';
             ctx.beginPath();
-            ctx.arc(ledX, ledY, 8, 0, 2 * Math.PI);
+            ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI);
             ctx.fill();
             
             // Glow if peaking
             if (vuPeak > 0) {
                 ctx.shadowColor = '#C13232';
-                ctx.shadowBlur = 15;
+                ctx.shadowBlur = Math.max(15, radius * 0.15);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
