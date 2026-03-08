@@ -3931,98 +3931,74 @@
             ctx.fillStyle = '#ff8c00'; // Dark orange
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw the VU meter frame
+            // Calculate overall audio level (average of bass, mids, highs)
+            const overallLevel = (bassAvg + midsAvg + highsAvg) / 3;
+            
+            // Draw square VU meter frame
+            const margin = 40;
+            const meterWidth = canvas.width - (margin * 2);
+            const meterHeight = canvas.height - (margin * 2);
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const radius = Math.min(canvas.width, canvas.height) * 0.35;
             
-            // Outer ring
+            // Outer square frame
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = 8;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.stroke();
+            ctx.lineWidth = 4;
+            ctx.strokeRect(margin, margin, meterWidth, meterHeight);
             
             // Inner background
             ctx.fillStyle = '#2a2a2a';
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius - 10, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.fillRect(margin + 10, margin + 10, meterWidth - 20, meterHeight - 20);
             
-            // Scale markings
-            ctx.strokeStyle = '#fff';
+            // Scale markings (only black dashes and numbers)
+            ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
+            ctx.fillStyle = '#000';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'right';
+            
             for (let i = 0; i <= 10; i++) {
-                const angle = (Math.PI * 1.5) - (i * Math.PI / 10); // Start from 270 degrees, go clockwise
-                const innerRadius = radius - 20;
-                const outerRadius = radius - 10;
-                const x1 = centerX + Math.cos(angle) * innerRadius;
-                const y1 = centerY + Math.sin(angle) * innerRadius;
-                const x2 = centerX + Math.cos(angle) * outerRadius;
-                const y2 = centerY + Math.sin(angle) * outerRadius;
+                const y = margin + 20 + (i * (meterHeight - 40) / 10);
+                // Left scale line
                 ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+                ctx.moveTo(margin + 10, y);
+                ctx.lineTo(margin + 25, y);
+                ctx.stroke();
+                // Right scale line  
+                ctx.beginPath();
+                ctx.moveTo(canvas.width - margin - 10, y);
+                ctx.lineTo(canvas.width - margin - 25, y);
                 ctx.stroke();
                 
-                // Labels
-                if (i % 2 === 0) {
-                    const labelRadius = radius - 35;
-                    const labelX = centerX + Math.cos(angle) * labelRadius;
-                    const labelY = centerY + Math.sin(angle) * labelRadius;
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '12px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(i * 10, labelX, labelY + 4);
-                }
+                // Numbers on the left
+                ctx.fillText((10 - i) * 10, margin + 5, y + 4);
             }
             
-            // Calculate needle angles based on audio levels
-            const bassAngle = (Math.PI * 1.5) - (bassAvg * Math.PI); // 0 to PI range
-            const midsAngle = (Math.PI * 1.5) - (midsAvg * Math.PI);
-            const highsAngle = (Math.PI * 1.5) - (highsAvg * Math.PI);
+            // Calculate needle position based on overall level
+            const needleY = margin + 20 + ((1 - overallLevel) * (meterHeight - 40));
             
-            // Draw needles
-            const needleLength = radius - 25;
-            
-            // Bass needle (red)
-            ctx.strokeStyle = '#ff0000';
+            // Draw needle
+            ctx.strokeStyle = '#000';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX + Math.cos(bassAngle) * needleLength, centerY + Math.sin(bassAngle) * needleLength);
+            ctx.moveTo(margin + 30, needleY);
+            ctx.lineTo(canvas.width - margin - 30, needleY);
             ctx.stroke();
             
-            // Mids needle (yellow)
-            ctx.strokeStyle = '#ffff00';
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX + Math.cos(midsAngle) * needleLength, centerY + Math.sin(midsAngle) * needleLength);
-            ctx.stroke();
-            
-            // Highs needle (green)
-            ctx.strokeStyle = '#00ff00';
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.lineTo(centerX + Math.cos(highsAngle) * needleLength, centerY + Math.sin(highsAngle) * needleLength);
-            ctx.stroke();
-            
-            // Center hub
+            // Needle pointer
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+            ctx.arc(margin + 30, needleY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(canvas.width - margin - 30, needleY, 5, 0, Math.PI * 2);
             ctx.fill();
             
-            // Labels
-            ctx.fillStyle = '#fff';
-            ctx.font = '16px Arial';
+            // VU Meter label
+            ctx.fillStyle = '#000';
+            ctx.font = '18px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('VU METER', centerX, centerY - radius + 30);
-            
-            ctx.font = '12px Arial';
-            ctx.fillText('BASS', centerX - radius * 0.6, centerY + radius * 0.8);
-            ctx.fillText('MIDS', centerX, centerY + radius * 0.8);
-            ctx.fillText('HIGH', centerX + radius * 0.6, centerY + radius * 0.8);
+            ctx.fillText('VU METER', centerX, margin - 10);
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
