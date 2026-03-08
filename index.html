@@ -4322,7 +4322,7 @@
             const baseHeight = 400;
             const scaleX = targetWidth / baseWidth;
             const scaleY = targetHeight / baseHeight;
-            const scale = Math.min(scaleX, scaleY, 1); // Don't scale up beyond 1
+            const scale = Math.min(scaleX, scaleY); // Scale up or down to fit available space
             
             // Apply transform to scale everything (meter, ticks, needle, etc)
             meterWrapper.style.transform = `scale(${scale})`;
