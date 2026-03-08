@@ -3965,8 +3965,8 @@
             const centerX = meterX + meterWidth / 2;
             const centerY = meterY + meterHeight - radius; // bottom of meter at bottom of white part
             const radius = meterHeight * 0.4;
-            const startAngle = Math.PI * 1.25; // 225 deg, top-left
-            const endAngle = Math.PI * 1.75; // 315 deg, top-right
+            const startAngle = Math.PI * 0.25; // 45 deg, bottom-left
+            const endAngle = Math.PI * 0.75; // 135 deg, bottom-right
             
             // Draw arc
             ctx.strokeStyle = '#000';
@@ -4002,7 +4002,7 @@
                 
                 // Labels for major ticks - large and visible
                 if (db === -20 || db === -10 || db === 0) {
-                    const labelRadius = radius - radius * 0.85; // closer to arc for prominence
+                    const labelRadius = - radius * 0.15; // negative to position above the bottom arc
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
