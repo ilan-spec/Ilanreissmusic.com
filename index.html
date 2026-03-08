@@ -3970,7 +3970,7 @@
             
             // Draw arc
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(6, radius * 0.06);
+            ctx.lineWidth = Math.max(3, radius * 0.03); // thinner
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.stroke();
@@ -3984,9 +3984,9 @@
                 const ratio = (db - minDB) / (maxDB - minDB);
                 const angle = startAngle + (endAngle - startAngle) * ratio;
                 
-                const tickLength = (db >= 0) ? radius * 0.6 : radius * 0.5; // larger ticks
+                const tickLength = (db >= 0) ? radius * 0.4 : radius * 0.35; // thinner ticks
                 const innerRadius = radius - tickLength;
-                const outerRadius = radius + radius * 0.08;
+                const outerRadius = radius + radius * 0.05;
                 
                 const x1 = centerX + Math.cos(angle) * innerRadius;
                 const y1 = centerY + Math.sin(angle) * innerRadius;
@@ -3994,21 +3994,21 @@
                 const y2 = centerY + Math.sin(angle) * outerRadius;
                 
                 ctx.strokeStyle = (db >= 0) ? '#C13232' : '#000';
-                ctx.lineWidth = Math.max(6, radius * 0.08); // thicker lines
+                ctx.lineWidth = Math.max(3, radius * 0.04); // thinner lines
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
                 
-                // Labels for major ticks - spread out for legibility
-                if (db % 10 === 0 || db === -7 || db === -5 || db === -3) {
-                    const labelRadius = radius - radius * 0.75; // further out
+                // Labels for fewer major ticks to avoid overlap
+                if (db === -20 || db === 0) {
+                    const labelRadius = radius - radius * 0.8; // further out to spread
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = `${Math.max(32, meterHeight * 0.15)}px Inter, sans-serif`; // much larger font
+                    ctx.font = `${Math.max(36, meterHeight * 0.18)}px Inter, sans-serif`; // larger font
                     ctx.textAlign = 'center';
-                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.04);
+                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.05);
                 }
             }
             
@@ -4053,7 +4053,7 @@
             for (let g = 1; g <= 3; g++) {
                 const ghostAngle = needleAngle - g * 0.02;
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = Math.max(6, radius * 0.1);
+                ctx.lineWidth = Math.max(4, radius * 0.06); // thinner
                 ctx.globalAlpha = 0.1;
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
@@ -4066,7 +4066,7 @@
             
             // Draw main needle
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(8, radius * 0.12);
+            ctx.lineWidth = Math.max(5, radius * 0.08); // thinner
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
             const needleX = centerX + Math.cos(needleAngle) * (radius * 0.98);
@@ -4074,19 +4074,19 @@
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
-            // Peak LED - terracotta-red-brown, distinctly above
-            const ledX = centerX;
-            const ledY = centerY - radius - radius * 0.3; // distinctly above
-            const ledRadius = Math.max(20, radius * 0.2);
-            ctx.fillStyle = '#A0522D'; // terracotta-red-brown
+            // Peak LED - small red dot on the right, lights up when peaking
+            const ledX = centerX + radius * 0.8; // on the right
+            const ledY = centerY;
+            const ledRadius = Math.max(5, radius * 0.05); // small
+            ctx.fillStyle = vuPeak > 0 ? '#FF0000' : '#333'; // red when peaking, dark otherwise
             ctx.beginPath();
             ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI);
             ctx.fill();
             
             // Glow if peaking
             if (vuPeak > 0) {
-                ctx.shadowColor = '#A0522D';
-                ctx.shadowBlur = Math.max(30, radius * 0.3);
+                ctx.shadowColor = '#FF0000';
+                ctx.shadowBlur = Math.max(10, radius * 0.1);
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
