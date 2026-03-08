@@ -3980,6 +3980,8 @@
             ctx.stroke();
             
             // Ticks and labels (at the top) - spaced like real meter
+            const minDB = -20;
+            const maxDB = 3;
             const tickDBs = [-20, -10, -7, -5, -3, -1, 0, 1, 2, 3];
             for (let i = 0; i < tickDBs.length; i++) {
                 const db = tickDBs[i];
