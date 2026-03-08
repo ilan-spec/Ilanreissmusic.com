@@ -3925,42 +3925,53 @@
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         }
 
-        // 4. VU Meter (TEAC style with authentic ballistics)
-        let vuNeedlePosition = -20; // Current needle position in dB
-        let vuPreviousLevel = -20; // Previous level for smoothing
-        let vuOvershoot = 0; // For overshoot effect
+        // 4. VU Meter (TEAC style with advanced spring physics)
+        let vuCurrentAngle = 0; // Current needle angle in radians
+        let vuVelocity = 0; // Needle velocity for physics
+        let vuTargetAngle = 0; // Target angle
+        let vuStiffness = 0.3; // Spring constant (higher = more sensitive)
+        let vuDampingRise = 0.7; // Damping when rising (lower = more overshoot)
+        let vuDampingFall = 0.9; // Damping when falling (higher = heavier feel)
         
         function drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg) {
             // Calculate overall audio level (0.0 to 1.0)
             const rawLevel = (bassAvg + midsAvg + highsAvg) / 3;
             
-            // Convert to dB (-60 to +6 range for better dynamics) - increased sensitivity
-            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 1.5 : -60; // 1.5x sensitivity multiplier
-            // Symmetrical scale: -20 to +20
+            // Convert to dB with high sensitivity
+            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 2.0 : -60; // 2.0x sensitivity for high response
             const clampedDb = Math.max(-20, Math.min(20, dbLevel));
             
-            // Ballistics: Apply attack/release smoothing
-            const attackFactor = 0.15; // Fast rise
-            const releaseFactor = 0.05; // Slow fall
-            
-            if (clampedDb > vuNeedlePosition) {
-                // Attack (rising)
-                vuNeedlePosition += (clampedDb - vuNeedlePosition) * attackFactor;
-                // Add slight overshoot
-                vuOvershoot = (clampedDb - vuNeedlePosition) * 0.1;
+            // Map dB to angle using logarithmic spacing (matching TEAC proportions)
+            // -20dB = -45°, 0dB = +25°, +20dB = +45°
+            let targetAngle;
+            if (clampedDb <= 0) {
+                // From -20 to 0: -45° to +25°
+                const normalized = (clampedDb + 20) / 20; // 0 to 1
+                targetAngle = -Math.PI/4 + (normalized * (25 * Math.PI/180 + Math.PI/4)); // -45° to +25°
             } else {
-                // Release (falling) - slower
-                vuNeedlePosition += (clampedDb - vuNeedlePosition) * releaseFactor;
-                vuOvershoot *= 0.9; // Decay overshoot
+                // From 0 to +20: +25° to +45°
+                const normalized = clampedDb / 20; // 0 to 1
+                targetAngle = 25 * Math.PI/180 + (normalized * 20 * Math.PI/180); // +25° to +45°
             }
             
-            // Apply overshoot
-            const finalPosition = vuNeedlePosition + vuOvershoot;
+            // Spring physics: Second-order system
+            const displacement = targetAngle - vuCurrentAngle;
+            const springForce = displacement * vuStiffness;
+            
+            // Different damping for rise vs fall (heavy fall feel)
+            const isRising = displacement > 0;
+            const damping = isRising ? vuDampingRise : vuDampingFall;
+            const dampingForce = vuVelocity * damping;
+            
+            // Update physics
+            const acceleration = springForce - dampingForce;
+            vuVelocity += acceleration * 0.016; // Assuming 60fps (16ms per frame)
+            vuCurrentAngle += vuVelocity;
             
             const canvas = ctx.canvas;
-            const centerX = canvas.width / 2; // Centered horizontally
-            const centerY = canvas.height / 2; // Centered vertically
-            const radius = Math.min(canvas.width, canvas.height) * 0.35;
+            const centerX = canvas.width / 2;
+            const pivotY = canvas.height * 0.95; // Pivot at 95% from top (bottom of frame)
+            const arcRadius = canvas.height * 0.85; // 85% of total height
             
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3983,95 +3994,101 @@
             ctx.lineWidth = 2;
             ctx.strokeRect(faceMargin + 2, faceTop + 2, faceWidth - 4, faceHeight - 4);
             
-            // 2. Scale arc (centered at top, wider angle for symmetry)
-            const startAngle = Math.PI * 0.8; // ~144° (more left)
-            const endAngle = Math.PI * 1.2; // ~216° (more right) - 72° total span, symmetrical
-            const arcRadius = radius * 0.6; // Smaller arc for top positioning
+            // 2. Scale arc (horizontal layout: -45° to +45°)
+            const startAngle = -Math.PI/4; // -45°
+            const endAngle = Math.PI/4; // +45°
             
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.arc(centerX, centerY + radius * 0.2, arcRadius, startAngle, endAngle);
+            ctx.arc(centerX, pivotY, arcRadius, startAngle, endAngle);
             ctx.stroke();
             
-            // 3. Tick marks and numbers (symmetrical scale: -20 to +20)
+            // 3. Tick marks and numbers (logarithmic spacing)
             const tickValues = [-20, -15, -10, -5, 0, 5, 10, 15, 20];
-            const tickAngles = [];
             
-            // Calculate positions for symmetrical scale
             for (let i = 0; i < tickValues.length; i++) {
                 const db = tickValues[i];
-                // Map -20 to +20 to angle range
-                const normalized = (db + 20) / 40; // 0 to 1
-                const angle = startAngle + (normalized * (endAngle - startAngle));
-                tickAngles.push(angle);
                 
-                // Draw tick mark
-                const tickLength = (db === 0 || Math.abs(db) % 10 === 0) ? 15 : 8; // Major/minor ticks
-                const innerRadius = arcRadius - tickLength;
-                const outerRadius = arcRadius + 5;
+                // Calculate angle for this dB value
+                let angle;
+                if (db <= 0) {
+                    const normalized = (db + 20) / 20;
+                    angle = -Math.PI/4 + (normalized * (25 * Math.PI/180 + Math.PI/4));
+                } else {
+                    const normalized = db / 20;
+                    angle = 25 * Math.PI/180 + (normalized * 20 * Math.PI/180);
+                }
                 
+                // Draw tick mark with appropriate weight
+                const isMajor = (db === -20 || db === -10 || db === 0 || db === 20);
+                const tickLength = isMajor ? 20 : 12;
+                const tickWidth = isMajor ? 2 : 1;
+                
+                ctx.lineWidth = tickWidth;
                 ctx.beginPath();
-                ctx.moveTo(centerX + Math.cos(angle) * innerRadius, centerY + radius * 0.2 + Math.sin(angle) * innerRadius);
-                ctx.lineTo(centerX + Math.cos(angle) * outerRadius, centerY + radius * 0.2 + Math.sin(angle) * outerRadius);
+                ctx.moveTo(centerX + Math.cos(angle) * (arcRadius - tickLength), pivotY + Math.sin(angle) * (arcRadius - tickLength));
+                ctx.lineTo(centerX + Math.cos(angle) * (arcRadius + 5), pivotY + Math.sin(angle) * (arcRadius + 5));
                 ctx.stroke();
                 
                 // Draw numbers
-                const textRadius = arcRadius - 25;
+                const textRadius = arcRadius - 30;
                 const textX = centerX + Math.cos(angle) * textRadius;
-                const textY = centerY + radius * 0.2 + Math.sin(angle) * textRadius;
+                const textY = pivotY + Math.sin(angle) * textRadius;
                 
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillStyle = (db > 0) ? '#D32F2F' : '#000000'; // Red for positive values
+                ctx.fillStyle = (db > 0) ? '#D32F2F' : '#000000';
                 ctx.fillText(db.toString(), textX, textY + 4);
             }
             
-            // 4. Red zone background (from +5 to +20)
-            const fiveIndex = tickValues.indexOf(5);
-            const twentyIndex = tickValues.indexOf(20);
-            if (fiveIndex >= 0 && twentyIndex >= 0) {
-                ctx.fillStyle = 'rgba(211, 47, 47, 0.2)'; // Light red background
-                ctx.beginPath();
-                ctx.arc(centerX, centerY + radius * 0.2, arcRadius - 5, tickAngles[fiveIndex], tickAngles[twentyIndex]);
-                ctx.arc(centerX, centerY + radius * 0.2, arcRadius + 5, tickAngles[twentyIndex], tickAngles[fiveIndex], true);
-                ctx.closePath();
-                ctx.fill();
-            }
+            // Reset line width
+            ctx.lineWidth = 1;
+            
+            // 4. Red zone background (from 0 to +20)
+            const zeroAngle = 25 * Math.PI/180; // +25°
+            const twentyAngle = Math.PI/4; // +45°
+            
+            ctx.fillStyle = 'rgba(211, 47, 47, 0.2)';
+            ctx.beginPath();
+            ctx.arc(centerX, pivotY, arcRadius - 5, zeroAngle, twentyAngle);
+            ctx.arc(centerX, pivotY, arcRadius + 5, twentyAngle, zeroAngle, true);
+            ctx.closePath();
+            ctx.fill();
             
             // 5. "VU" label
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 20px Arial'; // Slightly smaller for top positioning
+            ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('VU', centerX, centerY - radius * 0.1);
+            ctx.fillText('VU', centerX, pivotY - arcRadius * 0.3);
             
-            // 6. "PEAK" label and LED - positioned relative to new center
+            // 6. "PEAK" label and LED
             ctx.font = '10px Arial';
-            ctx.fillText('PEAK', centerX + radius * 0.4, centerY + radius * 0.1);
+            ctx.fillText('PEAK', centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1);
             
             // Peak LED with glow effect
-            const isClipping = finalPosition >= 5; // Clipping at +5dB now
+            const isClipping = vuCurrentAngle >= 25 * Math.PI/180; // Clipping at +25° (around 0dB)
             const ledColor = isClipping ? '#FF4444' : '#D32F2F';
             
             // LED glow
             const glowGradient = ctx.createRadialGradient(
-                centerX + radius * 0.4, centerY, 0,
-                centerX + radius * 0.4, centerY, isClipping ? 12 : 8
+                centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, 0,
+                centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, isClipping ? 12 : 8
             );
             glowGradient.addColorStop(0, isClipping ? 'rgba(255, 68, 68, 0.8)' : 'rgba(211, 47, 47, 0.6)');
             glowGradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
             ctx.fillStyle = glowGradient;
             ctx.beginPath();
-            ctx.arc(centerX + radius * 0.4, centerY, isClipping ? 12 : 8, 0, Math.PI * 2);
+            ctx.arc(centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, isClipping ? 12 : 8, 0, Math.PI * 2);
             ctx.fill();
             
             // LED itself
             ctx.fillStyle = ledColor;
             ctx.beginPath();
-            ctx.arc(centerX + radius * 0.4, centerY, 4, 0, Math.PI * 2);
+            ctx.arc(centerX + arcRadius * 0.4, pivotY - arcRadius * 0.1, 4, 0, Math.PI * 2);
             ctx.fill();
             
-            // 7. TEAC logo and serial number - adjusted for new layout
+            // 7. TEAC logo and serial number
             ctx.font = 'bold 12px Arial';
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'right';
@@ -4081,47 +4098,66 @@
             ctx.textAlign = 'left';
             ctx.fillText('5206006101', faceMargin + 10, faceTop + faceHeight - 10);
             
-            // 8. Needle with shadow and proper physics
-            // Calculate needle angle based on final position
-            const needleNormalized = (finalPosition + 20) / 40; // 0 to 1 for -20 to +20 range
-            const needleAngle = startAngle + (needleNormalized * (endAngle - startAngle));
+            // 8. Needle with advanced shadow and spring physics
             const needleLength = arcRadius - 10;
             
-            // Needle shadow
-            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-            ctx.lineWidth = 2;
+            // Save context for shadow
+            ctx.save();
+            
+            // Needle shadow with depth
+            ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+            ctx.lineWidth = 3;
             ctx.lineCap = 'round';
+            ctx.shadowColor = 'rgba(0,0,0,0.6)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 2;
             ctx.beginPath();
-            ctx.moveTo(centerX + 2, centerY + radius * 0.2 + 2);
+            ctx.moveTo(centerX, pivotY);
             ctx.lineTo(
-                centerX + 2 + Math.cos(needleAngle) * needleLength,
-                centerY + radius * 0.2 + 2 + Math.sin(needleAngle) * needleLength
+                centerX + Math.cos(vuCurrentAngle) * needleLength,
+                pivotY + Math.sin(vuCurrentAngle) * needleLength
             );
             ctx.stroke();
+            
+            // Reset shadow for main needle
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
             
             // Main needle
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1.5;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY + radius * 0.2);
+            ctx.moveTo(centerX, pivotY);
             ctx.lineTo(
-                centerX + Math.cos(needleAngle) * needleLength,
-                centerY + radius * 0.2 + Math.sin(needleAngle) * needleLength
+                centerX + Math.cos(vuCurrentAngle) * needleLength,
+                pivotY + Math.sin(vuCurrentAngle) * needleLength
             );
             ctx.stroke();
             
-            // Enhanced pivot hub with gradient
+            ctx.restore();
+            
+            // Enhanced pivot hub (flat-bottomed dome shape)
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(centerX, pivotY, 12, 0, Math.PI, false); // Flat bottom
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add a slight highlight to the hub
             const hubGradient = ctx.createLinearGradient(
-                centerX, centerY + radius * 0.2 - 8,
-                centerX, centerY + radius * 0.2 + 8
+                centerX, pivotY - 12,
+                centerX, pivotY + 12
             );
             hubGradient.addColorStop(0, '#333333');
             hubGradient.addColorStop(1, '#000000');
             
             ctx.fillStyle = hubGradient;
             ctx.beginPath();
-            ctx.arc(centerX, centerY + radius * 0.2, 8, 0, Math.PI, true); // Semi-circle
+            ctx.arc(centerX, pivotY, 10, 0, Math.PI, false);
+            ctx.closePath();
             ctx.fill();
             
             // Glass reflection overlay
