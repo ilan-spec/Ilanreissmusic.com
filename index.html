@@ -579,6 +579,22 @@
              line-height: normal;
         }
 
+        /* VU Meter Bar */
+        .vu-meter-container {
+            width: 100%;
+            height: 100%;
+            background-color: #333;
+            border: 2px solid #555;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .vu-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4caf50 60%, #ffeb3b 85%, #f44336 100%);
+            transition: width 0.05s ease-out;
+        }
+
         /* --- Info Window --- */
         #info-window {
             width: 300px;
@@ -2426,6 +2442,9 @@
         </div>
         <div class="content" style="padding: 0; border: 2px inset #808080; border-top-color: #404040; border-left-color: #404040; border-right-color: #fff; border-bottom-color: #fff; background: #000;">
             <canvas id="visualizer-canvas"></canvas>
+            <div class="vu-meter-container" id="vu-container" style="display: none;">
+                <div class="vu-fill" id="vu-fill"></div>
+            </div>
         </div>
         <div class="resize-handle"></div>
     </div>
@@ -3928,167 +3947,25 @@
         }
 
         // 4. VU Meter
-        let vuLevel = -20;
-        let vuPeak = -20;
-
         function drawVUMeterVisualizer() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Use the existing analyser to update the bar
+            analyser.getByteFrequencyData(frequencyData);
             
-            // Background
-            ctx.fillStyle = '#222';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Meter dimensions (scalable) - with border visible
-            const meterWidth = canvas.width * 0.95;
-            const meterHeight = canvas.height * 0.9;
-            const meterX = (canvas.width - meterWidth) / 2;
-            const meterY = (canvas.height - meterHeight) / 2;
-            
-            // Header removed as requested
-            
-            // Meter face gradient with orange glow
-            ctx.shadowColor = 'rgba(255, 165, 0, 0.3)'; // slight orange glow
-            ctx.shadowBlur = 20;
-            const grad = ctx.createLinearGradient(meterX, meterY, meterX, meterY + meterHeight);
-            grad.addColorStop(0, '#F5F0DC');
-            grad.addColorStop(1, '#E6E0C8');
-            ctx.fillStyle = grad;
-            ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
-            ctx.shadowBlur = 0;
-            
-            // Inset shadow (approximated)
-            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(meterX + 2, meterY + 2, meterWidth - 4, meterHeight - 4);
-            
-            // Arc parameters (horizontal at top)
-            const centerX = meterX + meterWidth / 2;
-            const centerY = meterY + meterHeight - radius; // bottom of meter at bottom of white part
-            const radius = meterHeight * 0.4;
-            const startAngle = Math.PI * 0.25; // 45 deg, bottom-left
-            const endAngle = Math.PI * 0.75; // 135 deg, bottom-right
-            
-            // Draw arc
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(4, radius * 0.05);
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.stroke();
-            
-            // Ticks and labels (at the top) - spaced like real meter
-            const minDB = -20;
-            const maxDB = 3;
-            const tickDBs = [-20, -10, -7, -5, -3, -1, 0, 1, 2, 3];
-            for (let i = 0; i < tickDBs.length; i++) {
-                const db = tickDBs[i];
-                const ratio = (db - minDB) / (maxDB - minDB);
-                const angle = startAngle + (endAngle - startAngle) * ratio;
-                
-                const tickLength = radius * 0.9; // large, spanning almost full radius
-                const innerRadius = radius - tickLength;
-                const outerRadius = radius + radius * 0.05;
-                
-                const x1 = centerX + Math.cos(angle) * innerRadius;
-                const y1 = centerY + Math.sin(angle) * innerRadius;
-                const x2 = centerX + Math.cos(angle) * outerRadius;
-                const y2 = centerY + Math.sin(angle) * outerRadius;
-                
-                ctx.strokeStyle = (db >= 0) ? '#C13232' : '#000';
-                ctx.lineWidth = Math.max(5, radius * 0.06); // thicker for visibility
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
-                
-                // Labels for major ticks - large and visible
-                if (db === -20 || db === -10 || db === 0) {
-                    const labelRadius = - radius * 0.15; // negative to position above the bottom arc
-                    const lx = centerX + Math.cos(angle) * labelRadius;
-                    const ly = centerY + Math.sin(angle) * labelRadius;
-                    ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = `${Math.max(50, meterHeight * 0.25)}px Inter, sans-serif`; // even larger, minimum 50px
-                    ctx.textAlign = 'center';
-                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.06);
-                }
-            }
-            
-            // TEAC logo bottom-right
-            ctx.fillStyle = '#000';
-            ctx.font = `bold ${Math.max(10, canvas.height * 0.02)}px Inter, sans-serif`;
-            ctx.textAlign = 'right';
-            ctx.fillText('TEAC', meterX + meterWidth - 10, meterY + meterHeight - 10);
-            
-            // Serial bottom-left
-            ctx.textAlign = 'left';
-            ctx.fillText('5206006101', meterX + 10, meterY + meterHeight - 10);
-            
-            // Calculate RMS dB from time domain data
+            // Calculate the average volume across all frequencies
             let sum = 0;
-            for (let i = 0; i < bufferLength; i++) {
-                const sample = (timeDomainData[i] - 128) / 128;
-                sum += sample * sample;
+            for (let i = 0; i < frequencyData.length; i++) {
+                sum += frequencyData[i];
             }
-            const rms = Math.sqrt(sum / bufferLength);
-            const db = 20 * Math.log10(Math.max(rms, 0.0001)) + 5; // shift up for more sensitivity
-            const clampedDB = Math.max(minDB, Math.min(maxDB, db));
+            const average = sum / frequencyData.length;
             
-            // VU filtering (attack/release) - more sensitive
-            const attack = 0.2; // faster attack
-            const release = 0.1; // faster release
-            if (clampedDB > vuLevel) {
-                vuLevel += (clampedDB - vuLevel) * attack;
-            } else {
-                vuLevel += (clampedDB - vuLevel) * release;
-            }
+            // Map the average value (0-255) to a percentage (0-100%)
+            // The 1.4 multiplier boosts the visual sensitivity
+            const volumePercentage = Math.min(100, Math.round((average / 255) * 100 * 1.4)); 
             
-            // Update peak
-            if (vuLevel > vuPeak) vuPeak = vuLevel;
-            vuPeak = Math.max(minDB, vuPeak - 0.02); // faster decay
-            
-            // Needle angle
-            const ratio = (vuLevel - minDB) / (maxDB - minDB);
-            const needleAngle = startAngle + (endAngle - startAngle) * ratio;
-            
-            // Draw ghost needles
-            for (let g = 1; g <= 3; g++) {
-                const ghostAngle = needleAngle - g * 0.02;
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = Math.max(5, radius * 0.08);
-                ctx.globalAlpha = 0.1;
-                ctx.beginPath();
-                ctx.moveTo(centerX, centerY);
-                const gx = centerX + Math.cos(ghostAngle) * (radius * 0.95);
-                const gy = centerY + Math.sin(ghostAngle) * (radius * 0.95);
-                ctx.lineTo(gx, gy);
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
-            
-            // Draw main needle
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(7, radius * 0.12);
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            const needleX = centerX + Math.cos(needleAngle) * (radius * 0.95);
-            const needleY = centerY + Math.sin(needleAngle) * (radius * 0.95);
-            ctx.lineTo(needleX, needleY);
-            ctx.stroke();
-            
-            // Peak LED - small red dot on the right, lights up when peaking
-            const ledX = centerX + radius * 0.8; // on the right
-            const ledY = centerY;
-            const ledRadius = Math.max(5, radius * 0.05); // small
-            ctx.fillStyle = vuPeak > 0 ? '#FF0000' : '#333'; // red when peaking, dark otherwise
-            ctx.beginPath();
-            ctx.arc(ledX, ledY, ledRadius, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // Glow if peaking
-            if (vuPeak > 0) {
-                ctx.shadowColor = '#FF0000';
-                ctx.shadowBlur = Math.max(10, radius * 0.1);
-                ctx.fill();
-                ctx.shadowBlur = 0;
+            // Update the CSS width of the bar
+            const vuFill = document.getElementById('vu-fill');
+            if (vuFill) {
+                vuFill.style.width = volumePercentage + '%';
             }
         }
 
@@ -5771,6 +5648,17 @@
                 document.querySelectorAll('.visualizer-tab').forEach(tab => tab.classList.remove('active'));
                 clickedTab.classList.add('active');
                 activeVisualizer = clickedTab.dataset.visualizer;
+                
+                // Show/hide canvas or bar based on visualizer
+                const canvas = document.getElementById('visualizer-canvas');
+                const vuContainer = document.getElementById('vu-container');
+                if (activeVisualizer === 'vuMeter') {
+                    canvas.style.display = 'none';
+                    vuContainer.style.display = 'block';
+                } else {
+                    canvas.style.display = 'block';
+                    vuContainer.style.display = 'none';
+                }
                 
                 // Re-initialize stars if switching to starfield
                 if (activeVisualizer === 'starfield') {
