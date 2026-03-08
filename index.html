@@ -3932,6 +3932,8 @@
         let vuStiffness = 0.4; // Spring constant (higher = more sensitive)
         let vuDampingRise = 0.6; // Damping when rising (lower = more overshoot)
         let vuDampingFall = 0.95; // Damping when falling (higher = heavier feel)
+        let peakHoldTime = 0; // Peak hold timer
+        let peakHoldDuration = 200; // Hold peak for 200ms minimum
         
         function drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg) {
             // Calculate overall audio level (0.0 to 1.0) - weighted towards mids/highs for better VU response
@@ -3941,92 +3943,103 @@
             const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) * 3.0 : -60; // 3.0x sensitivity for precise response
             const clampedDb = Math.max(-20, Math.min(20, dbLevel));
 
-            // PROPER LOGARITHMIC SCALE MAPPING (TEAC-style)
-            // -20dB = -45°, -10dB = -15°, -3dB = +10°, 0dB = +25°, +3dB = +35°, +20dB = +45°
+            // PROPER LOGARITHMIC MAPPING: Piece-wise function for accurate TEAC scale
+            // dB to angle mapping: -20dB = -45°, 0dB = +25°, +3dB = +35°, +20dB = +45°
             let targetAngle;
             if (clampedDb <= -10) {
-                // From -20 to -10: -45° to -15° (wide spacing for low levels)
-                const normalized = (clampedDb + 20) / 10; // 0 to 1
-                targetAngle = -Math.PI/4 + (normalized * Math.PI/6); // -45° to -15°
+                // Wide spacing: -20dB to -10dB (-45° to -15°)
+                const normalized = (clampedDb + 20) / 10;
+                targetAngle = -45 * Math.PI/180 + normalized * 30 * Math.PI/180;
             } else if (clampedDb <= 0) {
-                // From -10 to 0: -15° to +25° (medium spacing)
-                const normalized = (clampedDb + 10) / 10; // 0 to 1
-                targetAngle = -Math.PI/12 + (normalized * (25 + 15) * Math.PI/180); // -15° to +25°
+                // Medium spacing: -10dB to 0dB (-15° to +25°)
+                const normalized = (clampedDb + 10) / 10;
+                targetAngle = -15 * Math.PI/180 + normalized * 40 * Math.PI/180;
             } else if (clampedDb <= 3) {
-                // From 0 to +3: +25° to +35° (tight spacing for reference levels)
-                const normalized = clampedDb / 3; // 0 to 1
-                targetAngle = 25 * Math.PI/180 + (normalized * 10 * Math.PI/180); // +25° to +35°
+                // Tight spacing: 0dB to +3dB (+25° to +35°) - RED ZONE
+                const normalized = clampedDb / 3;
+                targetAngle = 25 * Math.PI/180 + normalized * 10 * Math.PI/180;
             } else {
-                // From +3 to +20: +35° to +45° (red zone expansion)
-                const normalized = (clampedDb - 3) / 17; // 0 to 1
-                targetAngle = 35 * Math.PI/180 + (normalized * 10 * Math.PI/180); // +35° to +45°
+                // Expansion: +3dB to +20dB (+35° to +45°)
+                const normalized = (clampedDb - 3) / 17;
+                targetAngle = 35 * Math.PI/180 + normalized * 10 * Math.PI/180;
             }
 
-            // SMOOTH COMPRESSOR PHYSICS: Low-pass filter approach
-            // Movement Rule: "The needle should move toward the target volume at a rate of 15% of the remaining distance per frame"
-            const angleDifference = targetAngle - vuCurrentAngle;
-            const movementRate = 0.15; // 15% of remaining distance per frame for smooth compressor feel
-            vuCurrentAngle += angleDifference * movementRate;
+            // PEAK HOLD LOGIC: Hold LED active for minimum 200ms after peak
+            const currentPeakAngle = Math.max(vuCurrentAngle, vuCurrentAngle * 0.9); // Slight decay
+            if (currentPeakAngle >= 25 * Math.PI/180) { // Above 0dB
+                peakHoldTime = peakHoldDuration;
+            } else if (peakHoldTime > 0) {
+                peakHoldTime -= 16.67; // Decrement at 60fps (16.67ms per frame)
+            }
+            const isClipping = peakHoldTime > 0;
 
             // Alternative: Simple exponential smoothing for very smooth movement
             // vuCurrentAngle = vuCurrentAngle * 0.9 + targetAngle * 0.1;
 
             const canvas = ctx.canvas;
-            // SINGLE ANCHOR POINT: Bottom center of container (like SVG cx="50%" cy="95%")
-            const pivotX = canvas.width / 2; // cx="50%"
-            const pivotY = canvas.height * 0.95; // cy="95%" - bottom of container
-            const arcRadius = Math.min(canvas.width, canvas.height) * 0.4; // Slightly larger for better visibility
+            // SVG-STYLE VIEWBOX: 16:9 aspect ratio for proper centering
+            const viewBoxWidth = 1600;
+            const viewBoxHeight = 900;
+            const scaleX = canvas.width / viewBoxWidth;
+            const scaleY = canvas.height / viewBoxHeight;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Center the viewbox in the canvas
+            const offsetX = (canvas.width - viewBoxWidth * scale) / 2;
+            const offsetY = (canvas.height - viewBoxHeight * scale) / 2;
+
+            // SINGLE ANCHOR POINT: Bottom center pivot (SVG cx="50%" cy="95%")
+            const pivotX = offsetX + (viewBoxWidth * 0.5) * scale; // cx="50%"
+            const pivotY = offsetY + (viewBoxHeight * 0.95) * scale; // cy="95%"
+
+            // METER FACE: 85% of viewbox area, centered
+            const meterWidth = viewBoxWidth * 0.85 * scale;
+            const meterHeight = viewBoxHeight * 0.85 * scale;
+            const meterLeft = offsetX + (viewBoxWidth * scale - meterWidth) / 2;
+            const meterTop = offsetY + (viewBoxHeight * scale - meterHeight) / 2;
+
+            // ARC RADIUS: Based on meter dimensions for proper proportion
+            const arcRadius = Math.min(meterWidth, meterHeight) * 0.45;
             
             // 1. Black matte plastic frame (full canvas)
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // 2. Centered meter face with proper margins
-            const faceMargin = Math.min(canvas.width, canvas.height) * 0.03; // Smaller margin for larger meter
-            const faceWidth = canvas.width - faceMargin * 2;
-            const faceHeight = canvas.height - faceMargin * 2;
-            const faceTop = faceMargin;
-            const faceLeft = faceMargin;
 
-            // 3. TEAC VINTAGE CREAM BACKGROUND
+            // 2. LARGE CENTERED METER FACE: 85% of viewbox area
             ctx.fillStyle = '#F5F2E1'; // Vintage cream background
-            ctx.fillRect(faceLeft, faceTop, faceWidth, faceHeight);
+            ctx.fillRect(meterLeft, meterTop, meterWidth, meterHeight);
 
-            // 3D inset effect
+            // 3D inset effect for professional look
             ctx.strokeStyle = '#D4D0C4';
             ctx.lineWidth = 2;
-            ctx.strokeRect(faceLeft + 2, faceTop + 2, faceWidth - 4, faceHeight - 4);
+            ctx.strokeRect(meterLeft + 2, meterTop + 2, meterWidth - 4, meterHeight - 4);
 
-            // 4. MAIN SCALE ARC: Single SVG-like path centered on pivot point
-            const startAngle = -Math.PI/4; // -45°
-            const endAngle = Math.PI/4; // +45°
-
+            // 3. MAIN SCALE ARC: Single wide symmetrical arc at top section
+            const arcCenterY = meterTop + meterHeight * 0.35; // Position arc in upper third
             ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(pivotX, pivotY, arcRadius, startAngle, endAngle);
-            ctx.stroke();
-            
-            // 5. TICKS AND NUMBERS: All rotate around the single pivot point
-            const tickValues = [-20, -10, -3, 0, 3, 10, 20]; // TEAC logarithmic distribution
+            ctx.arc(pivotX, arcCenterY, arcRadius, -Math.PI/4, Math.PI/4); // -45° to +45°
+            // 4. TICKS AND NUMBERS: Perfectly distributed along the arc
+            const tickValues = [-20, -10, -7, -5, -3, 0, 3, 7]; // Balanced logarithmic distribution
 
             for (let i = 0; i < tickValues.length; i++) {
                 const db = tickValues[i];
 
-                // Calculate angle for this dB value using proper logarithmic mapping
+                // Calculate angle using the same logarithmic mapping
                 let angle;
                 if (db <= -10) {
                     const normalized = (db + 20) / 10;
-                    angle = -Math.PI/4 + (normalized * Math.PI/6); // -45° to -15°
+                    angle = -45 * Math.PI/180 + normalized * 30 * Math.PI/180;
                 } else if (db <= 0) {
                     const normalized = (db + 10) / 10;
-                    angle = -Math.PI/12 + (normalized * (25 + 15) * Math.PI/180); // -15° to +25°
+                    angle = -15 * Math.PI/180 + normalized * 40 * Math.PI/180;
                 } else if (db <= 3) {
                     const normalized = db / 3;
-                    angle = 25 * Math.PI/180 + (normalized * 10 * Math.PI/180); // +25° to +35°
+                    angle = 25 * Math.PI/180 + normalized * 10 * Math.PI/180;
                 } else {
-                    const normalized = (db - 3) / 17;
-                    angle = 35 * Math.PI/180 + (normalized * 10 * Math.PI/180); // +35° to +45°
+                    const normalized = (db - 3) / 4; // 3 to 7 range
+                    angle = 35 * Math.PI/180 + normalized * 10 * Math.PI/180;
                 }
 
                 // Draw tick mark with appropriate weight
@@ -4037,14 +4050,14 @@
                 ctx.lineWidth = tickWidth;
                 ctx.strokeStyle = (db >= 0 && db <= 3) ? '#D32F2F' : '#000000'; // Red zone coloring
                 ctx.beginPath();
-                ctx.moveTo(pivotX + Math.cos(angle) * (arcRadius - tickLength), pivotY + Math.sin(angle) * (arcRadius - tickLength));
-                ctx.lineTo(pivotX + Math.cos(angle) * (arcRadius + 8), pivotY + Math.sin(angle) * (arcRadius + 8));
+                ctx.moveTo(pivotX + Math.cos(angle) * (arcRadius - tickLength), arcCenterY + Math.sin(angle) * (arcRadius - tickLength));
+                ctx.lineTo(pivotX + Math.cos(angle) * (arcRadius + 10), arcCenterY + Math.sin(angle) * (arcRadius + 10));
                 ctx.stroke();
 
-                // Draw numbers - positioned above the arc with proper spacing
-                const textRadius = arcRadius - 35;
+                // Draw numbers - positioned above the arc
+                const textRadius = arcRadius - 45;
                 const textX = pivotX + Math.cos(angle) * textRadius;
-                const textY = pivotY + Math.sin(angle) * textRadius;
+                const textY = arcCenterY + Math.sin(angle) * textRadius;
 
                 ctx.font = 'bold 11px Arial'; // Clean Sans-Serif typography
                 ctx.textAlign = 'center';
@@ -4055,61 +4068,62 @@
             // Reset line width
             ctx.lineWidth = 1;
             
-// 4. RED ZONE BACKGROUND: Only from 0 to +3 dB (TEAC specification)
+            // 5. RED ZONE BACKGROUND: Only from 0 to +3 dB (TEAC specification)
             const zeroAngle = 25 * Math.PI/180; // 0dB = +25°
             const threeDbAngle = 35 * Math.PI/180; // +3dB = +35°
 
             ctx.fillStyle = 'rgba(211, 47, 47, 0.15)'; // Subtle red tint
             ctx.beginPath();
-            ctx.arc(pivotX, pivotY, arcRadius - 5, zeroAngle, threeDbAngle);
-            ctx.arc(pivotX, pivotY, arcRadius + 5, threeDbAngle, zeroAngle, true);
+            ctx.arc(pivotX, arcCenterY, arcRadius - 5, zeroAngle, threeDbAngle);
+            ctx.arc(pivotX, arcCenterY, arcRadius + 5, threeDbAngle, zeroAngle, true);
             ctx.closePath();
             ctx.fill();
-            
-            // 5. "VU" label - positioned above the meter
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 20px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('VU', pivotX, pivotY - arcRadius - 10);
 
-            // 6. "PEAK" label and LED - positioned to the right of the meter
+            // 6. "VU" label - large and centered below the scale
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('VU', pivotX, arcCenterY + arcRadius + 40);
+
+            // 7. "PEAK" label and LED - positioned on the far right
             ctx.font = '10px Arial';
-            ctx.fillText('PEAK', pivotX + arcRadius + 20, pivotY - arcRadius * 0.3);
+            ctx.fillText('PEAK', meterLeft + meterWidth - 40, arcCenterY + arcRadius * 0.3);
             
-            // Peak LED with glow effect
-            const isClipping = vuCurrentAngle >= 35 * Math.PI/180; // Clipping at +3dB (+35°) - TEAC red zone
+            // Peak LED with glow effect (using peak hold logic)
             const ledColor = isClipping ? '#FF4444' : '#D32F2F';
             
             // LED glow
+            const ledX = meterLeft + meterWidth - 25;
+            const ledY = arcCenterY + arcRadius * 0.3;
             const glowGradient = ctx.createRadialGradient(
-                pivotX + arcRadius + 20, pivotY - arcRadius * 0.3, 0,
-                pivotX + arcRadius + 20, pivotY - arcRadius * 0.3, isClipping ? 12 : 8
+                ledX, ledY, 0,
+                ledX, ledY, isClipping ? 12 : 8
             );
             glowGradient.addColorStop(0, isClipping ? 'rgba(255, 68, 68, 0.8)' : 'rgba(211, 47, 47, 0.6)');
             glowGradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
             ctx.fillStyle = glowGradient;
             ctx.beginPath();
-            ctx.arc(pivotX + arcRadius + 20, pivotY - arcRadius * 0.3, isClipping ? 12 : 8, 0, Math.PI * 2);
+            ctx.arc(ledX, ledY, isClipping ? 12 : 8, 0, Math.PI * 2);
             ctx.fill();
 
             // LED itself
             ctx.fillStyle = ledColor;
             ctx.beginPath();
-            ctx.arc(pivotX + arcRadius + 20, pivotY - arcRadius * 0.3, 4, 0, Math.PI * 2);
+            ctx.arc(ledX, ledY, 4, 0, Math.PI * 2);
             ctx.fill();
             
-            // 7. TEAC logo and serial number
+            // 8. TEAC logo and serial number
             ctx.font = 'bold 12px Arial';
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'right';
-            ctx.fillText('TEAC', faceLeft + faceWidth - 10, faceTop + faceHeight - 10);
+            ctx.fillText('TEAC', meterLeft + meterWidth - 10, meterTop + meterHeight - 10);
             
             ctx.font = '8px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('5206006101', faceLeft + 10, faceTop + faceHeight - 10);
+            ctx.fillText('5206006101', meterLeft + 10, meterTop + meterHeight - 10);
             
-            // 8. THIN TAPERING NEEDLE with drop shadow (TEAC aesthetic)
-            const needleLength = arcRadius - 15;
+            // 9. THIN TAPERING NEEDLE with drop shadow (TEAC aesthetic)
+            const needleLength = arcRadius - 10; // Reach almost to the arc
 
             // Save context for shadow
             ctx.save();
@@ -4172,15 +4186,15 @@
             
             // Glass reflection overlay
             const glassGradient = ctx.createLinearGradient(
-                faceLeft, faceTop,
-                faceLeft + faceWidth, faceTop + faceHeight
+                meterLeft, meterTop,
+                meterLeft + meterWidth, meterTop + meterHeight
             );
             glassGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
             glassGradient.addColorStop(0.5, 'rgba(255,255,255,0.05)');
             glassGradient.addColorStop(1, 'rgba(255,255,255,0)');
             
             ctx.fillStyle = glassGradient;
-            ctx.fillRect(faceLeft, faceTop, faceWidth, faceHeight);
+            ctx.fillRect(meterLeft, meterTop, meterWidth, meterHeight);
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
