@@ -3970,29 +3970,28 @@
             
             const canvas = ctx.canvas;
             const centerX = canvas.width / 2;
-            const pivotY = canvas.height * 0.05; // Pivot at 5% from top (top of frame)
-            const arcRadius = canvas.height * 0.85; // 85% of total height
+            const pivotY = canvas.height - 30; // Pivot at bottom of window with small margin
+            const arcRadius = Math.min(canvas.width, canvas.height) * 0.35; // Responsive radius based on smaller dimension
             
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 1. Black matte plastic frame
+            // 1. Black matte plastic frame (full canvas)
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Rounded inner area for the meter face - centered with adjusted height for top pivot
-            const faceMargin = 20;
+            // 2. Centered meter face with proper margins
+            const faceMargin = Math.min(canvas.width, canvas.height) * 0.05; // 5% margin
             const faceWidth = canvas.width - faceMargin * 2;
             const faceHeight = canvas.height - faceMargin * 2;
             const faceTop = faceMargin;
+            const faceLeft = faceMargin;
             
+            // 3. Meter face background
             ctx.fillStyle = '#F5F2E1'; // Vintage cream background
-            ctx.fillRect(faceMargin, faceTop, faceWidth, faceHeight);
+            ctx.fillRect(faceLeft, faceTop, faceWidth, faceHeight);
             
             // 3D inset effect
             ctx.strokeStyle = '#D4D0C4';
             ctx.lineWidth = 2;
-            ctx.strokeRect(faceMargin + 2, faceTop + 2, faceWidth - 4, faceHeight - 4);
+            ctx.strokeRect(faceLeft + 2, faceTop + 2, faceWidth - 4, faceHeight - 4);
             
             // 2. Scale arc (horizontal layout: -45° to +45°)
             const startAngle = -Math.PI/4; // -45°
@@ -4032,7 +4031,7 @@
                 ctx.stroke();
                 
                 // Draw numbers - positioned above the arc for better visibility
-                const textY = pivotY - arcRadius + 20; // Above the arc
+                const textY = pivotY - arcRadius * 0.7; // Positioned well above the arc
                 const textX = centerX + Math.cos(angle) * (arcRadius * 0.8); // Slightly inside the arc
                 
                 ctx.font = '12px Arial';
@@ -4055,15 +4054,15 @@
             ctx.closePath();
             ctx.fill();
             
-            // 5. "VU" label
+            // 5. "VU" label - positioned above the meter
             ctx.fillStyle = '#000000';
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('VU', centerX, pivotY + arcRadius * 0.2);
+            ctx.fillText('VU', centerX, pivotY - arcRadius - 10);
             
-            // 6. "PEAK" label and LED
+            // 6. "PEAK" label and LED - positioned to the right of the meter
             ctx.font = '10px Arial';
-            ctx.fillText('PEAK', centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3);
+            ctx.fillText('PEAK', centerX + arcRadius + 20, pivotY - arcRadius * 0.3);
             
             // Peak LED with glow effect
             const isClipping = vuCurrentAngle >= 25 * Math.PI/180; // Clipping at +25° (around 0dB)
@@ -4071,31 +4070,31 @@
             
             // LED glow
             const glowGradient = ctx.createRadialGradient(
-                centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, 0,
-                centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, isClipping ? 12 : 8
+                centerX + arcRadius + 20, pivotY - arcRadius * 0.3, 0,
+                centerX + arcRadius + 20, pivotY - arcRadius * 0.3, isClipping ? 12 : 8
             );
             glowGradient.addColorStop(0, isClipping ? 'rgba(255, 68, 68, 0.8)' : 'rgba(211, 47, 47, 0.6)');
             glowGradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
             ctx.fillStyle = glowGradient;
             ctx.beginPath();
-            ctx.arc(centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, isClipping ? 12 : 8, 0, Math.PI * 2);
+            ctx.arc(centerX + arcRadius + 20, pivotY - arcRadius * 0.3, isClipping ? 12 : 8, 0, Math.PI * 2);
             ctx.fill();
             
             // LED itself
             ctx.fillStyle = ledColor;
             ctx.beginPath();
-            ctx.arc(centerX + arcRadius * 0.4, pivotY + arcRadius * 0.3, 4, 0, Math.PI * 2);
+            ctx.arc(centerX + arcRadius + 20, pivotY - arcRadius * 0.3, 4, 0, Math.PI * 2);
             ctx.fill();
             
             // 7. TEAC logo and serial number
             ctx.font = 'bold 12px Arial';
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'right';
-            ctx.fillText('TEAC', canvas.width - faceMargin - 10, faceTop + faceHeight - 10);
+            ctx.fillText('TEAC', faceLeft + faceWidth - 10, faceTop + faceHeight - 10);
             
             ctx.font = '8px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText('5206006101', faceMargin + 10, faceTop + faceHeight - 10);
+            ctx.fillText('5206006101', faceLeft + 10, faceTop + faceHeight - 10);
             
             // 8. Needle with advanced shadow and spring physics
             const needleLength = arcRadius - 10;
@@ -4161,15 +4160,15 @@
             
             // Glass reflection overlay
             const glassGradient = ctx.createLinearGradient(
-                faceMargin, faceTop,
-                canvas.width - faceMargin, faceTop + faceHeight
+                faceLeft, faceTop,
+                faceLeft + faceWidth, faceTop + faceHeight
             );
             glassGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
             glassGradient.addColorStop(0.5, 'rgba(255,255,255,0.05)');
             glassGradient.addColorStop(1, 'rgba(255,255,255,0)');
             
             ctx.fillStyle = glassGradient;
-            ctx.fillRect(faceMargin, faceTop, faceWidth, faceHeight);
+            ctx.fillRect(faceLeft, faceTop, faceWidth, faceHeight);
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
