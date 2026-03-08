@@ -3959,8 +3959,8 @@
             
             const canvas = ctx.canvas;
             const centerX = canvas.width / 2; // Centered horizontally
-            const centerY = canvas.height * 0.25; // Moved to top quarter
-            const radius = Math.min(canvas.width, canvas.height) * 0.35; // Slightly smaller for top positioning
+            const centerY = canvas.height / 2; // Centered vertically
+            const radius = Math.min(canvas.width, canvas.height) * 0.35;
             
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3969,10 +3969,10 @@
             ctx.fillStyle = '#000000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Rounded inner area for the meter face - centered at top
+            // Rounded inner area for the meter face - centered
             const faceMargin = 20;
             const faceWidth = canvas.width - faceMargin * 2;
-            const faceHeight = canvas.height * 0.4; // Shorter height for top positioning
+            const faceHeight = canvas.height - faceMargin * 2;
             const faceTop = faceMargin;
             
             ctx.fillStyle = '#F5F2E1'; // Vintage cream background
