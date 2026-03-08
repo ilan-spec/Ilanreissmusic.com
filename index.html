@@ -3925,80 +3925,149 @@
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         }
 
-        // 4. VU Meter (like old compressor)
+        // 4. VU Meter (TEAC style)
         function drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg) {
-            // Warm orange background
-            ctx.fillStyle = '#ff8c00'; // Dark orange
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Calculate overall audio level (average of bass, mids, highs)
+            // Calculate overall audio level in dB scale
             const overallLevel = (bassAvg + midsAvg + highsAvg) / 3;
+            // Convert to dB-like scale (-20 to +3)
+            const dbLevel = -20 + (overallLevel * 23); // -20 to +3 range
             
-            // Draw square VU meter frame
-            const margin = 40;
-            const meterWidth = canvas.width - (margin * 2);
-            const meterHeight = canvas.height - (margin * 2);
+            const canvas = ctx.canvas;
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.4;
             
-            // Outer square frame
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 4;
-            ctx.strokeRect(margin, margin, meterWidth, meterHeight);
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Inner background
-            ctx.fillStyle = '#2a2a2a';
-            ctx.fillRect(margin + 10, margin + 10, meterWidth - 20, meterHeight - 20);
+            // 1. Black matte plastic frame
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Scale markings (only black dashes and numbers)
-            ctx.strokeStyle = '#000';
+            // Rounded inner area for the meter face
+            const faceMargin = 20;
+            ctx.fillStyle = '#F5F2E1'; // Vintage cream background
+            ctx.fillRect(faceMargin, faceMargin, canvas.width - faceMargin * 2, canvas.height - faceMargin * 2);
+            
+            // 3D inset effect
+            ctx.strokeStyle = '#D4D0C4';
             ctx.lineWidth = 2;
-            ctx.fillStyle = '#000';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'right';
+            ctx.strokeRect(faceMargin + 2, faceMargin + 2, canvas.width - faceMargin * 2 - 4, canvas.height - faceMargin * 2 - 4);
             
-            for (let i = 0; i <= 10; i++) {
-                const y = margin + 20 + (i * (meterHeight - 40) / 10);
-                // Left scale line
-                ctx.beginPath();
-                ctx.moveTo(margin + 10, y);
-                ctx.lineTo(margin + 25, y);
-                ctx.stroke();
-                // Right scale line  
-                ctx.beginPath();
-                ctx.moveTo(canvas.width - margin - 10, y);
-                ctx.lineTo(canvas.width - margin - 25, y);
-                ctx.stroke();
-                
-                // Numbers on the left
-                ctx.fillText((10 - i) * 10, margin + 5, y + 4);
-            }
+            // 2. Scale arc (90-100 degrees, from about 200° to 290°)
+            const startAngle = Math.PI * 1.1; // ~200°
+            const endAngle = Math.PI * 1.6; // ~290°
+            const arcRadius = radius * 0.8;
             
-            // Calculate needle position based on overall level
-            const needleY = margin + 20 + ((1 - overallLevel) * (meterHeight - 40));
-            
-            // Draw needle
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(margin + 30, needleY);
-            ctx.lineTo(canvas.width - margin - 30, needleY);
+            ctx.arc(centerX, centerY + radius * 0.3, arcRadius, startAngle, endAngle);
             ctx.stroke();
             
-            // Needle pointer
-            ctx.fillStyle = '#000';
+            // 3. Tick marks and numbers (logarithmic scale)
+            const tickValues = [-20, -10, -7, -5, -3, 0, 3];
+            const tickAngles = [];
+            
+            // Calculate logarithmic positions
+            for (let i = 0; i < tickValues.length; i++) {
+                const db = tickValues[i];
+                // Map -20 to +3 to angle range
+                const normalized = (db + 20) / 23; // 0 to 1
+                const angle = startAngle + (normalized * (endAngle - startAngle));
+                tickAngles.push(angle);
+                
+                // Draw tick mark
+                const tickLength = (i % 2 === 0) ? 15 : 8; // Major/minor ticks
+                const innerRadius = arcRadius - tickLength;
+                const outerRadius = arcRadius + 5;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX + Math.cos(angle) * innerRadius, centerY + radius * 0.3 + Math.sin(angle) * innerRadius);
+                ctx.lineTo(centerX + Math.cos(angle) * outerRadius, centerY + radius * 0.3 + Math.sin(angle) * outerRadius);
+                ctx.stroke();
+                
+                // Draw numbers
+                const textRadius = arcRadius - 25;
+                const textX = centerX + Math.cos(angle) * textRadius;
+                const textY = centerY + radius * 0.3 + Math.sin(angle) * textRadius;
+                
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = (db >= 0) ? '#D32F2F' : '#000000'; // Red for positive values
+                ctx.fillText(db.toString(), textX, textY + 4);
+            }
+            
+            // 4. Red zone background (from 0 to +3)
+            const zeroIndex = tickValues.indexOf(0);
+            const threeIndex = tickValues.indexOf(3);
+            if (zeroIndex >= 0 && threeIndex >= 0) {
+                ctx.fillStyle = 'rgba(211, 47, 47, 0.2)'; // Light red background
+                ctx.beginPath();
+                ctx.arc(centerX, centerY + radius * 0.3, arcRadius - 5, tickAngles[zeroIndex], tickAngles[threeIndex]);
+                ctx.arc(centerX, centerY + radius * 0.3, arcRadius + 5, tickAngles[threeIndex], tickAngles[zeroIndex], true);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // 5. "VU" label
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('VU', centerX, centerY + radius * 0.1);
+            
+            // 6. "PEAK" label and LED
+            ctx.font = '10px Arial';
+            ctx.fillText('PEAK', centerX + radius * 0.6, centerY + radius * 0.2);
+            
+            // Peak LED (small red circle)
+            ctx.fillStyle = '#D32F2F';
             ctx.beginPath();
-            ctx.arc(margin + 30, needleY, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(canvas.width - margin - 30, needleY, 5, 0, Math.PI * 2);
+            ctx.arc(centerX + radius * 0.6, centerY + radius * 0.1, 4, 0, Math.PI * 2);
             ctx.fill();
             
-            // VU Meter label
-            ctx.fillStyle = '#000';
-            ctx.font = '18px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('VU METER', centerX, margin - 10);
+            // Glow effect for peak LED
+            const gradient = ctx.createRadialGradient(
+                centerX + radius * 0.6, centerY + radius * 0.1, 0,
+                centerX + radius * 0.6, centerY + radius * 0.1, 8
+            );
+            gradient.addColorStop(0, 'rgba(211, 47, 47, 0.6)');
+            gradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX + radius * 0.6, centerY + radius * 0.1, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 7. TEAC logo and serial number
+            ctx.font = 'bold 12px Arial';
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'right';
+            ctx.fillText('TEAC', canvas.width - faceMargin - 10, canvas.height - faceMargin - 10);
+            
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('5206006101', faceMargin + 10, canvas.height - faceMargin - 10);
+            
+            // 8. Needle
+            // Calculate needle angle based on dB level
+            const needleAngle = startAngle + ((dbLevel + 20) / 23) * (endAngle - startAngle);
+            const needleLength = arcRadius - 10;
+            
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY + radius * 0.3);
+            ctx.lineTo(
+                centerX + Math.cos(needleAngle) * needleLength,
+                centerY + radius * 0.3 + Math.sin(needleAngle) * needleLength
+            );
+            ctx.stroke();
+            
+            // Needle pivot (small black circle)
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY + radius * 0.3, 3, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
