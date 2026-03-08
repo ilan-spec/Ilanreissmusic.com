@@ -3762,6 +3762,20 @@
             let midsAvg = (mids / (midRange[1] - midRange[0]) || 0) / 255; 
             let highsAvg = (highs / (highRange[1] - highRange[0]) || 0) / 255; 
 
+            // Handle canvas/SVG visibility based on active visualizer
+            const canvas = document.getElementById('visualizer-canvas');
+            const svg = document.getElementById('vu-meter-svg');
+
+            if (activeVisualizer === 'vuMeter') {
+                // Hide canvas and show SVG for VU meter
+                if (canvas) canvas.style.display = 'none';
+                if (svg) svg.style.display = 'block';
+            } else {
+                // Show canvas and hide SVG for other visualizers
+                if (canvas) canvas.style.display = 'block';
+                if (svg) svg.style.display = 'none';
+            }
+
             // Call the active visualizer function
             // UPDATED: New switch cases
             switch (activeVisualizer) {
@@ -3969,9 +3983,15 @@
                 svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.id = 'vu-meter-svg';
                 svg.setAttribute('viewBox', '0 0 800 450');
+                svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
                 svg.style.width = '100%';
                 svg.style.height = '100%';
                 svg.style.backgroundColor = '#F5F2E1'; // Vintage cream background
+                svg.style.position = 'absolute';
+                svg.style.top = '0';
+                svg.style.left = '0';
+                svg.style.display = 'block';
+                svg.style.zIndex = '1';
 
                 // Create static elements
                 const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -4091,10 +4111,11 @@
                 needle.setAttribute('transform-origin', '400 400');
                 svg.appendChild(needle);
 
-                // Add SVG to canvas container
+                // Add SVG to canvas container and hide canvas
                 const canvas = ctx.canvas;
                 const container = canvas.parentElement;
                 container.appendChild(svg);
+                canvas.style.display = 'none'; // Hide the canvas
             }
 
             // Update needle rotation
