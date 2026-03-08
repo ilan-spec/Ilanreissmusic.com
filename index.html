@@ -3939,10 +3939,10 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // Meter dimensions (scalable) - expanded to fill almost entirely
-            const meterWidth = canvas.width * 0.98;
-            const meterHeight = canvas.height * 0.92;
-            const meterX = (canvas.width - meterWidth) / 2;
-            const meterY = (canvas.height - meterHeight) / 2;
+            const meterWidth = canvas.width;
+            const meterHeight = canvas.height;
+            const meterX = 0;
+            const meterY = 0;
             
             // Header removed as requested
             
@@ -3964,7 +3964,7 @@
             // Arc parameters (horizontal at top)
             const centerX = meterX + meterWidth / 2;
             const centerY = meterY + meterHeight * 0.8;
-            const radius = meterHeight * 0.4; // increased for larger elements
+            const radius = meterHeight * 0.45; // larger to fill
             const startAngle = Math.PI * 1.25; // 225 deg, top-left
             const endAngle = Math.PI * 1.75; // 315 deg, top-right
             
@@ -4000,15 +4000,15 @@
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
                 
-                // Labels for fewer major ticks to avoid overlap
-                if (db === -20 || db === 0) {
-                    const labelRadius = radius - radius * 0.8; // further out to spread
+                // Labels for major ticks - large and visible
+                if (db === -20 || db === -10 || db === 0) {
+                    const labelRadius = radius - radius * 0.85; // closer to arc for prominence
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = `${Math.max(36, meterHeight * 0.18)}px Inter, sans-serif`; // larger font
+                    ctx.font = `${Math.max(50, meterHeight * 0.25)}px Inter, sans-serif`; // even larger, minimum 50px
                     ctx.textAlign = 'center';
-                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.05);
+                    ctx.fillText(db.toString(), lx, ly + meterHeight * 0.06);
                 }
             }
             
