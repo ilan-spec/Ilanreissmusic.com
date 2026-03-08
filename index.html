@@ -3938,11 +3938,11 @@
             ctx.fillStyle = '#222';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Meter dimensions (scalable) - expanded to fill almost entirely
-            const meterWidth = canvas.width;
-            const meterHeight = canvas.height;
-            const meterX = 0;
-            const meterY = 0;
+            // Meter dimensions (scalable) - with border visible
+            const meterWidth = canvas.width * 0.95;
+            const meterHeight = canvas.height * 0.9;
+            const meterX = (canvas.width - meterWidth) / 2;
+            const meterY = (canvas.height - meterHeight) / 2;
             
             // Header removed as requested
             
@@ -3963,14 +3963,14 @@
             
             // Arc parameters (horizontal at top)
             const centerX = meterX + meterWidth / 2;
-            const centerY = meterY + meterHeight * 0.8;
-            const radius = meterHeight * 0.45; // larger to fill
+            const centerY = meterY + meterHeight - radius; // bottom of meter at bottom of white part
+            const radius = meterHeight * 0.4;
             const startAngle = Math.PI * 1.25; // 225 deg, top-left
             const endAngle = Math.PI * 1.75; // 315 deg, top-right
             
             // Draw arc
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(3, radius * 0.03); // thinner
+            ctx.lineWidth = Math.max(4, radius * 0.05);
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.stroke();
@@ -3984,7 +3984,7 @@
                 const ratio = (db - minDB) / (maxDB - minDB);
                 const angle = startAngle + (endAngle - startAngle) * ratio;
                 
-                const tickLength = (db >= 0) ? radius * 0.4 : radius * 0.35; // thinner ticks
+                const tickLength = radius * 0.9; // large, spanning almost full radius
                 const innerRadius = radius - tickLength;
                 const outerRadius = radius + radius * 0.05;
                 
@@ -3994,7 +3994,7 @@
                 const y2 = centerY + Math.sin(angle) * outerRadius;
                 
                 ctx.strokeStyle = (db >= 0) ? '#C13232' : '#000';
-                ctx.lineWidth = Math.max(3, radius * 0.04); // thinner lines
+                ctx.lineWidth = Math.max(5, radius * 0.06); // thicker for visibility
                 ctx.beginPath();
                 ctx.moveTo(x1, y1);
                 ctx.lineTo(x2, y2);
@@ -4053,12 +4053,12 @@
             for (let g = 1; g <= 3; g++) {
                 const ghostAngle = needleAngle - g * 0.02;
                 ctx.strokeStyle = '#000';
-                ctx.lineWidth = Math.max(4, radius * 0.06); // thinner
+                ctx.lineWidth = Math.max(5, radius * 0.08);
                 ctx.globalAlpha = 0.1;
                 ctx.beginPath();
                 ctx.moveTo(centerX, centerY);
-                const gx = centerX + Math.cos(ghostAngle) * (radius * 0.98);
-                const gy = centerY + Math.sin(ghostAngle) * (radius * 0.98);
+                const gx = centerX + Math.cos(ghostAngle) * (radius * 0.95);
+                const gy = centerY + Math.sin(ghostAngle) * (radius * 0.95);
                 ctx.lineTo(gx, gy);
                 ctx.stroke();
             }
@@ -4066,11 +4066,11 @@
             
             // Draw main needle
             ctx.strokeStyle = '#000';
-            ctx.lineWidth = Math.max(5, radius * 0.08); // thinner
+            ctx.lineWidth = Math.max(7, radius * 0.12);
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            const needleX = centerX + Math.cos(needleAngle) * (radius * 0.98);
-            const needleY = centerY + Math.sin(needleAngle) * (radius * 0.98);
+            const needleX = centerX + Math.cos(needleAngle) * (radius * 0.95);
+            const needleY = centerY + Math.sin(needleAngle) * (radius * 0.95);
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
