@@ -3925,12 +3925,37 @@
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
         }
 
-        // 4. VU Meter (TEAC style)
+        // 4. VU Meter (TEAC style with authentic ballistics)
+        let vuNeedlePosition = -20; // Current needle position in dB
+        let vuPreviousLevel = -20; // Previous level for smoothing
+        let vuOvershoot = 0; // For overshoot effect
+        
         function drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg) {
-            // Calculate overall audio level in dB scale
-            const overallLevel = (bassAvg + midsAvg + highsAvg) / 3;
-            // Convert to dB-like scale (-20 to +3)
-            const dbLevel = -20 + (overallLevel * 23); // -20 to +3 range
+            // Calculate overall audio level (0.0 to 1.0)
+            const rawLevel = (bassAvg + midsAvg + highsAvg) / 3;
+            
+            // Convert to dB (-60 to +6 range for better dynamics)
+            const dbLevel = rawLevel > 0 ? 20 * Math.log10(rawLevel) : -60;
+            // Clamp to our scale range (-20 to +3)
+            const clampedDb = Math.max(-20, Math.min(3, dbLevel));
+            
+            // Ballistics: Apply attack/release smoothing
+            const attackFactor = 0.15; // Fast rise
+            const releaseFactor = 0.05; // Slow fall
+            
+            if (clampedDb > vuNeedlePosition) {
+                // Attack (rising)
+                vuNeedlePosition += (clampedDb - vuNeedlePosition) * attackFactor;
+                // Add slight overshoot
+                vuOvershoot = (clampedDb - vuNeedlePosition) * 0.1;
+            } else {
+                // Release (falling) - slower
+                vuNeedlePosition += (clampedDb - vuNeedlePosition) * releaseFactor;
+                vuOvershoot *= 0.9; // Decay overshoot
+            }
+            
+            // Apply overshoot
+            const finalPosition = vuNeedlePosition + vuOvershoot;
             
             const canvas = ctx.canvas;
             const centerX = canvas.width / 2;
@@ -4020,22 +4045,26 @@
             ctx.font = '10px Arial';
             ctx.fillText('PEAK', centerX + radius * 0.6, centerY + radius * 0.2);
             
-            // Peak LED (small red circle)
-            ctx.fillStyle = '#D32F2F';
+            // Peak LED with glow effect
+            const isClipping = finalPosition >= 0;
+            const ledColor = isClipping ? '#FF4444' : '#D32F2F';
+            
+            // LED glow
+            const glowGradient = ctx.createRadialGradient(
+                centerX + radius * 0.6, centerY + radius * 0.1, 0,
+                centerX + radius * 0.6, centerY + radius * 0.1, isClipping ? 12 : 8
+            );
+            glowGradient.addColorStop(0, isClipping ? 'rgba(255, 68, 68, 0.8)' : 'rgba(211, 47, 47, 0.6)');
+            glowGradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
+            ctx.fillStyle = glowGradient;
             ctx.beginPath();
-            ctx.arc(centerX + radius * 0.6, centerY + radius * 0.1, 4, 0, Math.PI * 2);
+            ctx.arc(centerX + radius * 0.6, centerY + radius * 0.1, isClipping ? 12 : 8, 0, Math.PI * 2);
             ctx.fill();
             
-            // Glow effect for peak LED
-            const gradient = ctx.createRadialGradient(
-                centerX + radius * 0.6, centerY + radius * 0.1, 0,
-                centerX + radius * 0.6, centerY + radius * 0.1, 8
-            );
-            gradient.addColorStop(0, 'rgba(211, 47, 47, 0.6)');
-            gradient.addColorStop(1, 'rgba(211, 47, 47, 0)');
-            ctx.fillStyle = gradient;
+            // LED itself
+            ctx.fillStyle = ledColor;
             ctx.beginPath();
-            ctx.arc(centerX + radius * 0.6, centerY + radius * 0.1, 8, 0, Math.PI * 2);
+            ctx.arc(centerX + radius * 0.6, centerY + radius * 0.1, 4, 0, Math.PI * 2);
             ctx.fill();
             
             // 7. TEAC logo and serial number
@@ -4048,13 +4077,28 @@
             ctx.textAlign = 'left';
             ctx.fillText('5206006101', faceMargin + 10, canvas.height - faceMargin - 10);
             
-            // 8. Needle
-            // Calculate needle angle based on dB level
-            const needleAngle = startAngle + ((dbLevel + 20) / 23) * (endAngle - startAngle);
+            // 8. Needle with shadow and proper physics
+            // Calculate needle angle based on final position
+            const needleNormalized = (finalPosition + 20) / 23; // 0 to 1
+            const needleAngle = startAngle + (needleNormalized * (endAngle - startAngle));
             const needleLength = arcRadius - 10;
             
+            // Needle shadow
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(centerX + 2, centerY + radius * 0.3 + 2);
+            ctx.lineTo(
+                centerX + 2 + Math.cos(needleAngle) * needleLength,
+                centerY + radius * 0.3 + 2 + Math.sin(needleAngle) * needleLength
+            );
+            ctx.stroke();
+            
+            // Main needle
             ctx.strokeStyle = '#000000';
             ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
             ctx.beginPath();
             ctx.moveTo(centerX, centerY + radius * 0.3);
             ctx.lineTo(
@@ -4063,11 +4107,30 @@
             );
             ctx.stroke();
             
-            // Needle pivot (small black circle)
-            ctx.fillStyle = '#000000';
+            // Enhanced pivot hub with gradient
+            const hubGradient = ctx.createLinearGradient(
+                centerX, centerY + radius * 0.3 - 8,
+                centerX, centerY + radius * 0.3 + 8
+            );
+            hubGradient.addColorStop(0, '#333333');
+            hubGradient.addColorStop(1, '#000000');
+            
+            ctx.fillStyle = hubGradient;
             ctx.beginPath();
-            ctx.arc(centerX, centerY + radius * 0.3, 3, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY + radius * 0.3, 8, 0, Math.PI, true); // Semi-circle
             ctx.fill();
+            
+            // Glass reflection overlay
+            const glassGradient = ctx.createLinearGradient(
+                faceMargin, faceMargin,
+                canvas.width - faceMargin, canvas.height - faceMargin
+            );
+            glassGradient.addColorStop(0, 'rgba(255,255,255,0.1)');
+            glassGradient.addColorStop(0.5, 'rgba(255,255,255,0.05)');
+            glassGradient.addColorStop(1, 'rgba(255,255,255,0)');
+            
+            ctx.fillStyle = glassGradient;
+            ctx.fillRect(faceMargin, faceMargin, canvas.width - faceMargin * 2, canvas.height - faceMargin * 2);
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
