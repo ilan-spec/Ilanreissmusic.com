@@ -2417,6 +2417,7 @@
                 <button class="visualizer-tab window-button" data-visualizer="rain">Rain</button>
                 <button class="visualizer-tab window-button" data-visualizer="starfield">Starfield</button>
                 <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
+                <button class="visualizer-tab window-button" data-visualizer="vuMeter">VU Meter</button>
             </div>
             <div class="title-bar-buttons">
                 <button class="window-button" id="visualizer-fullscreen-button" title="Toggle Visualizer Fullscreen">⛶</button>
@@ -3773,6 +3774,9 @@
                 case 'retroWaveform':
                     drawRetroWaveformVisualizer(timeDomainData);
                     break;
+                case 'vuMeter':
+                    drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg);
+                    break;
             }
         }
         
@@ -3919,6 +3923,106 @@
             ctx.lineTo(canvas.width, canvas.height);
             ctx.closePath(); ctx.fill();
             ctx.globalAlpha = 1.0; ctx.shadowBlur = 0;
+        }
+
+        // 4. VU Meter (like old compressor)
+        function drawVUMeterVisualizer(bassAvg, midsAvg, highsAvg) {
+            // Warm orange background
+            ctx.fillStyle = '#ff8c00'; // Dark orange
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw the VU meter frame
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.35;
+            
+            // Outer ring
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner background
+            ctx.fillStyle = '#2a2a2a';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius - 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Scale markings
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i <= 10; i++) {
+                const angle = (Math.PI * 1.5) - (i * Math.PI / 10); // Start from 270 degrees, go clockwise
+                const innerRadius = radius - 20;
+                const outerRadius = radius - 10;
+                const x1 = centerX + Math.cos(angle) * innerRadius;
+                const y1 = centerY + Math.sin(angle) * innerRadius;
+                const x2 = centerX + Math.cos(angle) * outerRadius;
+                const y2 = centerY + Math.sin(angle) * outerRadius;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                
+                // Labels
+                if (i % 2 === 0) {
+                    const labelRadius = radius - 35;
+                    const labelX = centerX + Math.cos(angle) * labelRadius;
+                    const labelY = centerY + Math.sin(angle) * labelRadius;
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(i * 10, labelX, labelY + 4);
+                }
+            }
+            
+            // Calculate needle angles based on audio levels
+            const bassAngle = (Math.PI * 1.5) - (bassAvg * Math.PI); // 0 to PI range
+            const midsAngle = (Math.PI * 1.5) - (midsAvg * Math.PI);
+            const highsAngle = (Math.PI * 1.5) - (highsAvg * Math.PI);
+            
+            // Draw needles
+            const needleLength = radius - 25;
+            
+            // Bass needle (red)
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + Math.cos(bassAngle) * needleLength, centerY + Math.sin(bassAngle) * needleLength);
+            ctx.stroke();
+            
+            // Mids needle (yellow)
+            ctx.strokeStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + Math.cos(midsAngle) * needleLength, centerY + Math.sin(midsAngle) * needleLength);
+            ctx.stroke();
+            
+            // Highs needle (green)
+            ctx.strokeStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + Math.cos(highsAngle) * needleLength, centerY + Math.sin(highsAngle) * needleLength);
+            ctx.stroke();
+            
+            // Center hub
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Labels
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('VU METER', centerX, centerY - radius + 30);
+            
+            ctx.font = '12px Arial';
+            ctx.fillText('BASS', centerX - radius * 0.6, centerY + radius * 0.8);
+            ctx.fillText('MIDS', centerX, centerY + radius * 0.8);
+            ctx.fillText('HIGH', centerX + radius * 0.6, centerY + radius * 0.8);
         }
 
         // --- Window Management (Drag, Resize, Focus) ---
