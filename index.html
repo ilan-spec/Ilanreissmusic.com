@@ -3928,7 +3928,7 @@
         }
 
         // 4. VU Meter
-        let vuPreviousAngle = Math.PI * (-2/3); // start at -120 deg, approx -20
+        let vuLevel = -20;
         let vuPeak = -20;
 
         function drawVUMeterVisualizer() {
@@ -3938,17 +3938,17 @@
             ctx.fillStyle = '#222';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
+            // Meter dimensions (scalable)
+            const meterWidth = canvas.width * 0.9;
+            const meterHeight = canvas.height * 0.8;
+            const meterX = (canvas.width - meterWidth) / 2;
+            const meterY = (canvas.height - meterHeight) / 2;
+            
             // Header
             ctx.fillStyle = '#AAA';
-            ctx.font = '12px Inter, sans-serif';
+            ctx.font = `${Math.max(10, canvas.height * 0.02)}px Inter, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText('ilanreissmusic.com | AUDIO STREAM MONITOR', canvas.width / 2, 20);
-            
-            // Meter dimensions
-            const meterWidth = 320;
-            const meterHeight = 180;
-            const meterX = (canvas.width - meterWidth) / 2;
-            const meterY = 30;
+            ctx.fillText('ilanreissmusic.com | AUDIO STREAM MONITOR', canvas.width / 2, meterY + canvas.height * 0.05);
             
             // Meter face gradient
             const grad = ctx.createLinearGradient(meterX, meterY, meterX, meterY + meterHeight);
@@ -3957,17 +3957,17 @@
             ctx.fillStyle = grad;
             ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
             
-            // Inset shadow (approximated with stroke)
+            // Inset shadow (approximated)
             ctx.strokeStyle = 'rgba(0,0,0,0.5)';
             ctx.lineWidth = 2;
             ctx.strokeRect(meterX + 2, meterY + 2, meterWidth - 4, meterHeight - 4);
             
-            // Arc parameters
+            // Arc parameters (horizontal at top)
             const centerX = meterX + meterWidth / 2;
-            const centerY = meterY + meterHeight - 20;
-            const radius = 110;
-            const startAngle = Math.PI * (-2/3); // -120 deg
-            const endAngle = Math.PI * (1/6); // 30 deg
+            const centerY = meterY + meterHeight * 0.8;
+            const radius = meterHeight * 0.25;
+            const startAngle = Math.PI * 1.25; // 225 deg, top-left
+            const endAngle = Math.PI * 1.75; // 315 deg, top-right
             
             // Draw arc
             ctx.strokeStyle = '#000';
@@ -3976,7 +3976,7 @@
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.stroke();
             
-            // Ticks and labels
+            // Ticks and labels (at the top)
             const minDB = -20;
             const maxDB = 3;
             const numTicks = 23;
@@ -4000,13 +4000,13 @@
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
                 
-                // Labels every 5 dB
+                // Labels every 5 dB, positioned above the arc
                 if (i % 5 === 0) {
-                    const labelRadius = radius - 25;
+                    const labelRadius = radius - 30;
                     const lx = centerX + Math.cos(angle) * labelRadius;
                     const ly = centerY + Math.sin(angle) * labelRadius;
                     ctx.fillStyle = (db >= 0) ? '#C13232' : '#000';
-                    ctx.font = '10px Inter, sans-serif';
+                    ctx.font = `${Math.max(8, canvas.height * 0.015)}px Inter, sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.fillText(db.toString(), lx, ly + 3);
                 }
@@ -4014,7 +4014,7 @@
             
             // TEAC logo bottom-right
             ctx.fillStyle = '#000';
-            ctx.font = 'bold 12px Inter, sans-serif';
+            ctx.font = `bold ${Math.max(10, canvas.height * 0.02)}px Inter, sans-serif`;
             ctx.textAlign = 'right';
             ctx.fillText('TEAC', meterX + meterWidth - 10, meterY + meterHeight - 10);
             
@@ -4022,27 +4022,36 @@
             ctx.textAlign = 'left';
             ctx.fillText('5206006101', meterX + 10, meterY + meterHeight - 10);
             
-            // Calculate current dB
-            let sumDB = 0;
+            // Calculate RMS dB from time domain data
+            let sum = 0;
             for (let i = 0; i < bufferLength; i++) {
-                sumDB += frequencyDataFloat[i];
+                const sample = (timeDomainData[i] - 128) / 128;
+                sum += sample * sample;
             }
-            const avgDB = sumDB / bufferLength;
-            const db = Math.max(minDB, Math.min(maxDB, avgDB + 60)); // Approximate mapping
+            const rms = Math.sqrt(sum / bufferLength);
+            const db = 20 * Math.log10(Math.max(rms, 0.0001));
+            const clampedDB = Math.max(minDB, Math.min(maxDB, db));
+            
+            // VU filtering (attack/release)
+            const attack = 0.05; // fast attack
+            const release = 0.01; // slow release
+            if (clampedDB > vuLevel) {
+                vuLevel += (clampedDB - vuLevel) * attack;
+            } else {
+                vuLevel += (clampedDB - vuLevel) * release;
+            }
             
             // Update peak
-            if (db > vuPeak) vuPeak = db;
-            vuPeak = Math.max(minDB, vuPeak - 0.1); // Decay
+            if (vuLevel > vuPeak) vuPeak = vuLevel;
+            vuPeak = Math.max(minDB, vuPeak - 0.005); // slow decay
             
             // Needle angle
-            const ratio = (db - minDB) / (maxDB - minDB);
-            const targetAngle = startAngle + (endAngle - startAngle) * ratio;
-            const currentAngle = vuPreviousAngle + (targetAngle - vuPreviousAngle) * 0.1; // Smooth
-            vuPreviousAngle = currentAngle;
+            const ratio = (vuLevel - minDB) / (maxDB - minDB);
+            const needleAngle = startAngle + (endAngle - startAngle) * ratio;
             
             // Draw ghost needles
             for (let g = 1; g <= 3; g++) {
-                const ghostAngle = currentAngle - g * 0.02;
+                const ghostAngle = needleAngle - g * 0.02;
                 ctx.strokeStyle = '#000';
                 ctx.lineWidth = 2;
                 ctx.globalAlpha = 0.1;
@@ -4060,14 +4069,14 @@
             ctx.lineWidth = 3;
             ctx.beginPath();
             ctx.moveTo(centerX, centerY);
-            const needleX = centerX + Math.cos(currentAngle) * (radius - 10);
-            const needleY = centerY + Math.sin(currentAngle) * (radius - 10);
+            const needleX = centerX + Math.cos(needleAngle) * (radius - 10);
+            const needleY = centerY + Math.sin(needleAngle) * (radius - 10);
             ctx.lineTo(needleX, needleY);
             ctx.stroke();
             
             // Peak LED
-            const ledX = centerX + radius + 30;
-            const ledY = centerY;
+            const ledX = centerX;
+            const ledY = centerY - radius - 20;
             ctx.fillStyle = '#C13232';
             ctx.beginPath();
             ctx.arc(ledX, ledY, 8, 0, 2 * Math.PI);
