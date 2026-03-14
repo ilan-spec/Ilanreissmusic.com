@@ -2651,7 +2651,7 @@
                 overflow: hidden;
                 pointer-events: none;
                 border: 1px solid var(--glass-border);
-                border-radius: 24px;
+                border-radius: 0;
                 background: var(--glass-bg);
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
@@ -2700,6 +2700,77 @@
             #mobile-interface .mobile-card:first-of-type {
                 margin-top: -45px;
                 padding-top: 52px;
+            }
+
+            #mobile-interface .mobile-library-scrubber {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            #mobile-interface .mobile-library-scrubber .mobile-scrubber-label {
+                font-size: 0.78rem;
+                text-transform: uppercase;
+                letter-spacing: 0.11em;
+                color: rgba(236, 252, 255, 0.82);
+                font-weight: 700;
+            }
+
+            #mobile-interface #mobile-scrubber-bar {
+                width: min(86%, 320px);
+                height: 10px;
+                margin: 0 auto;
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                background: rgba(255, 255, 255, 0.16);
+                appearance: none;
+                -webkit-appearance: none;
+                outline: none;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+            }
+
+            #mobile-interface #mobile-scrubber-bar::-webkit-slider-runnable-track {
+                height: 10px;
+                border-radius: 24px;
+                background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+            }
+
+            #mobile-interface #mobile-scrubber-bar::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 20px;
+                height: 20px;
+                margin-top: -5px;
+                border-radius: 50%;
+                border: 1px solid var(--glass-border);
+                background: rgba(255, 255, 255, 0.32);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            }
+
+            #mobile-interface #mobile-scrubber-bar::-moz-range-track {
+                height: 10px;
+                border-radius: 24px;
+                border: 1px solid var(--glass-border);
+                background: rgba(255, 255, 255, 0.16);
+            }
+
+            #mobile-interface #mobile-scrubber-bar::-moz-range-thumb {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                border: 1px solid var(--glass-border);
+                background: rgba(255, 255, 255, 0.32);
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            }
+
+            #mobile-interface #mobile-time-display {
+                font-size: 0.8rem;
+                color: rgba(244, 254, 255, 0.9);
+                font-weight: 600;
+                letter-spacing: 0.05em;
             }
 
             #mobile-interface .mobile-section-title {
@@ -2818,12 +2889,43 @@
                 width: 100%;
                 overflow: hidden;
                 border: 1px solid var(--glass-border);
-                border-radius: 24px;
+                border-radius: 0;
                 background: var(--glass-bg);
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
                 box-shadow: var(--glass-shadow);
                 padding: 8px;
+            }
+
+            #mobile-interface,
+            #mobile-interface .mobile-list,
+            #mobile-interface .mobile-shell {
+                scrollbar-width: thin;
+                scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.12);
+            }
+
+            #mobile-interface ::-webkit-scrollbar {
+                width: 11px;
+                height: 11px;
+            }
+
+            #mobile-interface ::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+            }
+
+            #mobile-interface ::-webkit-scrollbar-thumb {
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.24));
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.22);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            }
+
+            #mobile-interface ::-webkit-scrollbar-corner {
+                background: transparent;
             }
 
             #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
@@ -3529,7 +3631,11 @@
             </div>
 
             <section class="mobile-card">
-                <div class="mobile-section-title">Library</div>
+                <div class="mobile-library-scrubber" aria-label="Track scrubber">
+                    <span class="mobile-scrubber-label">Scrub</span>
+                    <input id="mobile-scrubber-bar" type="range" min="0" max="100" value="0" aria-label="Seek playback">
+                    <div id="mobile-time-display">0:00 / 0:00</div>
+                </div>
                 <div class="mobile-hint">Tap a track below to start playback</div>
                 <div class="mobile-tabs">
                     <button id="mobile-tab-tracks" class="mobile-tab-btn active" type="button">Tracks</button>
@@ -3643,9 +3749,11 @@
                 // Custom player controls
                 const playPauseBtn = document.getElementById('play-pause-btn');
                 const scrubberBar = document.getElementById('scrubber-bar');
+                const mobileScrubberBar = document.getElementById('mobile-scrubber-bar');
                 const volumeSlider = document.getElementById('volume-slider');
                 const volumeBtn = document.getElementById('volume-btn');
                 const timeDisplay = document.getElementById('time-display');
+                const mobileTimeDisplay = document.getElementById('mobile-time-display');
                 
                 // Play/Pause handler - control musicPlayer (the actual playback source)
                 if (playPauseBtn) {
@@ -3661,6 +3769,18 @@
                 // Scrubber handler - sync both players
                 if (scrubberBar) {
                     scrubberBar.addEventListener('input', (e) => {
+                        const duration = musicPlayer.duration || visibleAudioEl.duration;
+                        if (duration) {
+                            const newTime = (parseFloat(e.target.value) / 100) * duration;
+                            musicPlayer.currentTime = newTime;
+                            visibleAudioEl.currentTime = newTime;
+                        }
+                    });
+                }
+
+                // Mobile scrubber handler - keep in sync with desktop scrubber behavior
+                if (mobileScrubberBar) {
+                    mobileScrubberBar.addEventListener('input', (e) => {
                         const duration = musicPlayer.duration || visibleAudioEl.duration;
                         if (duration) {
                             const newTime = (parseFloat(e.target.value) / 100) * duration;
@@ -3688,11 +3808,19 @@
                         if (scrubberBar && !scrubberBar.closest(':active')) {
                             scrubberBar.value = pct;
                         }
+                        if (mobileScrubberBar && !mobileScrubberBar.matches(':active')) {
+                            mobileScrubberBar.value = pct;
+                        }
                         // Update time display
                         if (timeDisplay) {
                             const cur = formatTime(timeEl.currentTime);
                             const dur = formatTime(timeEl.duration);
                             timeDisplay.textContent = cur + ' / ' + dur;
+                        }
+                        if (mobileTimeDisplay) {
+                            const cur = formatTime(timeEl.currentTime);
+                            const dur = formatTime(timeEl.duration);
+                            mobileTimeDisplay.textContent = cur + ' / ' + dur;
                         }
                     }
                 };
