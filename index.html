@@ -2729,6 +2729,8 @@
                 appearance: none;
                 -webkit-appearance: none;
                 outline: none;
+                cursor: pointer;
+                touch-action: pan-x;
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
             }
@@ -2897,6 +2899,7 @@
                 padding: 8px;
             }
 
+            body.mobile-mode,
             #mobile-interface,
             #mobile-interface .mobile-list,
             #mobile-interface .mobile-shell {
@@ -2904,11 +2907,13 @@
                 scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.12);
             }
 
+            body.mobile-mode::-webkit-scrollbar,
             #mobile-interface ::-webkit-scrollbar {
                 width: 11px;
                 height: 11px;
             }
 
+            body.mobile-mode::-webkit-scrollbar-track,
             #mobile-interface ::-webkit-scrollbar-track {
                 background: rgba(255, 255, 255, 0.1);
                 border-radius: 24px;
@@ -2917,6 +2922,7 @@
                 -webkit-backdrop-filter: blur(20px);
             }
 
+            body.mobile-mode::-webkit-scrollbar-thumb,
             #mobile-interface ::-webkit-scrollbar-thumb {
                 background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.24));
                 border-radius: 24px;
@@ -2924,6 +2930,7 @@
                 box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
             }
 
+            body.mobile-mode::-webkit-scrollbar-corner,
             #mobile-interface ::-webkit-scrollbar-corner {
                 background: transparent;
             }
@@ -3636,7 +3643,6 @@
                     <input id="mobile-scrubber-bar" type="range" min="0" max="100" value="0" aria-label="Seek playback">
                     <div id="mobile-time-display">0:00 / 0:00</div>
                 </div>
-                <div class="mobile-hint">Tap a track below to start playback</div>
                 <div class="mobile-tabs">
                     <button id="mobile-tab-tracks" class="mobile-tab-btn active" type="button">Tracks</button>
                     <button id="mobile-tab-mixes" class="mobile-tab-btn" type="button">Mixes</button>
@@ -3754,6 +3760,8 @@
                 const volumeBtn = document.getElementById('volume-btn');
                 const timeDisplay = document.getElementById('time-display');
                 const mobileTimeDisplay = document.getElementById('mobile-time-display');
+                let isDesktopScrubbing = false;
+                let isMobileScrubbing = false;
                 
                 // Play/Pause handler - control musicPlayer (the actual playback source)
                 if (playPauseBtn) {
@@ -3768,6 +3776,11 @@
                 
                 // Scrubber handler - sync both players
                 if (scrubberBar) {
+                    scrubberBar.addEventListener('pointerdown', () => { isDesktopScrubbing = true; });
+                    scrubberBar.addEventListener('pointerup', () => { isDesktopScrubbing = false; });
+                    scrubberBar.addEventListener('touchstart', () => { isDesktopScrubbing = true; }, { passive: true });
+                    scrubberBar.addEventListener('touchend', () => { isDesktopScrubbing = false; }, { passive: true });
+                    scrubberBar.addEventListener('change', () => { isDesktopScrubbing = false; });
                     scrubberBar.addEventListener('input', (e) => {
                         const duration = musicPlayer.duration || visibleAudioEl.duration;
                         if (duration) {
@@ -3780,6 +3793,11 @@
 
                 // Mobile scrubber handler - keep in sync with desktop scrubber behavior
                 if (mobileScrubberBar) {
+                    mobileScrubberBar.addEventListener('pointerdown', () => { isMobileScrubbing = true; });
+                    mobileScrubberBar.addEventListener('pointerup', () => { isMobileScrubbing = false; });
+                    mobileScrubberBar.addEventListener('touchstart', () => { isMobileScrubbing = true; }, { passive: true });
+                    mobileScrubberBar.addEventListener('touchend', () => { isMobileScrubbing = false; }, { passive: true });
+                    mobileScrubberBar.addEventListener('change', () => { isMobileScrubbing = false; });
                     mobileScrubberBar.addEventListener('input', (e) => {
                         const duration = musicPlayer.duration || visibleAudioEl.duration;
                         if (duration) {
@@ -3805,10 +3823,10 @@
                     const timeEl = musicPlayer || visibleAudioEl;
                     if (timeEl && timeEl.duration) {
                         const pct = (timeEl.currentTime / timeEl.duration) * 100;
-                        if (scrubberBar && !scrubberBar.closest(':active')) {
+                        if (scrubberBar && !isDesktopScrubbing) {
                             scrubberBar.value = pct;
                         }
-                        if (mobileScrubberBar && !mobileScrubberBar.matches(':active')) {
+                        if (mobileScrubberBar && !isMobileScrubbing) {
                             mobileScrubberBar.value = pct;
                         }
                         // Update time display
