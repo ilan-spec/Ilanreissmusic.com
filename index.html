@@ -2162,6 +2162,24 @@
             #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
                 transform: scale(min(1, calc((100vw - 20px) / 650)));
             }
+
+            #mobile-interface .mobile-controls-row-top .mobile-control-btn {
+                width: 38px;
+                min-height: 34px;
+            }
+
+            #mobile-interface .mobile-corner-vus {
+                height: 72px;
+            }
+
+            #mobile-interface .mobile-corner-vu {
+                width: 96px;
+                height: 72px;
+            }
+
+            #mobile-interface .mobile-corner-vu .meter-scale-wrapper {
+                transform: scale(0.145);
+            }
             
             /* Solitaire even smaller */
             #solitaire-game-board {
@@ -2519,6 +2537,70 @@
                 font-weight: 700;
                 margin-bottom: 8px;
                 color: #000080;
+            }
+
+            #mobile-interface .mobile-top-actions {
+                display: flex;
+                justify-content: flex-end;
+                margin: -4px 0 6px;
+            }
+
+            #mobile-interface .mobile-controls-row-top {
+                gap: 6px;
+                margin-top: 0;
+                width: auto;
+            }
+
+            #mobile-interface .mobile-controls-row-top .mobile-control-btn {
+                flex: 0 0 auto;
+                width: 42px;
+                min-height: 36px;
+                padding: 0;
+                font-size: 0.95rem;
+            }
+
+            #mobile-interface .mobile-corner-vus {
+                position: relative;
+                height: 88px;
+                margin-bottom: 8px;
+                pointer-events: none;
+            }
+
+            #mobile-interface .mobile-corner-vu {
+                position: absolute;
+                top: 0;
+                width: 124px;
+                height: 88px;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            #mobile-interface .mobile-corner-vu-left {
+                left: 0;
+            }
+
+            #mobile-interface .mobile-corner-vu-right {
+                right: 0;
+            }
+
+            #mobile-interface .mobile-corner-vu .meter-scale-wrapper {
+                width: 650px;
+                height: 400px;
+                position: absolute;
+                top: 0;
+                left: 0;
+                transform: scale(0.19);
+                transform-origin: top left;
+            }
+
+            #mobile-interface .mobile-corner-vu-right .meter-scale-wrapper {
+                left: auto;
+                right: 0;
+                transform-origin: top right;
+            }
+
+            #mobile-interface .mobile-corner-vu .meter-casing {
+                padding: 14px;
             }
 
             #mobile-interface .mobile-card {
@@ -3296,6 +3378,57 @@
                 <img class="mobile-logo" src="background1.png" alt="Ilan Reiss Music logo">
             </div>
 
+            <div class="mobile-top-actions" aria-label="Mobile transport controls">
+                <div class="mobile-controls-row mobile-controls-row-top">
+                    <button id="mobile-prev" class="mobile-control-btn" aria-label="Previous track"><i class="fas fa-step-backward"></i></button>
+                    <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
+                    <button id="mobile-next" class="mobile-control-btn" aria-label="Next track"><i class="fas fa-step-forward"></i></button>
+                </div>
+            </div>
+
+            <div class="mobile-corner-vus" aria-hidden="true">
+                <div class="mobile-corner-vu mobile-corner-vu-left">
+                    <div class="meter-scale-wrapper">
+                        <div class="meter-casing">
+                            <div class="meter-window">
+                                <svg class="meter-scale" viewBox="0 0 600 350">
+                                    <g id="mobile-corner-left-ticks"></g>
+                                </svg>
+                                <div class="vu-text">VU</div>
+                                <div class="peak-led-container">
+                                    <div class="peak-led mobile-peak-led" id="mobile-corner-left-peak"></div>
+                                    <div class="peak-text">PEAK</div>
+                                </div>
+                                <div class="needle-container">
+                                    <div class="needle mobile-needle" id="mobile-corner-left-needle"></div>
+                                </div>
+                                <div class="pivot-cover"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mobile-corner-vu mobile-corner-vu-right">
+                    <div class="meter-scale-wrapper">
+                        <div class="meter-casing">
+                            <div class="meter-window">
+                                <svg class="meter-scale" viewBox="0 0 600 350">
+                                    <g id="mobile-corner-right-ticks"></g>
+                                </svg>
+                                <div class="vu-text">VU</div>
+                                <div class="peak-led-container">
+                                    <div class="peak-led mobile-peak-led" id="mobile-corner-right-peak"></div>
+                                    <div class="peak-text">PEAK</div>
+                                </div>
+                                <div class="needle-container">
+                                    <div class="needle mobile-needle" id="mobile-corner-right-needle"></div>
+                                </div>
+                                <div class="pivot-cover"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <section class="mobile-card">
                 <div class="mobile-section-title">Library</div>
                 <div class="mobile-hint">Tap a track below to start playback</div>
@@ -3310,11 +3443,6 @@
             <section class="mobile-card">
                 <div class="mobile-section-title">Now Playing</div>
                 <div id="mobile-now-playing">Select a track to play</div>
-                <div class="mobile-controls-row">
-                    <button id="mobile-prev" class="mobile-control-btn" aria-label="Previous track"><i class="fas fa-step-backward"></i></button>
-                    <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
-                    <button id="mobile-next" class="mobile-control-btn" aria-label="Next track"><i class="fas fa-step-forward"></i></button>
-                </div>
             </section>
 
             <section class="mobile-card mobile-vu-card">
@@ -3328,13 +3456,13 @@
                                     </svg>
                                     <div class="vu-text">VU</div>
                                     <div class="peak-led-container">
-                                        <div class="peak-led" id="mobile-peak-led"></div>
+                                        <div class="peak-led mobile-peak-led" id="mobile-peak-led"></div>
                                         <div class="peak-text">PEAK</div>
                                     </div>
                                     <div class="branding left">5306006101</div>
                                     <div class="branding right">TEAC</div>
                                     <div class="needle-container">
-                                        <div class="needle" id="mobile-needle"></div>
+                                        <div class="needle mobile-needle" id="mobile-needle"></div>
                                     </div>
                                     <div class="pivot-cover"></div>
                                 </div>
@@ -3762,8 +3890,8 @@
         const mobileNextBtn = document.getElementById('mobile-next');
         const mobileBgColorPicker = document.getElementById('mobile-bg-color-picker');
         const mobileVizBgPicker = document.getElementById('mobile-viz-bg-picker');
-        const mobileNeedle = document.getElementById('mobile-needle');
-        const mobilePeakLed = document.getElementById('mobile-peak-led');
+        const mobileNeedles = document.querySelectorAll('.mobile-needle');
+        const mobilePeakLeds = document.querySelectorAll('.mobile-peak-led');
         const searchBar = document.getElementById('search-bar');
         const sortAzButton = document.getElementById('sort-az');
         const sortZaButton = document.getElementById('sort-za');
@@ -4696,6 +4824,8 @@
             // Initialize ticks on first call
             initVUMeterTicks();
             initVUMeterTicks('mobile-ticks-group');
+            initVUMeterTicks('mobile-corner-left-ticks');
+            initVUMeterTicks('mobile-corner-right-ticks');
             resizeVUMeter();
 
             // Get volume
@@ -4741,8 +4871,10 @@
             if (needle) {
                 needle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
             }
-            if (mobileNeedle) {
-                mobileNeedle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+            if (mobileNeedles && mobileNeedles.length) {
+                mobileNeedles.forEach((el) => {
+                    el.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+                });
             }
 
             // Peak LED Logic
@@ -4754,9 +4886,11 @@
                     peakLed.classList.remove('active');
                 }
             }
-            if (mobilePeakLed) {
-                if (currentAngle > 20) mobilePeakLed.classList.add('active');
-                else mobilePeakLed.classList.remove('active');
+            if (mobilePeakLeds && mobilePeakLeds.length) {
+                mobilePeakLeds.forEach((el) => {
+                    if (currentAngle > 20) el.classList.add('active');
+                    else el.classList.remove('active');
+                });
             }
         }
 
