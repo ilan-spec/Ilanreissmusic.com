@@ -2164,8 +2164,10 @@
             }
 
             #mobile-interface .mobile-controls-row-top .mobile-control-btn {
-                width: 38px;
-                min-height: 34px;
+                width: 46px;
+                min-height: 46px;
+                height: 46px;
+                flex-basis: 46px;
             }
 
             #mobile-interface .mobile-logo {
@@ -2173,7 +2175,7 @@
             }
 
             #mobile-interface .mobile-top-actions {
-                margin-top: -55px;
+                margin-top: -58px;
             }
 
             #mobile-interface .mobile-corner-vus {
@@ -2493,12 +2495,21 @@
             }
 
             #mobile-interface {
+                --glass-bg: rgba(255, 255, 255, 0.1);
+                --glass-bg-strong: rgba(255, 255, 255, 0.16);
+                --glass-border: rgba(255, 255, 255, 0.2);
+                --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
                 display: none;
                 min-height: 100vh;
-                padding: calc(env(safe-area-inset-top, 0px) + 0px) 12px 24px;
-                background: var(--mobile-bg, #008080);
-                color: #000;
+                padding: calc(env(safe-area-inset-top, 0px) + 0px) 12px 28px;
+                background:
+                    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 34%),
+                    radial-gradient(circle at 82% 88%, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 42%),
+                    var(--mobile-bg, #008080);
+                color: #eefbff;
                 isolation: isolate;
+                font-family: 'Inter', system-ui, sans-serif;
+                letter-spacing: 0.02em;
             }
 
             #mobile-interface .mobile-shell {
@@ -2511,7 +2522,7 @@
                 min-height: 100vh;
                 touch-action: pan-y;
                 padding: 0;
-                background: #e2e8f0;
+                background: var(--mobile-bg, #008080);
             }
 
             body.mobile-mode #desktop-os {
@@ -2520,6 +2531,14 @@
 
             body.mobile-mode #mobile-interface {
                 display: block;
+            }
+
+            #mobile-interface,
+            #mobile-interface button,
+            #mobile-interface input,
+            #mobile-interface label {
+                font-family: 'Inter', system-ui, sans-serif;
+                letter-spacing: 0.02em;
             }
 
             #mobile-interface .mobile-card:not(.mobile-vu-card),
@@ -2535,7 +2554,7 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background: var(--mobile-bg, #008080);
+                background: transparent;
                 padding: 0;
                 min-height: 48px;
             }
@@ -2551,10 +2570,10 @@
             }
 
             #mobile-interface .mobile-hint {
-                font-size: 0.86rem;
-                font-weight: 700;
-                margin-bottom: 4px;
-                color: #000080;
+                font-size: 0.9rem;
+                font-weight: 600;
+                margin-bottom: 6px;
+                color: rgba(232, 252, 255, 0.92);
             }
 
             #mobile-interface .mobile-top-actions {
@@ -2572,38 +2591,45 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 1px;
+                gap: 8px;
             }
 
             #mobile-interface .mobile-now-playing-inline {
                 width: 100%;
                 max-width: 100%;
-                font-size: 0.9rem;
+                font-size: 0.96rem;
                 font-weight: 700;
-                color: #f8f8f8;
+                color: #f8fdff;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 text-align: center;
-                background: transparent;
-                border: none;
-                padding: 1px 8px;
+                background: var(--glass-bg);
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                padding: 8px 12px;
                 line-height: 1.2;
-                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
             }
 
             #mobile-interface .mobile-controls-row-top {
-                gap: 6px;
+                gap: 10px;
                 margin-top: 0;
                 width: auto;
             }
 
             #mobile-interface .mobile-controls-row-top .mobile-control-btn {
-                flex: 0 0 auto;
-                width: 42px;
-                min-height: 36px;
+                flex: 0 0 52px;
+                width: 52px;
+                min-height: 52px;
+                height: 52px;
                 padding: 0;
-                font-size: 0.95rem;
+                border-radius: 50%;
+                font-size: 1rem;
+                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.45);
             }
 
             #mobile-interface .mobile-corner-vus {
@@ -2624,6 +2650,12 @@
                 height: 88px;
                 overflow: hidden;
                 pointer-events: none;
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: var(--glass-shadow);
             }
 
             #mobile-interface .mobile-corner-vu-left {
@@ -2655,15 +2687,14 @@
             }
 
             #mobile-interface .mobile-card {
-                background: #c0c0c0;
-                border-top: 2px solid #fff;
-                border-left: 2px solid #fff;
-                border-right: 2px solid #404040;
-                border-bottom: 2px solid #404040;
-                border-radius: 0;
-                padding: 12px;
-                margin-bottom: 8px;
-                box-shadow: 1px 1px 0 1px #000;
+                background: var(--glass-bg);
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                padding: 14px;
+                margin-bottom: 10px;
+                box-shadow: var(--glass-shadow);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
             }
 
             #mobile-interface .mobile-card:first-of-type {
@@ -2672,12 +2703,12 @@
             }
 
             #mobile-interface .mobile-section-title {
-                font-size: 0.8rem;
+                font-size: 1rem;
                 text-transform: uppercase;
-                letter-spacing: 0.08em;
-                color: #202020;
-                font-weight: 700;
-                margin-bottom: 8px;
+                letter-spacing: 0.09em;
+                color: #f8fdff;
+                font-weight: 800;
+                margin-bottom: 10px;
             }
 
             #mobile-now-playing {
@@ -2696,50 +2727,52 @@
 
             #mobile-interface .mobile-control-btn {
                 flex: 1;
-                min-height: 42px;
-                border-top: 2px solid #fff;
-                border-left: 2px solid #fff;
-                border-right: 2px solid #404040;
-                border-bottom: 2px solid #404040;
-                border-radius: 0;
-                background: #c0c0c0;
-                color: #000080;
+                min-height: 44px;
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                background: var(--glass-bg);
+                color: #f4fcff;
                 font-size: 1rem;
                 font-weight: 700;
                 cursor: pointer;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+                transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
             }
 
             #mobile-interface .mobile-control-btn:active {
-                border-top: 2px solid #404040;
-                border-left: 2px solid #404040;
-                border-right: 2px solid #fff;
-                border-bottom: 2px solid #fff;
+                transform: translateY(1px) scale(0.985);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                background: var(--glass-bg-strong);
             }
 
             #mobile-interface .mobile-tabs {
                 display: flex;
-                gap: 6px;
+                gap: 8px;
                 margin-bottom: 10px;
             }
 
             #mobile-interface .mobile-tab-btn {
-                min-height: 34px;
-                padding: 4px 10px;
-                border-top: 2px solid #fff;
-                border-left: 2px solid #fff;
-                border-right: 2px solid #404040;
-                border-bottom: 2px solid #404040;
-                background: #c0c0c0;
-                color: #000;
+                min-height: 36px;
+                padding: 6px 12px;
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                background: var(--glass-bg);
+                color: #eefbff;
                 font-weight: 700;
                 font-size: 0.82rem;
                 text-transform: uppercase;
-                letter-spacing: 0.04em;
+                letter-spacing: 0.06em;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: 0 6px 14px rgba(0, 0, 0, 0.14);
             }
 
             #mobile-interface .mobile-tab-btn.active {
-                background: #000080;
-                color: #fff;
+                background: rgba(255, 255, 255, 0.24);
+                color: #ffffff;
+                border-color: rgba(255, 255, 255, 0.32);
             }
 
             .mobile-list {
@@ -2748,7 +2781,7 @@
                 padding: 0;
                 display: flex;
                 flex-direction: column;
-                gap: 7px;
+                gap: 8px;
                 max-height: 52vh;
                 overflow-y: auto;
             }
@@ -2758,22 +2791,23 @@
             }
 
             .mobile-list li {
-                border-top: 1px solid #fff;
-                border-left: 1px solid #fff;
-                border-right: 1px solid #404040;
-                border-bottom: 1px solid #404040;
-                border-radius: 0;
-                padding: 10px;
-                font-size: 0.94rem;
-                line-height: 1.2;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 24px;
+                padding: 12px;
+                font-size: 0.95rem;
+                line-height: 1.25;
                 cursor: pointer;
-                background: #d8d8d8;
+                background: rgba(255, 255, 255, 0.12);
+                color: #eefbff;
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
             }
 
             .mobile-list li.mobile-active {
-                background: #000080;
+                background: rgba(255, 255, 255, 0.22);
                 color: #fff;
                 font-weight: 700;
+                border-color: rgba(255, 255, 255, 0.36);
             }
 
             #mobile-interface .mobile-vu-wrap {
@@ -2783,6 +2817,13 @@
                 min-height: 290px;
                 width: 100%;
                 overflow: hidden;
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: var(--glass-shadow);
+                padding: 8px;
             }
 
             #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
@@ -2801,14 +2842,14 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                color: #000080;
+                color: #eefbff;
                 text-decoration: none;
                 font-weight: 700;
             }
 
             #mobile-interface .mobile-social-link:active,
             #mobile-interface .mobile-social-link:hover {
-                color: #1084d0;
+                color: #ffffff;
             }
 
             #mobile-interface .mobile-color-row {
@@ -2820,17 +2861,16 @@
 
             #mobile-interface .mobile-color-row label {
                 font-weight: 700;
-                font-size: 0.9rem;
+                font-size: 0.92rem;
+                color: #f3fdff;
             }
 
             #mobile-interface .mobile-color-row input[type="color"] {
-                width: 44px;
-                height: 28px;
-                border-top: 2px solid #404040;
-                border-left: 2px solid #404040;
-                border-right: 2px solid #fff;
-                border-bottom: 2px solid #fff;
-                background: #c0c0c0;
+                width: 46px;
+                height: 32px;
+                border: 1px solid var(--glass-border);
+                border-radius: 24px;
+                background: rgba(255, 255, 255, 0.16);
             }
 
     </style>
