@@ -2584,6 +2584,7 @@
                 z-index: 33;
                 background: transparent;
                 padding-bottom: 0;
+                pointer-events: none;
             }
 
             #mobile-interface .mobile-top-controls {
@@ -2592,6 +2593,7 @@
                 flex-direction: column;
                 align-items: center;
                 gap: 8px;
+                pointer-events: auto;
             }
 
             #mobile-interface .mobile-now-playing-inline {
@@ -2709,6 +2711,8 @@
                 justify-content: center;
                 gap: 8px;
                 margin-bottom: 10px;
+                position: relative;
+                z-index: 40;
             }
 
             #mobile-interface .mobile-library-scrubber .mobile-scrubber-label {
@@ -2730,7 +2734,8 @@
                 -webkit-appearance: none;
                 outline: none;
                 cursor: pointer;
-                touch-action: pan-x;
+                touch-action: none;
+                pointer-events: auto;
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
             }
@@ -2905,6 +2910,29 @@
             #mobile-interface .mobile-shell {
                 scrollbar-width: thin;
                 scrollbar-color: rgba(255, 255, 255, 0.45) rgba(255, 255, 255, 0.12);
+            }
+
+            /* Force viewport/right-edge scrollbar to match mobile glass styling */
+            ::-webkit-scrollbar {
+                width: 11px;
+                height: 11px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.24));
+                border-radius: 24px;
+                border: 1px solid rgba(255, 255, 255, 0.22);
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            }
+
+            ::-webkit-scrollbar-corner {
+                background: transparent;
             }
 
             body.mobile-mode::-webkit-scrollbar,
@@ -3778,8 +3806,10 @@
                 if (scrubberBar) {
                     scrubberBar.addEventListener('pointerdown', () => { isDesktopScrubbing = true; });
                     scrubberBar.addEventListener('pointerup', () => { isDesktopScrubbing = false; });
+                    scrubberBar.addEventListener('pointercancel', () => { isDesktopScrubbing = false; });
                     scrubberBar.addEventListener('touchstart', () => { isDesktopScrubbing = true; }, { passive: true });
                     scrubberBar.addEventListener('touchend', () => { isDesktopScrubbing = false; }, { passive: true });
+                    scrubberBar.addEventListener('touchcancel', () => { isDesktopScrubbing = false; }, { passive: true });
                     scrubberBar.addEventListener('change', () => { isDesktopScrubbing = false; });
                     scrubberBar.addEventListener('input', (e) => {
                         const duration = musicPlayer.duration || visibleAudioEl.duration;
@@ -3795,8 +3825,10 @@
                 if (mobileScrubberBar) {
                     mobileScrubberBar.addEventListener('pointerdown', () => { isMobileScrubbing = true; });
                     mobileScrubberBar.addEventListener('pointerup', () => { isMobileScrubbing = false; });
+                    mobileScrubberBar.addEventListener('pointercancel', () => { isMobileScrubbing = false; });
                     mobileScrubberBar.addEventListener('touchstart', () => { isMobileScrubbing = true; }, { passive: true });
                     mobileScrubberBar.addEventListener('touchend', () => { isMobileScrubbing = false; }, { passive: true });
+                    mobileScrubberBar.addEventListener('touchcancel', () => { isMobileScrubbing = false; }, { passive: true });
                     mobileScrubberBar.addEventListener('change', () => { isMobileScrubbing = false; });
                     mobileScrubberBar.addEventListener('input', (e) => {
                         const duration = musicPlayer.duration || visibleAudioEl.duration;
@@ -3807,6 +3839,11 @@
                         }
                     });
                 }
+
+                document.addEventListener('pointerup', () => {
+                    isDesktopScrubbing = false;
+                    isMobileScrubbing = false;
+                });
                 
                 // Volume handler
                 if (volumeSlider) {
