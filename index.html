@@ -2511,9 +2511,222 @@
 
             /* Mini-app content helpers */
 
+            /* --- Mobile Interface Isolation --- */
+            #desktop-os {
+                display: block;
+            }
+
+            #mobile-interface {
+                display: none;
+                min-height: 100vh;
+                padding: 16px 14px 28px;
+                background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+                color: #0f172a;
+                isolation: isolate;
+            }
+
+            body.mobile-mode {
+                overflow: auto !important;
+                height: auto !important;
+                min-height: 100vh;
+                touch-action: pan-y;
+                padding: 0;
+                background: #e2e8f0;
+            }
+
+            body.mobile-mode #desktop-os {
+                display: none !important;
+            }
+
+            body.mobile-mode #mobile-interface {
+                display: block;
+            }
+
+            #mobile-interface .mobile-card:not(.mobile-vu-card),
+            #mobile-interface .mobile-card:not(.mobile-vu-card) * {
+                position: static;
+                z-index: auto;
+            }
+
+            #mobile-interface .mobile-header {
+                margin-bottom: 14px;
+            }
+
+            #mobile-interface .mobile-title {
+                font-size: 1.15rem;
+                font-weight: 800;
+                letter-spacing: 0.02em;
+                margin-bottom: 2px;
+            }
+
+            #mobile-interface .mobile-subtitle {
+                font-size: 0.84rem;
+                color: #334155;
+            }
+
+            #mobile-interface .mobile-card {
+                background: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 10px;
+                padding: 12px;
+                margin-bottom: 12px;
+                box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+            }
+
+            #mobile-interface .mobile-section-title {
+                font-size: 0.82rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: #475569;
+                font-weight: 700;
+                margin-bottom: 8px;
+            }
+
+            #mobile-now-playing {
+                font-size: 0.98rem;
+                font-weight: 700;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            #mobile-interface .mobile-controls-row {
+                display: flex;
+                gap: 8px;
+                margin-top: 10px;
+            }
+
+            #mobile-interface .mobile-control-btn {
+                flex: 1;
+                min-height: 42px;
+                border: 1px solid #94a3b8;
+                border-radius: 8px;
+                background: #f8fafc;
+                color: #0f172a;
+                font-size: 1rem;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+            #mobile-interface .mobile-control-btn:active {
+                background: #e2e8f0;
+            }
+
+            #mobile-track-list {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 7px;
+                max-height: 42vh;
+                overflow-y: auto;
+            }
+
+            #mobile-track-list li {
+                border: 1px solid #dbe3ee;
+                border-radius: 8px;
+                padding: 10px;
+                font-size: 0.94rem;
+                line-height: 1.2;
+                cursor: pointer;
+                background: #f8fafc;
+            }
+
+            #mobile-track-list li.mobile-active {
+                background: #dbeafe;
+                border-color: #93c5fd;
+                color: #1e3a8a;
+                font-weight: 700;
+            }
+
+            #mobile-interface .mobile-vu-wrap {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 220px;
+            }
+
+            #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
+                width: 320px;
+                height: 200px;
+            }
+
+            #mobile-interface .mobile-vu-meter .meter-casing {
+                padding: 10px;
+                border-radius: 10px;
+            }
+
+            #mobile-interface .mobile-vu-meter .meter-window {
+                width: 300px;
+                height: 170px;
+            }
+
+            #mobile-interface .mobile-vu-meter .vu-text {
+                bottom: 40px;
+                font-size: 20px;
+            }
+
+            #mobile-interface .mobile-vu-meter .branding.left {
+                left: 12px;
+                font-size: 8px;
+            }
+
+            #mobile-interface .mobile-vu-meter .branding.right {
+                right: 12px;
+                font-size: 11px;
+            }
+
+            #mobile-interface .mobile-vu-meter .peak-led-container {
+                right: 18px;
+                top: 58px;
+            }
+
+            #mobile-interface .mobile-vu-meter .peak-led {
+                width: 10px;
+                height: 10px;
+                margin-bottom: 4px;
+            }
+
+            #mobile-interface .mobile-vu-meter .peak-text {
+                font-size: 8px;
+            }
+
+            #mobile-interface .mobile-vu-meter .needle-container {
+                width: 150px;
+                height: 150px;
+                bottom: -12px;
+            }
+
+            #mobile-interface .mobile-vu-meter .needle {
+                height: 120px;
+                bottom: 10px;
+                width: 2px;
+            }
+
+            #mobile-interface .mobile-vu-meter .pivot-cover {
+                width: 56px;
+                height: 20px;
+            }
+
+            #mobile-interface .mobile-social-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                color: #be185d;
+                text-decoration: none;
+                font-weight: 700;
+            }
+
+            #mobile-interface .mobile-social-link:active,
+            #mobile-interface .mobile-social-link:hover {
+                color: #9d174d;
+            }
+
     </style>
 </head>
 <body>
+    <div id="desktop-os">
     <!-- Floating background/logo image (keeps behind windows and is draggable) -->
     <img id="background1" src="background1.png" alt="background logo" draggable="false">
 
@@ -3103,6 +3316,68 @@
     <!-- Global mobile close (appears when a window is opened fullscreen on mobile) -->
     <button id="mobile-close-global" title="Close" style="display:none; position:fixed; right:14px; top:14px; z-index:10001; width:44px; height:44px; border-radius:10px; background:rgba(0,0,0,0.7); color:#fff; font-size:18px; align-items:center; justify-content:center;">✕</button>
 
+    </div>
+
+    <div id="mobile-interface" aria-label="Mobile interface">
+        <div class="mobile-shell">
+            <div class="mobile-header">
+                <div class="mobile-title">Ilan Reiss Music</div>
+                <div class="mobile-subtitle">Mobile player</div>
+            </div>
+
+            <section class="mobile-card mobile-vu-card">
+                <div class="mobile-section-title">Permanent VU Visualiser</div>
+                <div class="mobile-vu-wrap">
+                    <div class="vu-meter-container mobile-vu-meter" id="mobile-vu-container">
+                        <div class="meter-scale-wrapper" id="mobile-meter-scale-wrapper">
+                            <div class="meter-casing">
+                                <div class="meter-window">
+                                    <svg class="meter-scale" viewBox="0 0 600 350">
+                                        <g id="mobile-ticks-group"></g>
+                                    </svg>
+                                    <div class="vu-text">VU</div>
+                                    <div class="peak-led-container">
+                                        <div class="peak-led" id="mobile-peak-led"></div>
+                                        <div class="peak-text">PEAK</div>
+                                    </div>
+                                    <div class="branding left">5306006101</div>
+                                    <div class="branding right">TEAC</div>
+                                    <div class="needle-container">
+                                        <div class="needle" id="mobile-needle"></div>
+                                    </div>
+                                    <div class="pivot-cover"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mobile-card">
+                <div class="mobile-section-title">Now Playing</div>
+                <div id="mobile-now-playing">Select a track to play</div>
+                <div class="mobile-controls-row">
+                    <button id="mobile-rewind" class="mobile-control-btn" aria-label="Rewind 10 seconds"><i class="fas fa-rotate-left"></i></button>
+                    <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
+                    <button id="mobile-skip" class="mobile-control-btn" aria-label="Skip to next track"><i class="fas fa-forward"></i></button>
+                </div>
+            </section>
+
+            <section class="mobile-card">
+                <div class="mobile-section-title">Tracks</div>
+                <ul id="mobile-track-list"></ul>
+            </section>
+
+            <section class="mobile-card">
+                <div class="mobile-section-title">Socials</div>
+                <a class="mobile-social-link" href="https://instagram.com/ilanreiss" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-instagram"></i>
+                    <span>@ilanreiss</span>
+                </a>
+            </section>
+        </div>
+    </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         
@@ -3148,6 +3423,24 @@
         let musicPlayer = null; // will be `new Audio()` initialized on gesture
         let silentWarmup = null; // short silent audio to unlock mobile audio once
         let warmupPlayed = false;
+        let isMobile = false;
+
+        function detectMobileMode() {
+            const isSmallScreen = window.matchMedia('(max-width: 767.98px)').matches;
+            const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const isMobileUA = /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent || '');
+            return isSmallScreen || isPortrait || isTouch || isMobileUA;
+        }
+
+        function applyInterfaceMode() {
+            isMobile = detectMobileMode();
+            document.body.classList.toggle('mobile-mode', isMobile);
+        }
+
+        applyInterfaceMode();
+        window.addEventListener('resize', applyInterfaceMode);
+        window.addEventListener('orientationchange', applyInterfaceMode);
 
         function initPlayersOnGesture() {
             if (musicPlayer) return;
@@ -3234,6 +3527,9 @@
                     const isPlaying = musicPlayer && !musicPlayer.paused;
                     if (playPauseBtn) {
                         playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+                    }
+                    if (mobilePlayPauseBtn) {
+                        mobilePlayPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
                     }
                 };
                 
@@ -3469,10 +3765,30 @@
         const playerTabs = document.querySelectorAll('#player-tabs .visualizer-tab'); // Player tabs
         const playerTabContents = document.querySelectorAll('.tab-content'); // Player tab content
         const nowPlayingElement = document.getElementById('now-playing');
+        const mobileNowPlayingElement = document.getElementById('mobile-now-playing');
+        const mobileTrackListElement = document.getElementById('mobile-track-list');
+        const mobilePlayPauseBtn = document.getElementById('mobile-play-pause');
+        const mobileSkipBtn = document.getElementById('mobile-skip');
+        const mobileRewindBtn = document.getElementById('mobile-rewind');
+        const mobileNeedle = document.getElementById('mobile-needle');
+        const mobilePeakLed = document.getElementById('mobile-peak-led');
         const searchBar = document.getElementById('search-bar');
         const sortAzButton = document.getElementById('sort-az');
         const sortZaButton = document.getElementById('sort-za');
         const bitcrushToggle = document.getElementById('bitcrush-toggle');
+
+        function updateNowPlayingText(text) {
+            if (nowPlayingElement) nowPlayingElement.textContent = text;
+            if (mobileNowPlayingElement) mobileNowPlayingElement.textContent = text;
+        }
+
+        function syncMobileActiveTrackByName(trackName) {
+            if (!mobileTrackListElement || !trackName) return;
+            mobileTrackListElement.querySelectorAll('li').forEach((el) => {
+                if (el.dataset.filename === trackName) el.classList.add('mobile-active');
+                else el.classList.remove('mobile-active');
+            });
+        }
         
         // Windows
         const allWindows = document.querySelectorAll('.window');
@@ -3718,7 +4034,7 @@
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
         let vizBgColor = '#000000';
-        let activeVisualizer = 'rain'; // UPDATED: Default visualizer
+        let activeVisualizer = isMobile ? 'vuMeter' : 'rain'; // Mobile keeps permanent VU meter
         let playlists = [];
         let selectedPlaylistId = null;
         let contextMenuTrack = null;
@@ -3743,12 +4059,12 @@
             { label: '+', angle: 45, color: '#e63925' }
         ];
 
-        function initVUMeterTicks() {
+        function initVUMeterTicks(targetGroupId = 'ticks-group') {
             const cx = 300;
             const cy = 320;
             const radius = 200;
             const textRadius = 230;
-            const ticksGroup = document.getElementById('ticks-group');
+            const ticksGroup = document.getElementById(targetGroupId);
             if (!ticksGroup) return;
             // Clear existing
             ticksGroup.innerHTML = '';
@@ -4114,6 +4430,10 @@
             }
 
             animationFrameId = requestAnimationFrame(drawVisualizer);
+
+            if (!analyser) {
+                return;
+            }
             
             canvas.width = canvas.clientWidth;
             canvas.height = canvas.clientHeight;
@@ -4334,6 +4654,7 @@
         function drawVUMeterVisualizer() {
             // Initialize ticks on first call
             initVUMeterTicks();
+            initVUMeterTicks('mobile-ticks-group');
             resizeVUMeter();
 
             // Get volume
@@ -4379,6 +4700,9 @@
             if (needle) {
                 needle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
             }
+            if (mobileNeedle) {
+                mobileNeedle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
+            }
 
             // Peak LED Logic
             const peakLed = document.getElementById('peak-led');
@@ -4388,6 +4712,10 @@
                 } else {
                     peakLed.classList.remove('active');
                 }
+            }
+            if (mobilePeakLed) {
+                if (currentAngle > 20) mobilePeakLed.classList.add('active');
+                else mobilePeakLed.classList.remove('active');
             }
         }
 
@@ -4400,8 +4728,7 @@
         let resizeStartX, resizeStartY;
         let initialWidth, initialHeight;
         
-        // Check if on a mobile device (based on media query)
-        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        // `isMobile` is managed by applyInterfaceMode() and updates on resize/orientation
 
         // Bring window to front on click/touch
         allWindows.forEach(windowEl => {
@@ -4525,6 +4852,9 @@
             document.addEventListener('touchmove', handleResizeMove, { passive: false });
             document.addEventListener('mouseup', handleEnd);
             document.addEventListener('touchend', handleEnd);
+        } else {
+            activeVisualizer = 'vuMeter';
+            startVisualizer();
         }
 
         // --- Main Player: Populate Lists & Tabs ---
@@ -4571,7 +4901,8 @@
                 if (!audioContext) setupAudioContext(); 
                 tryStartSilentAudio();
 
-                nowPlayingElement.textContent = li.querySelector('.file-name').textContent;
+                updateNowPlayingText(li.querySelector('.file-name').textContent);
+                syncMobileActiveTrackByName(filename);
                 
                 // Set active style
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
@@ -4608,8 +4939,69 @@
             files.forEach(fileObj => {
                 fileListElement.appendChild(createPlayerListItem(fileObj, false));
             });
+            populateMobileTrackList(files);
         }
         populateFileList(currentTracklist); // Initial population
+
+        function populateMobileTrackList(files) {
+            if (!mobileTrackListElement) return;
+            mobileTrackListElement.innerHTML = '';
+            files.forEach((fileObj) => {
+                const li = document.createElement('li');
+                li.dataset.filename = fileObj.name;
+                li.dataset.url = fileObj.url || '';
+                li.textContent = fileObj.name.replace('.mp3', '');
+                li.addEventListener('click', () => {
+                    // Route through desktop list item click when possible so all existing logic is reused.
+                    const existingLi = fileListElement.querySelector(`li[data-filename="${CSS.escape(fileObj.name)}"]`);
+                    if (existingLi) {
+                        existingLi.click();
+                        return;
+                    }
+
+                    const fileUrl = (fileObj.url && fileObj.url.length) ? fileObj.url : ('audio/' + fileObj.name);
+                    document.getElementById('deck-a-audio').pause();
+                    document.getElementById('deck-b-audio').pause();
+                    initPlayersOnGesture();
+                    try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
+                    if (!audioContext) setupAudioContext();
+                    musicPlayer.src = fileUrl;
+                    musicPlayer.play().catch(() => {});
+                    tryStartSilentAudio();
+                    updateNowPlayingText(fileObj.name.replace('.mp3', ''));
+                    syncMobileActiveTrackByName(fileObj.name);
+                    updateMediaSession(fileObj.name.replace('.mp3', ''), false);
+                });
+                mobileTrackListElement.appendChild(li);
+            });
+        }
+
+        if (mobilePlayPauseBtn) {
+            mobilePlayPauseBtn.addEventListener('click', () => {
+                initPlayersOnGesture();
+                togglePlay();
+            });
+        }
+
+        if (mobileSkipBtn) {
+            mobileSkipBtn.addEventListener('click', () => {
+                skipToNextTrack();
+            });
+        }
+
+        if (mobileRewindBtn) {
+            mobileRewindBtn.addEventListener('click', () => {
+                initPlayersOnGesture();
+                if (!musicPlayer) return;
+                musicPlayer.currentTime = Math.max(0, (musicPlayer.currentTime || 0) - 10);
+            });
+        }
+
+        // Keep mobile active state synced when desktop list items are clicked.
+        fileListElement.addEventListener('click', (e) => {
+            const li = e.target.closest('li[data-filename]');
+            if (li) syncMobileActiveTrackByName(li.dataset.filename);
+        });
 
         // Try to fetch audio files list from the GitHub repo 'audio/' folder so
         // newly pushed files appear automatically on the live site.
@@ -4629,7 +5021,8 @@
                         name: item.name,
                         url: item.download_url,
                         bpm: bpmMap.get(item.name) || 120.00
-                    }));
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
                 if (files.length > 0) {
                     audioFileObjects = files.map((f, index) => ({ 
                         name: f.name, 
@@ -4699,7 +5092,8 @@
                 musicPlayer.src = fileUrl;
                 musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
-                nowPlayingElement.textContent = track.name.replace('.mp3','');
+                updateNowPlayingText(track.name.replace('.mp3',''));
+                syncMobileActiveTrackByName(track.name);
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
                 const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
                 if (match) match.classList.add('active');
@@ -4760,7 +5154,8 @@
                 musicPlayer.src = fileUrl;
                 musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
-                nowPlayingElement.textContent = track.name.replace('.mp3','');
+                updateNowPlayingText(track.name.replace('.mp3',''));
+                syncMobileActiveTrackByName(track.name);
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
                 const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
                 if (match) match.classList.add('active');
@@ -4818,7 +5213,8 @@
                 musicPlayer.src = fileUrl;
                 musicPlayer.play().catch(() => {});
                 tryStartSilentAudio();
-                nowPlayingElement.textContent = track.name.replace('.mp3','');
+                updateNowPlayingText(track.name.replace('.mp3',''));
+                syncMobileActiveTrackByName(track.name);
                 document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
                 const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
                 if (match) match.classList.add('active');
