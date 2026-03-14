@@ -38,66 +38,6 @@
             -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
 
-        // Helper: load a folder of instrument samples (e.g., audio/bass) from the GitHub repo
-        // This will append rows to the sequencer for each file found in the folder.
-        async function loadInstrumentFolder(folderPath, friendlyLabel) {
-            const owner = 'ilan-spec';
-            const repo = 'Ilanreissmusic.com';
-            const branch = 'main';
-            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(folderPath)}?ref=${branch}`;
-            try {
-                const res = await fetch(apiUrl);
-                if (!res.ok) {
-                    console.warn('Instrument folder not found:', folderPath);
-                    return false;
-                }
-                const data = await res.json();
-                if (!Array.isArray(data)) return false;
-                const files = data.filter(i => i.type === 'file' && (i.name.toLowerCase().endsWith('.wav') || i.name.toLowerCase().endsWith('.mp3')));
-                if (files.length === 0) return false;
-
-                // Append rows for each found file
-                const startIndex = tr808Rows.length;
-                for (const f of files) {
-                    createTr808Row(f.name);
-                    // store sample url in tr808Samples-like structure so logging is easier
-                    tr808Samples.push({ name: f.name, url: f.download_url, buffer: null });
-                }
-                renderTr808Sequencer();
-                if (!audioContext) setupAudioContext();
-
-                // Decode and attach buffers to the newly created rows
-                for (let i = 0; i < files.length; i++) {
-                    const sampleIndex = startIndex + i;
-                    try {
-                        const r = await fetch(tr808Samples[tr808Samples.length - files.length + i].url);
-                        const ab = await r.arrayBuffer();
-                        const buf = await audioContext.decodeAudioData(ab);
-                        // assign buffer to the corresponding row
-                        if (tr808Rows[sampleIndex]) {
-                            tr808Rows[sampleIndex].buffer = buf;
-                            // create per-row gain node
-                            if (!tr808Rows[sampleIndex].gainNode) {
-                                try {
-                                    tr808Rows[sampleIndex].gainNode = audioContext.createGain();
-                                    tr808Rows[sampleIndex].gainNode.gain.value = tr808Rows[sampleIndex].muted ? 0 : (tr808Rows[sampleIndex].volume || 1.0);
-                                    if (tr808PreGain) tr808Rows[sampleIndex].gainNode.connect(tr808PreGain);
-                                    else tr808Rows[sampleIndex].gainNode.connect(analyser);
-                                } catch (e) {}
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('Failed to load instrument sample', files[i].name, e.message);
-                    }
-                }
-                console.log(`Loaded instrument folder ${folderPath}:`, files.map(f=>f.name));
-                return true;
-            } catch (e) {
-                console.warn('Could not load instrument folder', folderPath, e.message);
-                return false;
-            }
-        }
-
         body {
             font-family: 'Inter', system-ui, sans-serif;
             color: #000;
@@ -2214,6 +2154,10 @@
                 width: 38px; /* Smaller buttons */
                 font-size: 10px;
             }
+
+            #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
+                transform: scale(0.42);
+            }
             
             /* Solitaire even smaller */
             #solitaire-game-board {
@@ -2519,9 +2463,9 @@
             #mobile-interface {
                 display: none;
                 min-height: 100vh;
-                padding: 16px 14px 28px;
-                background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
-                color: #0f172a;
+                padding: 16px 12px 24px;
+                background: var(--mobile-bg, #008080);
+                color: #000;
                 isolation: isolate;
             }
 
@@ -2549,35 +2493,35 @@
             }
 
             #mobile-interface .mobile-header {
-                margin-bottom: 14px;
+                margin-bottom: 10px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
 
-            #mobile-interface .mobile-title {
-                font-size: 1.15rem;
-                font-weight: 800;
-                letter-spacing: 0.02em;
-                margin-bottom: 2px;
-            }
-
-            #mobile-interface .mobile-subtitle {
-                font-size: 0.84rem;
-                color: #334155;
+            #mobile-interface .mobile-logo {
+                width: min(240px, 72vw);
+                height: auto;
+                display: block;
             }
 
             #mobile-interface .mobile-card {
-                background: #ffffff;
-                border: 1px solid #cbd5e1;
-                border-radius: 10px;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                border-radius: 0;
                 padding: 12px;
                 margin-bottom: 12px;
-                box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+                box-shadow: 1px 1px 0 1px #000;
             }
 
             #mobile-interface .mobile-section-title {
-                font-size: 0.82rem;
+                font-size: 0.8rem;
                 text-transform: uppercase;
                 letter-spacing: 0.08em;
-                color: #475569;
+                color: #202020;
                 font-weight: 700;
                 margin-bottom: 8px;
             }
@@ -2599,20 +2543,52 @@
             #mobile-interface .mobile-control-btn {
                 flex: 1;
                 min-height: 42px;
-                border: 1px solid #94a3b8;
-                border-radius: 8px;
-                background: #f8fafc;
-                color: #0f172a;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                border-radius: 0;
+                background: #c0c0c0;
+                color: #000080;
                 font-size: 1rem;
                 font-weight: 700;
                 cursor: pointer;
             }
 
             #mobile-interface .mobile-control-btn:active {
-                background: #e2e8f0;
+                border-top: 2px solid #404040;
+                border-left: 2px solid #404040;
+                border-right: 2px solid #fff;
+                border-bottom: 2px solid #fff;
             }
 
-            #mobile-track-list {
+            #mobile-interface .mobile-tabs {
+                display: flex;
+                gap: 6px;
+                margin-bottom: 10px;
+            }
+
+            #mobile-interface .mobile-tab-btn {
+                min-height: 34px;
+                padding: 4px 10px;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                background: #c0c0c0;
+                color: #000;
+                font-weight: 700;
+                font-size: 0.82rem;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            #mobile-interface .mobile-tab-btn.active {
+                background: #000080;
+                color: #fff;
+            }
+
+            .mobile-list {
                 list-style: none;
                 margin: 0;
                 padding: 0;
@@ -2623,20 +2599,26 @@
                 overflow-y: auto;
             }
 
-            #mobile-track-list li {
-                border: 1px solid #dbe3ee;
-                border-radius: 8px;
+            #mobile-mix-list {
+                display: none;
+            }
+
+            .mobile-list li {
+                border-top: 1px solid #fff;
+                border-left: 1px solid #fff;
+                border-right: 1px solid #404040;
+                border-bottom: 1px solid #404040;
+                border-radius: 0;
                 padding: 10px;
                 font-size: 0.94rem;
                 line-height: 1.2;
                 cursor: pointer;
-                background: #f8fafc;
+                background: #d8d8d8;
             }
 
-            #mobile-track-list li.mobile-active {
-                background: #dbeafe;
-                border-color: #93c5fd;
-                color: #1e3a8a;
+            .mobile-list li.mobile-active {
+                background: #000080;
+                color: #fff;
                 font-weight: 700;
             }
 
@@ -2644,12 +2626,16 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                min-height: 220px;
+                min-height: 250px;
+                width: 100%;
+                overflow: hidden;
             }
 
             #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
-                width: 320px;
-                height: 200px;
+                width: 650px;
+                height: 400px;
+                transform: scale(0.5);
+                transform-origin: center center;
             }
 
             #mobile-interface .mobile-vu-meter .meter-casing {
@@ -2713,14 +2699,36 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                color: #be185d;
+                color: #000080;
                 text-decoration: none;
                 font-weight: 700;
             }
 
             #mobile-interface .mobile-social-link:active,
             #mobile-interface .mobile-social-link:hover {
-                color: #9d174d;
+                color: #1084d0;
+            }
+
+            #mobile-interface .mobile-color-row {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            #mobile-interface .mobile-color-row label {
+                font-weight: 700;
+                font-size: 0.9rem;
+            }
+
+            #mobile-interface .mobile-color-row input[type="color"] {
+                width: 44px;
+                height: 28px;
+                border-top: 2px solid #404040;
+                border-left: 2px solid #404040;
+                border-right: 2px solid #fff;
+                border-bottom: 2px solid #fff;
+                background: #c0c0c0;
             }
 
     </style>
@@ -3321,12 +3329,10 @@
     <div id="mobile-interface" aria-label="Mobile interface">
         <div class="mobile-shell">
             <div class="mobile-header">
-                <div class="mobile-title">Ilan Reiss Music</div>
-                <div class="mobile-subtitle">Mobile player</div>
+                <img class="mobile-logo" src="background1.png" alt="Ilan Reiss Music logo">
             </div>
 
             <section class="mobile-card mobile-vu-card">
-                <div class="mobile-section-title">Permanent VU Visualiser</div>
                 <div class="mobile-vu-wrap">
                     <div class="vu-meter-container mobile-vu-meter" id="mobile-vu-container">
                         <div class="meter-scale-wrapper" id="mobile-meter-scale-wrapper">
@@ -3357,15 +3363,30 @@
                 <div class="mobile-section-title">Now Playing</div>
                 <div id="mobile-now-playing">Select a track to play</div>
                 <div class="mobile-controls-row">
-                    <button id="mobile-rewind" class="mobile-control-btn" aria-label="Rewind 10 seconds"><i class="fas fa-rotate-left"></i></button>
+                    <button id="mobile-prev" class="mobile-control-btn" aria-label="Previous track"><i class="fas fa-step-backward"></i></button>
                     <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
-                    <button id="mobile-skip" class="mobile-control-btn" aria-label="Skip to next track"><i class="fas fa-forward"></i></button>
+                    <button id="mobile-next" class="mobile-control-btn" aria-label="Next track"><i class="fas fa-step-forward"></i></button>
                 </div>
             </section>
 
             <section class="mobile-card">
-                <div class="mobile-section-title">Tracks</div>
-                <ul id="mobile-track-list"></ul>
+                <div class="mobile-section-title">Library</div>
+                <div class="mobile-tabs">
+                    <button id="mobile-tab-tracks" class="mobile-tab-btn active" type="button">Tracks</button>
+                    <button id="mobile-tab-mixes" class="mobile-tab-btn" type="button">Mixes</button>
+                </div>
+                <ul id="mobile-track-list" class="mobile-list"></ul>
+                <ul id="mobile-mix-list" class="mobile-list"></ul>
+            </section>
+
+            <section class="mobile-card">
+                <div class="mobile-section-title">Colors</div>
+                <div class="mobile-color-row">
+                    <label for="mobile-bg-color-picker">BG</label>
+                    <input type="color" id="mobile-bg-color-picker" value="#008080">
+                    <label for="mobile-viz-bg-picker">Viz</label>
+                    <input type="color" id="mobile-viz-bg-picker" value="#000000">
+                </div>
             </section>
 
             <section class="mobile-card">
@@ -3436,6 +3457,7 @@
         function applyInterfaceMode() {
             isMobile = detectMobileMode();
             document.body.classList.toggle('mobile-mode', isMobile);
+            document.dispatchEvent(new CustomEvent('interface-mode-changed', { detail: { isMobile } }));
         }
 
         applyInterfaceMode();
@@ -3767,9 +3789,14 @@
         const nowPlayingElement = document.getElementById('now-playing');
         const mobileNowPlayingElement = document.getElementById('mobile-now-playing');
         const mobileTrackListElement = document.getElementById('mobile-track-list');
+        const mobileMixListElement = document.getElementById('mobile-mix-list');
+        const mobileTabTracksBtn = document.getElementById('mobile-tab-tracks');
+        const mobileTabMixesBtn = document.getElementById('mobile-tab-mixes');
         const mobilePlayPauseBtn = document.getElementById('mobile-play-pause');
-        const mobileSkipBtn = document.getElementById('mobile-skip');
-        const mobileRewindBtn = document.getElementById('mobile-rewind');
+        const mobilePrevBtn = document.getElementById('mobile-prev');
+        const mobileNextBtn = document.getElementById('mobile-next');
+        const mobileBgColorPicker = document.getElementById('mobile-bg-color-picker');
+        const mobileVizBgPicker = document.getElementById('mobile-viz-bg-picker');
         const mobileNeedle = document.getElementById('mobile-needle');
         const mobilePeakLed = document.getElementById('mobile-peak-led');
         const searchBar = document.getElementById('search-bar');
@@ -3782,13 +3809,48 @@
             if (mobileNowPlayingElement) mobileNowPlayingElement.textContent = text;
         }
 
-        function syncMobileActiveTrackByName(trackName) {
-            if (!mobileTrackListElement || !trackName) return;
-            mobileTrackListElement.querySelectorAll('li').forEach((el) => {
-                if (el.dataset.filename === trackName) el.classList.add('mobile-active');
-                else el.classList.remove('mobile-active');
-            });
+        function setMobileLibraryTab(tabName) {
+            const showTracks = tabName !== 'mixes';
+            if (mobileTrackListElement) mobileTrackListElement.style.display = showTracks ? 'flex' : 'none';
+            if (mobileMixListElement) mobileMixListElement.style.display = showTracks ? 'none' : 'flex';
+            if (mobileTabTracksBtn) mobileTabTracksBtn.classList.toggle('active', showTracks);
+            if (mobileTabMixesBtn) mobileTabMixesBtn.classList.toggle('active', !showTracks);
         }
+
+        function syncMobileActiveTrackByName(trackName) {
+            if (!trackName) return;
+            let foundInTracks = false;
+            let foundInMixes = false;
+
+            if (mobileTrackListElement) {
+                mobileTrackListElement.querySelectorAll('li').forEach((el) => {
+                    const isActive = el.dataset.filename === trackName;
+                    el.classList.toggle('mobile-active', isActive);
+                    if (isActive) foundInTracks = true;
+                });
+            }
+
+            if (mobileMixListElement) {
+                mobileMixListElement.querySelectorAll('li').forEach((el) => {
+                    const isActive = el.dataset.filename === trackName;
+                    el.classList.toggle('mobile-active', isActive);
+                    if (isActive) foundInMixes = true;
+                });
+            }
+
+            if (foundInMixes) setMobileLibraryTab('mixes');
+            else if (foundInTracks) setMobileLibraryTab('tracks');
+        }
+
+        if (mobileTabTracksBtn) {
+            mobileTabTracksBtn.addEventListener('click', () => setMobileLibraryTab('tracks'));
+        }
+
+        if (mobileTabMixesBtn) {
+            mobileTabMixesBtn.addEventListener('click', () => setMobileLibraryTab('mixes'));
+        }
+
+        setMobileLibraryTab('tracks');
         
         // Windows
         const allWindows = document.querySelectorAll('.window');
@@ -4035,10 +4097,24 @@
         let secondaryColor = '#FF00FF';
         let vizBgColor = '#000000';
         let activeVisualizer = isMobile ? 'vuMeter' : 'rain'; // Mobile keeps permanent VU meter
+        let lastDesktopVisualizer = activeVisualizer === 'vuMeter' ? 'rain' : activeVisualizer;
         let playlists = [];
         let selectedPlaylistId = null;
         let contextMenuTrack = null;
         let contextMenuLongPressTimer = null;
+
+        document.addEventListener('interface-mode-changed', (e) => {
+            const mobileNow = !!(e && e.detail && e.detail.isMobile);
+            if (mobileNow) {
+                if (activeVisualizer !== 'vuMeter') {
+                    lastDesktopVisualizer = activeVisualizer;
+                }
+                activeVisualizer = 'vuMeter';
+                if (typeof startVisualizer === 'function') startVisualizer();
+            } else if (activeVisualizer === 'vuMeter' && lastDesktopVisualizer) {
+                activeVisualizer = lastDesktopVisualizer;
+            }
+        });
 
         // VU Meter tick data
         const vuTicksData = [
@@ -4950,6 +5026,7 @@
                 const li = document.createElement('li');
                 li.dataset.filename = fileObj.name;
                 li.dataset.url = fileObj.url || '';
+                li.dataset.isMix = 'false';
                 li.textContent = fileObj.name.replace('.mp3', '');
                 li.addEventListener('click', () => {
                     // Route through desktop list item click when possible so all existing logic is reused.
@@ -4976,6 +5053,40 @@
             });
         }
 
+        function populateMobileMixList(files) {
+            if (!mobileMixListElement) return;
+            mobileMixListElement.innerHTML = '';
+            files.forEach((fileObj) => {
+                const li = document.createElement('li');
+                li.dataset.filename = fileObj.name;
+                li.dataset.url = fileObj.url || '';
+                li.dataset.isMix = 'true';
+                li.textContent = fileObj.name.replace('.mp3', '');
+                li.addEventListener('click', () => {
+                    // Route through desktop mix list when possible.
+                    const existingLi = mixListElement.querySelector(`li[data-filename="${CSS.escape(fileObj.name)}"]`);
+                    if (existingLi) {
+                        existingLi.click();
+                        return;
+                    }
+
+                    const fileUrl = (fileObj.url && fileObj.url.length) ? fileObj.url : ('mixes/' + fileObj.name);
+                    document.getElementById('deck-a-audio').pause();
+                    document.getElementById('deck-b-audio').pause();
+                    initPlayersOnGesture();
+                    try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
+                    if (!audioContext) setupAudioContext();
+                    musicPlayer.src = fileUrl;
+                    musicPlayer.play().catch(() => {});
+                    tryStartSilentAudio();
+                    updateNowPlayingText(fileObj.name.replace('.mp3', ''));
+                    syncMobileActiveTrackByName(fileObj.name);
+                    updateMediaSession(fileObj.name.replace('.mp3', ''), true);
+                });
+                mobileMixListElement.appendChild(li);
+            });
+        }
+
         if (mobilePlayPauseBtn) {
             mobilePlayPauseBtn.addEventListener('click', () => {
                 initPlayersOnGesture();
@@ -4983,22 +5094,25 @@
             });
         }
 
-        if (mobileSkipBtn) {
-            mobileSkipBtn.addEventListener('click', () => {
+        if (mobileNextBtn) {
+            mobileNextBtn.addEventListener('click', () => {
                 skipToNextTrack();
             });
         }
 
-        if (mobileRewindBtn) {
-            mobileRewindBtn.addEventListener('click', () => {
-                initPlayersOnGesture();
-                if (!musicPlayer) return;
-                musicPlayer.currentTime = Math.max(0, (musicPlayer.currentTime || 0) - 10);
+        if (mobilePrevBtn) {
+            mobilePrevBtn.addEventListener('click', () => {
+                skipToPreviousTrack();
             });
         }
 
         // Keep mobile active state synced when desktop list items are clicked.
         fileListElement.addEventListener('click', (e) => {
+            const li = e.target.closest('li[data-filename]');
+            if (li) syncMobileActiveTrackByName(li.dataset.filename);
+        });
+
+        mixListElement.addEventListener('click', (e) => {
             const li = e.target.closest('li[data-filename]');
             if (li) syncMobileActiveTrackByName(li.dataset.filename);
         });
@@ -5045,12 +5159,45 @@
         // without authentication; rate limits may apply for heavy use.
         refreshAudioFromGithub();
 
+        async function refreshMixesFromGithub() {
+            const owner = 'ilan-spec';
+            const repo = 'Ilanreissmusic.com';
+            const branch = 'main';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/mixes?ref=${branch}`;
+            try {
+                const res = await fetch(apiUrl);
+                if (!res.ok) throw new Error('GitHub API error ' + res.status);
+                const data = await res.json();
+                if (!Array.isArray(data)) return;
+                const files = data
+                    .filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3'))
+                    .map((item, index) => ({
+                        name: item.name,
+                        bpm: 0,
+                        url: item.download_url,
+                        dateIndex: index
+                    }))
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                if (files.length > 0) {
+                    currentMixlist = files;
+                    populateMixList(currentMixlist);
+                    console.log('Loaded', files.length, 'mix files from GitHub mixes/ folder.');
+                }
+            } catch (e) {
+                console.warn('Could not load mix files from GitHub:', e.message);
+            }
+        }
+
+        refreshMixesFromGithub();
+
         // Populate "Mixes" list
         function populateMixList(files) {
             mixListElement.innerHTML = '';
             files.forEach(fileObj => {
                 mixListElement.appendChild(createPlayerListItem(fileObj, true));
             });
+            populateMobileMixList(files);
         }
         populateMixList(currentMixlist); // Initial population
 
@@ -6540,9 +6687,13 @@
         bgColorPicker.addEventListener('input', (e) => {
             const newColor = e.target.value;
             document.body.style.background = newColor;
+            document.documentElement.style.setProperty('--mobile-bg', newColor);
             // Use the exact selected background color for visualizer elements
             visualizerColor = newColor;
             secondaryColor = newColor;
+            if (mobileBgColorPicker && mobileBgColorPicker.value !== newColor) {
+                mobileBgColorPicker.value = newColor;
+            }
         });
 
         // Visualizer background picker: changes only the visualizer canvas background
@@ -6551,6 +6702,25 @@
                 const newVizBg = e.target.value;
                 vizBgColor = newVizBg;
                 try { if (canvas) canvas.style.background = newVizBg; } catch(e){}
+                if (mobileVizBgPicker && mobileVizBgPicker.value !== newVizBg) {
+                    mobileVizBgPicker.value = newVizBg;
+                }
+            });
+        }
+
+        if (mobileBgColorPicker) {
+            mobileBgColorPicker.addEventListener('input', (e) => {
+                if (!bgColorPicker) return;
+                bgColorPicker.value = e.target.value;
+                bgColorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        }
+
+        if (mobileVizBgPicker) {
+            mobileVizBgPicker.addEventListener('input', (e) => {
+                if (!vizBgPicker) return;
+                vizBgPicker.value = e.target.value;
+                vizBgPicker.dispatchEvent(new Event('input', { bubbles: true }));
             });
         }
 
@@ -7285,13 +7455,16 @@
         
         // Initial visualizer color sync - use the exact picker color
         const initialBgColor = bgColorPicker.value;
+        document.documentElement.style.setProperty('--mobile-bg', initialBgColor);
         visualizerColor = initialBgColor;
         secondaryColor = initialBgColor;
+        if (mobileBgColorPicker) mobileBgColorPicker.value = initialBgColor;
         // Initialize visualizer background color
         try {
             if (vizBgPicker) {
                 vizBgColor = vizBgPicker.value;
                 if (canvas) canvas.style.background = vizBgColor;
+                if (mobileVizBgPicker) mobileVizBgPicker.value = vizBgColor;
             } else {
                 if (canvas) canvas.style.background = vizBgColor;
             }
