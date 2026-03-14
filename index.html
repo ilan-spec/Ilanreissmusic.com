@@ -2169,16 +2169,16 @@
             }
 
             #mobile-interface .mobile-logo {
-                transform: translateY(-8px);
+                transform: translateY(-12px);
             }
 
             #mobile-interface .mobile-top-actions {
-                margin-top: -2px;
+                margin-top: -10px;
             }
 
             #mobile-interface .mobile-corner-vus {
                 height: 72px;
-                top: -8px;
+                top: -12px;
             }
 
             #mobile-interface .mobile-corner-vu {
@@ -2537,33 +2537,34 @@
                 align-items: center;
                 background: var(--mobile-bg, #008080);
                 padding: 0;
-                min-height: 56px;
+                min-height: 48px;
             }
 
             #mobile-interface .mobile-logo {
                 width: min(280px, 82vw);
                 height: auto;
                 display: block;
-                transform: translateY(-10px);
+                transform: translateY(-14px);
                 position: relative;
                 z-index: 32;
+                cursor: pointer;
             }
 
             #mobile-interface .mobile-hint {
                 font-size: 0.86rem;
                 font-weight: 700;
-                margin-bottom: 8px;
+                margin-bottom: 4px;
                 color: #000080;
             }
 
             #mobile-interface .mobile-top-actions {
                 display: flex;
                 justify-content: center;
-                margin: 0 0 4px;
+                margin: -8px 0 2px;
                 position: relative;
                 z-index: 31;
                 background: transparent;
-                padding-bottom: 2px;
+                padding-bottom: 0;
             }
 
             #mobile-interface .mobile-top-controls {
@@ -2571,7 +2572,7 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                gap: 3px;
+                gap: 1px;
             }
 
             #mobile-interface .mobile-now-playing-inline {
@@ -2579,18 +2580,16 @@
                 max-width: 100%;
                 font-size: 0.9rem;
                 font-weight: 700;
-                color: #000;
+                color: #f8f8f8;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 text-align: center;
-                background: #f4f4f4;
-                border-top: 2px solid #fff;
-                border-left: 2px solid #fff;
-                border-right: 2px solid #404040;
-                border-bottom: 2px solid #404040;
-                padding: 4px 8px;
+                background: transparent;
+                border: none;
+                padding: 1px 8px;
                 line-height: 1.2;
+                text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
             }
 
             #mobile-interface .mobile-controls-row-top {
@@ -2609,7 +2608,7 @@
 
             #mobile-interface .mobile-corner-vus {
                 position: absolute;
-                top: -6px;
+                top: -14px;
                 left: 0;
                 right: 0;
                 height: 88px;
@@ -2663,7 +2662,7 @@
                 border-bottom: 2px solid #404040;
                 border-radius: 0;
                 padding: 12px;
-                margin-bottom: 12px;
+                margin-bottom: 8px;
                 box-shadow: 1px 1px 0 1px #000;
             }
 
@@ -3427,7 +3426,7 @@
     <div id="mobile-interface" aria-label="Mobile interface">
         <div class="mobile-shell">
             <div class="mobile-header">
-                <img class="mobile-logo" src="background1.png" alt="Ilan Reiss Music logo">
+                <img id="mobile-background1" class="mobile-logo" src="background1.png" alt="Ilan Reiss Music logo">
                 <div class="mobile-corner-vus" aria-hidden="true">
                     <div class="mobile-corner-vu mobile-corner-vu-left">
                         <div class="meter-scale-wrapper">
@@ -3914,6 +3913,7 @@
         const mobileShuffleBtn = document.getElementById('mobile-shuffle');
         const mobileBgColorPicker = document.getElementById('mobile-bg-color-picker');
         const mobileVizBgPicker = document.getElementById('mobile-viz-bg-picker');
+        const mobileLogo = document.getElementById('mobile-background1');
         const mobileNeedles = document.querySelectorAll('.mobile-needle');
         const mobilePeakLeds = document.querySelectorAll('.mobile-peak-led');
         const searchBar = document.getElementById('search-bar');
@@ -5232,6 +5232,16 @@
         if (mobileShuffleBtn) {
             mobileShuffleBtn.addEventListener('click', () => {
                 playRandomTrack();
+            });
+        }
+
+        // Tap/click logo on mobile to pick a random accent color for background + visualizer color.
+        if (mobileLogo) {
+            mobileLogo.addEventListener('click', () => {
+                if (!bgColorPicker) return;
+                const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                bgColorPicker.value = randomColor;
+                bgColorPicker.dispatchEvent(new Event('input', { bubbles: true }));
             });
         }
 
