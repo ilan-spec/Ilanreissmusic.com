@@ -2155,8 +2155,12 @@
                 font-size: 10px;
             }
 
+            #mobile-interface .mobile-vu-wrap {
+                min-height: 250px;
+            }
+
             #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
-                transform: scale(0.42);
+                transform: scale(min(1, calc((100vw - 20px) / 650)));
             }
             
             /* Solitaire even smaller */
@@ -2463,7 +2467,7 @@
             #mobile-interface {
                 display: none;
                 min-height: 100vh;
-                padding: 16px 12px 24px;
+                padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 24px;
                 background: var(--mobile-bg, #008080);
                 color: #000;
                 isolation: isolate;
@@ -2493,16 +2497,28 @@
             }
 
             #mobile-interface .mobile-header {
+                position: sticky;
+                top: 0;
+                z-index: 20;
                 margin-bottom: 10px;
                 display: flex;
                 justify-content: center;
                 align-items: center;
+                background: var(--mobile-bg, #008080);
+                padding: 4px 0 8px;
             }
 
             #mobile-interface .mobile-logo {
-                width: min(240px, 72vw);
+                width: min(280px, 82vw);
                 height: auto;
                 display: block;
+            }
+
+            #mobile-interface .mobile-hint {
+                font-size: 0.86rem;
+                font-weight: 700;
+                margin-bottom: 8px;
+                color: #000080;
             }
 
             #mobile-interface .mobile-card {
@@ -2595,7 +2611,7 @@
                 display: flex;
                 flex-direction: column;
                 gap: 7px;
-                max-height: 42vh;
+                max-height: 52vh;
                 overflow-y: auto;
             }
 
@@ -2626,7 +2642,7 @@
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                min-height: 250px;
+                min-height: 290px;
                 width: 100%;
                 overflow: hidden;
             }
@@ -2634,65 +2650,13 @@
             #mobile-interface .mobile-vu-meter .meter-scale-wrapper {
                 width: 650px;
                 height: 400px;
-                transform: scale(0.5);
+                transform: scale(min(1, calc((100vw - 32px) / 650)));
                 transform-origin: center center;
             }
 
             #mobile-interface .mobile-vu-meter .meter-casing {
-                padding: 10px;
+                padding: 16px;
                 border-radius: 10px;
-            }
-
-            #mobile-interface .mobile-vu-meter .meter-window {
-                width: 300px;
-                height: 170px;
-            }
-
-            #mobile-interface .mobile-vu-meter .vu-text {
-                bottom: 40px;
-                font-size: 20px;
-            }
-
-            #mobile-interface .mobile-vu-meter .branding.left {
-                left: 12px;
-                font-size: 8px;
-            }
-
-            #mobile-interface .mobile-vu-meter .branding.right {
-                right: 12px;
-                font-size: 11px;
-            }
-
-            #mobile-interface .mobile-vu-meter .peak-led-container {
-                right: 18px;
-                top: 58px;
-            }
-
-            #mobile-interface .mobile-vu-meter .peak-led {
-                width: 10px;
-                height: 10px;
-                margin-bottom: 4px;
-            }
-
-            #mobile-interface .mobile-vu-meter .peak-text {
-                font-size: 8px;
-            }
-
-            #mobile-interface .mobile-vu-meter .needle-container {
-                width: 150px;
-                height: 150px;
-                bottom: -12px;
-            }
-
-            #mobile-interface .mobile-vu-meter .needle {
-                height: 120px;
-                bottom: 10px;
-                width: 2px;
-            }
-
-            #mobile-interface .mobile-vu-meter .pivot-cover {
-                width: 56px;
-                height: 20px;
             }
 
             #mobile-interface .mobile-social-link {
@@ -3332,6 +3296,27 @@
                 <img class="mobile-logo" src="background1.png" alt="Ilan Reiss Music logo">
             </div>
 
+            <section class="mobile-card">
+                <div class="mobile-section-title">Library</div>
+                <div class="mobile-hint">Tap a track below to start playback</div>
+                <div class="mobile-tabs">
+                    <button id="mobile-tab-tracks" class="mobile-tab-btn active" type="button">Tracks</button>
+                    <button id="mobile-tab-mixes" class="mobile-tab-btn" type="button">Mixes</button>
+                </div>
+                <ul id="mobile-track-list" class="mobile-list"></ul>
+                <ul id="mobile-mix-list" class="mobile-list"></ul>
+            </section>
+
+            <section class="mobile-card">
+                <div class="mobile-section-title">Now Playing</div>
+                <div id="mobile-now-playing">Select a track to play</div>
+                <div class="mobile-controls-row">
+                    <button id="mobile-prev" class="mobile-control-btn" aria-label="Previous track"><i class="fas fa-step-backward"></i></button>
+                    <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
+                    <button id="mobile-next" class="mobile-control-btn" aria-label="Next track"><i class="fas fa-step-forward"></i></button>
+                </div>
+            </section>
+
             <section class="mobile-card mobile-vu-card">
                 <div class="mobile-vu-wrap">
                     <div class="vu-meter-container mobile-vu-meter" id="mobile-vu-container">
@@ -3357,26 +3342,6 @@
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <section class="mobile-card">
-                <div class="mobile-section-title">Now Playing</div>
-                <div id="mobile-now-playing">Select a track to play</div>
-                <div class="mobile-controls-row">
-                    <button id="mobile-prev" class="mobile-control-btn" aria-label="Previous track"><i class="fas fa-step-backward"></i></button>
-                    <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
-                    <button id="mobile-next" class="mobile-control-btn" aria-label="Next track"><i class="fas fa-step-forward"></i></button>
-                </div>
-            </section>
-
-            <section class="mobile-card">
-                <div class="mobile-section-title">Library</div>
-                <div class="mobile-tabs">
-                    <button id="mobile-tab-tracks" class="mobile-tab-btn active" type="button">Tracks</button>
-                    <button id="mobile-tab-mixes" class="mobile-tab-btn" type="button">Mixes</button>
-                </div>
-                <ul id="mobile-track-list" class="mobile-list"></ul>
-                <ul id="mobile-mix-list" class="mobile-list"></ul>
             </section>
 
             <section class="mobile-card">
