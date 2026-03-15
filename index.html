@@ -2837,11 +2837,38 @@
                 pointer-events: none;
             }
 
+            #mobile-interface .mobile-search-clear {
+                width: 0;
+                height: 40px;
+                opacity: 0;
+                margin-left: 0;
+                padding: 0;
+                border: 1px solid transparent;
+                border-radius: 50%;
+                background: var(--glass-bg);
+                color: var(--mobile-contrast-text);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+                pointer-events: none;
+                cursor: pointer;
+                transition: width 400ms ease, opacity 250ms ease, margin-left 400ms ease, border-color 250ms ease;
+                overflow: hidden;
+            }
+
             #mobile-interface .mobile-search-container.expanded .mobile-search-input {
-                width: calc(100% - 48px);
+                width: calc(100% - 96px);
                 opacity: 1;
                 margin-left: 8px;
                 padding: 10px 12px;
+                border-color: var(--glass-border);
+                pointer-events: auto;
+            }
+
+            #mobile-interface .mobile-search-container.expanded .mobile-search-clear {
+                width: 40px;
+                opacity: 1;
+                margin-left: 8px;
                 border-color: var(--glass-border);
                 pointer-events: auto;
             }
@@ -3110,7 +3137,8 @@
             #mobile-interface .mobile-now-playing-inline,
             #mobile-interface .mobile-color-row input[type="color"],
             #mobile-interface .mobile-search-toggle,
-            #mobile-interface .mobile-search-input {
+            #mobile-interface .mobile-search-input,
+            #mobile-interface .mobile-search-clear {
                 border-color: var(--glass-border);
             }
 
@@ -3781,6 +3809,7 @@
                             <i class="fas fa-magnifying-glass"></i>
                         </button>
                         <input id="mobile-search-input" class="mobile-search-input" type="text" placeholder="Search tracks" autocomplete="off" aria-label="Search library">
+                        <button id="mobile-search-clear" class="mobile-search-clear" type="button" aria-label="Clear search">x</button>
                     </div>
                 </div>
                 <div class="mobile-tabs">
@@ -4250,6 +4279,7 @@
         const mobileSearchContainer = document.getElementById('mobile-search-container');
         const mobileSearchToggle = document.getElementById('mobile-search-toggle');
         const mobileSearchInput = document.getElementById('mobile-search-input');
+        const mobileSearchClear = document.getElementById('mobile-search-clear');
         const mobilePlayPauseBtn = document.getElementById('mobile-play-pause');
         const mobilePrevBtn = document.getElementById('mobile-prev');
         const mobileNextBtn = document.getElementById('mobile-next');
@@ -4295,11 +4325,12 @@
 
             const activeFilename = (document.querySelector('#file-list li.active, #mix-list li.active') || {}).dataset?.filename;
             if (activeFilename) {
-                syncMobileActiveTrackByName(activeFilename);
+                syncMobileActiveTrackByName(activeFilename, { preserveCurrentTab: true });
             }
         }
 
-        function syncMobileActiveTrackByName(trackName) {
+        function syncMobileActiveTrackByName(trackName, options = {}) {
+            const preserveCurrentTab = !!options.preserveCurrentTab;
             if (!trackName) return;
             let foundInTracks = false;
             let foundInMixes = false;
@@ -4320,8 +4351,10 @@
                 });
             }
 
-            if (foundInMixes) setMobileLibraryTab('mixes');
-            else if (foundInTracks) setMobileLibraryTab('tracks');
+            if (!preserveCurrentTab) {
+                if (foundInMixes) setMobileLibraryTab('mixes');
+                else if (foundInTracks) setMobileLibraryTab('tracks');
+            }
         }
 
         if (mobileTabTracksBtn) {
@@ -4348,6 +4381,14 @@
                 mobileSearchInput.value = '';
                 applyMobileSearchFilter('');
             });
+
+            if (mobileSearchClear) {
+                mobileSearchClear.addEventListener('click', () => {
+                    mobileSearchInput.value = '';
+                    applyMobileSearchFilter('');
+                    mobileSearchInput.focus();
+                });
+            }
 
             mobileSearchInput.addEventListener('input', (e) => {
                 applyMobileSearchFilter(e.target.value);
