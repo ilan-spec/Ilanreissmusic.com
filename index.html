@@ -4791,6 +4791,7 @@
         let visualizerActive = false;
         let animationFrameId;
         let mobileMeterAnalyser = null;
+        let mobileAnalyzerSyncTimer = null;
 
         // Audio nodes for all sources
         let sourceMain = null, sourceDeckA = null, sourceDeckB = null;
@@ -5021,13 +5022,30 @@
                 if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
                     visibleAudioEl.src = musicPlayer.src;
                 }
-                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.35) {
+                // Keep analyser feed tightly locked to audible playback to avoid VU lag.
+                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.04) {
                     visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
                 }
+                visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
                 visibleAudioEl.play().catch(() => {});
             } catch (e) {
                 // Best-effort only; main playback remains on musicPlayer.
             }
+        }
+
+        function startMobileAnalyzerSyncLoop() {
+            if (!isMobile) return;
+            if (mobileAnalyzerSyncTimer) return;
+            mobileAnalyzerSyncTimer = setInterval(() => {
+                if (!musicPlayer || musicPlayer.paused) return;
+                syncMobileAnalyzerPlayback();
+            }, 90);
+        }
+
+        function stopMobileAnalyzerSyncLoop() {
+            if (!mobileAnalyzerSyncTimer) return;
+            clearInterval(mobileAnalyzerSyncTimer);
+            mobileAnalyzerSyncTimer = null;
         }
 
         // Pause visualizer if tab is hidden. Also attempt best-effort resume of audio
@@ -5080,6 +5098,7 @@
                 if (isMobile && visibleAudioEl) {
                     try { visibleAudioEl.pause(); } catch (e) {}
                 }
+                stopMobileAnalyzerSyncLoop();
             } else {
                 const anyAudioPlaying = (musicPlayer && !musicPlayer.paused) ||
                                       (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
@@ -5087,6 +5106,7 @@
                 if (anyAudioPlaying) {
                     startVisualizer();
                     syncMobileAnalyzerPlayback();
+                    startMobileAnalyzerSyncLoop();
                     hideResumePrompt();
                 } else {
                     // If the AudioContext is suspended (common after lock), ask user to tap
@@ -6815,6 +6835,7 @@
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                 // reflect in visible element UI
                 try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
+                stopMobileAnalyzerSyncLoop();
             });
             musicPlayer.addEventListener('play', () => {
                 if (audioContext) {
@@ -6824,10 +6845,15 @@
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
                 syncMobileAnalyzerPlayback();
+                startMobileAnalyzerSyncLoop();
             });
             musicPlayer.addEventListener('ended', () => {
+                stopMobileAnalyzerSyncLoop();
                 playNextTrack();
             });
+            musicPlayer.addEventListener('seeking', syncMobileAnalyzerPlayback);
+            musicPlayer.addEventListener('seeked', syncMobileAnalyzerPlayback);
+            musicPlayer.addEventListener('ratechange', syncMobileAnalyzerPlayback);
             // Preload handling: start fetching next track when current is nearly finished
             musicPlayer.addEventListener('timeupdate', () => {
                 if (!musicPlayer.duration || musicPlayer.paused) return;
