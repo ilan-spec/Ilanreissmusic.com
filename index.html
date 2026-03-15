@@ -4375,14 +4375,13 @@
 
         if (mobileSearchToggle && mobileSearchContainer && mobileSearchInput) {
             mobileSearchToggle.addEventListener('click', () => {
-                if (!mobileSearchContainer.classList.contains('expanded')) {
-                    mobileSearchContainer.classList.add('expanded');
+                const isExpanded = mobileSearchContainer.classList.toggle('expanded');
+                if (isExpanded) {
+                    mobileSearchInput.focus();
+                    return;
                 }
-                mobileSearchInput.focus();
-                try {
-                    const len = mobileSearchInput.value.length;
-                    mobileSearchInput.setSelectionRange(len, len);
-                } catch (e) {}
+                mobileSearchInput.value = '';
+                applyMobileSearchFilter('');
             });
 
             if (mobileSearchClear) {
