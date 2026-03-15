@@ -2500,7 +2500,6 @@
                 --glass-border: rgba(255, 255, 255, 0.2);
                 --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
                 --mobile-contrast-text: #ffffff;
-                --mobile-contrast-border: rgba(255, 255, 255, 0.32);
                 display: none;
                 min-height: 100vh;
                 padding: calc(env(safe-area-inset-top, 0px) + 0px) 12px 28px;
@@ -2516,12 +2515,10 @@
 
             #mobile-interface[data-contrast="light"] {
                 --mobile-contrast-text: #000000;
-                --mobile-contrast-border: rgba(0, 0, 0, 0.42);
             }
 
             #mobile-interface[data-contrast="dark"] {
                 --mobile-contrast-text: #ffffff;
-                --mobile-contrast-border: rgba(255, 255, 255, 0.32);
             }
 
             #mobile-interface .mobile-shell {
@@ -2543,6 +2540,10 @@
 
             body.mobile-mode #mobile-interface {
                 display: block;
+            }
+
+            body.mobile-mode #digital-clock {
+                display: none !important;
             }
 
             #mobile-interface,
@@ -2809,7 +2810,7 @@
             #mobile-interface .mobile-search-toggle {
                 width: 40px;
                 height: 40px;
-                border: 1px solid var(--mobile-contrast-border);
+                border: 1px solid var(--glass-border);
                 border-radius: 50%;
                 background: var(--glass-bg);
                 color: var(--mobile-contrast-text);
@@ -2841,7 +2842,7 @@
                 opacity: 1;
                 margin-left: 8px;
                 padding: 10px 12px;
-                border-color: var(--mobile-contrast-border);
+                border-color: var(--glass-border);
                 pointer-events: auto;
             }
 
@@ -3110,7 +3111,7 @@
             #mobile-interface .mobile-color-row input[type="color"],
             #mobile-interface .mobile-search-toggle,
             #mobile-interface .mobile-search-input {
-                border-color: var(--mobile-contrast-border);
+                border-color: var(--glass-border);
             }
 
     </style>
