@@ -3107,6 +3107,10 @@
                 color: #f3fdff;
             }
 
+            #mobile-interface .mobile-color-row label[for="mobile-bg-color-picker"] {
+                cursor: pointer;
+            }
+
             #mobile-interface .mobile-color-row input[type="color"] {
                 width: 46px;
                 height: 32px;
@@ -3825,8 +3829,6 @@
                 <div class="mobile-color-row">
                     <label for="mobile-bg-color-picker">BG</label>
                     <input type="color" id="mobile-bg-color-picker" value="#008080">
-                    <label for="mobile-viz-bg-picker">Viz</label>
-                    <input type="color" id="mobile-viz-bg-picker" value="#000000">
                 </div>
             </section>
 
@@ -7319,6 +7321,13 @@
                 bgColorPicker.value = e.target.value;
                 bgColorPicker.dispatchEvent(new Event('input', { bubbles: true }));
             });
+
+            const mobileBgLabel = document.querySelector('label[for="mobile-bg-color-picker"]');
+            if (mobileBgLabel) {
+                mobileBgLabel.addEventListener('click', () => {
+                    mobileBgColorPicker.click();
+                });
+            }
         }
 
         if (mobileVizBgPicker) {
