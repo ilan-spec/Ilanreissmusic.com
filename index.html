@@ -389,7 +389,13 @@
 
         /* Hidden audio element */
         #audio-player {
-            display: none;
+            position: fixed;
+            width: 1px;
+            height: 1px;
+            left: -9999px;
+            top: -9999px;
+            opacity: 0;
+            pointer-events: none;
         }
         
         /* Scrubber and Volume slider styling */
@@ -4296,6 +4302,7 @@
         const sortAzButton = document.getElementById('sort-az');
         const sortZaButton = document.getElementById('sort-za');
         const bitcrushToggle = document.getElementById('bitcrush-toggle');
+        let mobileSearchFilterRaf = null;
 
         function updateNowPlayingText(text) {
             if (nowPlayingElement) nowPlayingElement.textContent = text;
@@ -4315,15 +4322,19 @@
 
         function applyMobileSearchFilter(searchTerm = '') {
             const normalizedSearch = String(searchTerm || '').toLowerCase().trim();
-            const filteredTracks = normalizedSearch
-                ? currentTracklist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
-                : currentTracklist;
-            const filteredMixes = normalizedSearch
-                ? currentMixlist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
-                : currentMixlist;
+            const showingMixes = !!(mobileTabMixesBtn && mobileTabMixesBtn.classList.contains('active'));
 
-            populateMobileTrackList(filteredTracks);
-            populateMobileMixList(filteredMixes);
+            if (showingMixes) {
+                const filteredMixes = normalizedSearch
+                    ? currentMixlist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
+                    : currentMixlist;
+                populateMobileMixList(filteredMixes);
+            } else {
+                const filteredTracks = normalizedSearch
+                    ? currentTracklist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
+                    : currentTracklist;
+                populateMobileTrackList(filteredTracks);
+            }
 
             const activeFilename = (document.querySelector('#file-list li.active, #mix-list li.active') || {}).dataset?.filename;
             if (activeFilename) {
@@ -4393,7 +4404,12 @@
             }
 
             mobileSearchInput.addEventListener('input', (e) => {
-                applyMobileSearchFilter(e.target.value);
+                const nextValue = e.target.value;
+                if (mobileSearchFilterRaf) cancelAnimationFrame(mobileSearchFilterRaf);
+                mobileSearchFilterRaf = requestAnimationFrame(() => {
+                    applyMobileSearchFilter(nextValue);
+                    mobileSearchFilterRaf = null;
+                });
             });
 
             mobileSearchInput.addEventListener('keydown', (e) => {
@@ -5023,7 +5039,7 @@
                     visibleAudioEl.src = musicPlayer.src;
                 }
                 // Keep analyser feed tightly locked to audible playback to avoid VU lag.
-                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.04) {
+                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.015) {
                     visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
                 }
                 visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
@@ -5036,15 +5052,17 @@
         function startMobileAnalyzerSyncLoop() {
             if (!isMobile) return;
             if (mobileAnalyzerSyncTimer) return;
-            mobileAnalyzerSyncTimer = setInterval(() => {
+            const tick = () => {
                 if (!musicPlayer || musicPlayer.paused) return;
                 syncMobileAnalyzerPlayback();
-            }, 90);
+                mobileAnalyzerSyncTimer = requestAnimationFrame(tick);
+            };
+            mobileAnalyzerSyncTimer = requestAnimationFrame(tick);
         }
 
         function stopMobileAnalyzerSyncLoop() {
             if (!mobileAnalyzerSyncTimer) return;
-            clearInterval(mobileAnalyzerSyncTimer);
+            cancelAnimationFrame(mobileAnalyzerSyncTimer);
             mobileAnalyzerSyncTimer = null;
         }
 
