@@ -4790,6 +4790,8 @@
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
+        let mobileMeterAnalyser = null;
+        let mobileAnalyzerSyncTimer = null;
 
         // Audio nodes for all sources
         let sourceMain = null, sourceDeckA = null, sourceDeckB = null;
@@ -4821,10 +4823,18 @@
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
+            mobileMeterAnalyser = null;
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            // iOS background playback is more reliable when the main mobile player
+            // stays as a direct media element (not routed through Web Audio).
+            // For mobile VU metering, route the hidden UI audio element into the analyser.
+            if (!isMobile) {
+                sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            } else {
+                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
+            }
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -4914,9 +4924,7 @@
             wetMixB.connect(analyser);
             
             // --- Connect Main Player (via gainMain) ---
-            // sourceMain will be routed through gainMain -> either directly to analyser or through bitcrusher
-            // The actual connection is done in toggleBitcrusher()
-            sourceMain.connect(gainMain);
+            // sourceMain routing is configured once below so bitcrusher path is consistent.
 
             // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
@@ -4941,14 +4949,32 @@
             initTr808Fx();
 
             // --- Connect Main Player ---
-            sourceMain.connect(gainMain); 
-            // The bitcrusher logic will handle connecting gainMain to the right place
-            toggleBitcrusher(true); // Run once on setup to establish connection
+            if (sourceMain) {
+                if (isMobile) {
+                    // Mobile: analyze hidden element without routing it to destination.
+                    mobileMeterAnalyser = audioContext.createAnalyser();
+                    mobileMeterAnalyser.fftSize = 2048;
+                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
+                    sourceMain.connect(mobileMeterAnalyser);
+                } else {
+                    sourceMain.connect(gainMain);
+                    // The bitcrusher logic will handle connecting gainMain to the right place
+                    toggleBitcrusher(true); // Run once on setup to establish connection
+                }
+            } else if (bitcrushToggle) {
+                // No main-source routing on mobile; keep bitcrusher visibly off.
+                bitcrushToggle.classList.remove('active');
+            }
         }
 
         // Toggle bitcrusher on/off
         function toggleBitcrusher(forceReconnect = false) {
             if (!analyser) return; 
+            if (!sourceMain || !gainMain) {
+                isBitcrushActive = false;
+                if (bitcrushToggle) bitcrushToggle.classList.remove('active');
+                return;
+            }
             
             if (!forceReconnect) {
                 isBitcrushActive = !isBitcrushActive;
@@ -4986,6 +5012,40 @@
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
+        }
+
+        function syncMobileAnalyzerPlayback() {
+            if (!isMobile || !visibleAudioEl || !musicPlayer) return;
+            if (!musicPlayer.src) return;
+
+            try {
+                if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
+                    visibleAudioEl.src = musicPlayer.src;
+                }
+                // Keep analyser feed tightly locked to audible playback to avoid VU lag.
+                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.04) {
+                    visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
+                }
+                visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
+                visibleAudioEl.play().catch(() => {});
+            } catch (e) {
+                // Best-effort only; main playback remains on musicPlayer.
+            }
+        }
+
+        function startMobileAnalyzerSyncLoop() {
+            if (!isMobile) return;
+            if (mobileAnalyzerSyncTimer) return;
+            mobileAnalyzerSyncTimer = setInterval(() => {
+                if (!musicPlayer || musicPlayer.paused) return;
+                syncMobileAnalyzerPlayback();
+            }, 90);
+        }
+
+        function stopMobileAnalyzerSyncLoop() {
+            if (!mobileAnalyzerSyncTimer) return;
+            clearInterval(mobileAnalyzerSyncTimer);
+            mobileAnalyzerSyncTimer = null;
         }
 
         // Pause visualizer if tab is hidden. Also attempt best-effort resume of audio
@@ -5035,12 +5095,18 @@
                     }
                 } catch (e) {}
                 tryStartSilentAudio();
+                if (isMobile && visibleAudioEl) {
+                    try { visibleAudioEl.pause(); } catch (e) {}
+                }
+                stopMobileAnalyzerSyncLoop();
             } else {
                 const anyAudioPlaying = (musicPlayer && !musicPlayer.paused) ||
                                       (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
                                       (document.getElementById('deck-b-audio') && !document.getElementById('deck-b-audio').paused);
                 if (anyAudioPlaying) {
                     startVisualizer();
+                    syncMobileAnalyzerPlayback();
+                    startMobileAnalyzerSyncLoop();
                     hideResumePrompt();
                 } else {
                     // If the AudioContext is suspended (common after lock), ask user to tap
@@ -5283,6 +5349,8 @@
         }
         
         function drawVUMeterVisualizer() {
+            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
+            if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
             initVUMeterTicks('mobile-ticks-group');
@@ -5291,7 +5359,7 @@
             resizeVUMeter();
 
             // Get volume
-            analyser.getByteFrequencyData(frequencyData);
+            vuAnalyser.getByteFrequencyData(frequencyData);
             let sum = 0;
             // Only average the lower-to-mid frequencies
             const length = Math.floor(frequencyData.length * 0.5); 
@@ -6755,6 +6823,7 @@
         
         // Bitcrusher toggle
         bitcrushToggle.addEventListener('click', () => {
+            if (isMobile) return;
             if (!audioContext) setupAudioContext();
             toggleBitcrusher();
         });
@@ -6766,6 +6835,7 @@
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                 // reflect in visible element UI
                 try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
+                stopMobileAnalyzerSyncLoop();
             });
             musicPlayer.addEventListener('play', () => {
                 if (audioContext) {
@@ -6774,15 +6844,22 @@
                 }
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
+                syncMobileAnalyzerPlayback();
+                startMobileAnalyzerSyncLoop();
             });
             musicPlayer.addEventListener('ended', () => {
+                stopMobileAnalyzerSyncLoop();
                 playNextTrack();
             });
+            musicPlayer.addEventListener('seeking', syncMobileAnalyzerPlayback);
+            musicPlayer.addEventListener('seeked', syncMobileAnalyzerPlayback);
+            musicPlayer.addEventListener('ratechange', syncMobileAnalyzerPlayback);
             // Preload handling: start fetching next track when current is nearly finished
             musicPlayer.addEventListener('timeupdate', () => {
                 if (!musicPlayer.duration || musicPlayer.paused) return;
                 const remaining = musicPlayer.duration - musicPlayer.currentTime;
                 if (remaining <= 12) ensurePreloadNext();
+                syncMobileAnalyzerPlayback();
             });
             musicPlayer.addEventListener('playing', () => {
                 try {
