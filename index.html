@@ -4826,10 +4826,11 @@
             if (!musicPlayer) initPlayersOnGesture();
             // iOS background playback is more reliable when the main mobile player
             // stays as a direct media element (not routed through Web Audio).
+            // For mobile VU metering, route the hidden UI audio element into the analyser.
             if (!isMobile) {
                 sourceMain = audioContext.createMediaElementSource(musicPlayer);
             } else {
-                sourceMain = null;
+                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
             }
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
@@ -5002,6 +5003,25 @@
             }
         }
 
+        function syncMobileAnalyzerPlayback() {
+            if (!isMobile || !visibleAudioEl || !musicPlayer) return;
+            if (!musicPlayer.src) return;
+
+            try {
+                if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
+                    visibleAudioEl.src = musicPlayer.src;
+                }
+                visibleAudioEl.muted = true;
+                visibleAudioEl.volume = 0;
+                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.35) {
+                    visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
+                }
+                visibleAudioEl.play().catch(() => {});
+            } catch (e) {
+                // Best-effort only; main playback remains on musicPlayer.
+            }
+        }
+
         // Pause visualizer if tab is hidden. Also attempt best-effort resume of audio
         // when the page becomes hidden (e.g., iPhone lock) so background audio can
         // continue where the OS allows it. Note: OS/browser ultimately control
@@ -5049,12 +5069,16 @@
                     }
                 } catch (e) {}
                 tryStartSilentAudio();
+                if (isMobile && visibleAudioEl) {
+                    try { visibleAudioEl.pause(); } catch (e) {}
+                }
             } else {
                 const anyAudioPlaying = (musicPlayer && !musicPlayer.paused) ||
                                       (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
                                       (document.getElementById('deck-b-audio') && !document.getElementById('deck-b-audio').paused);
                 if (anyAudioPlaying) {
                     startVisualizer();
+                    syncMobileAnalyzerPlayback();
                     hideResumePrompt();
                 } else {
                     // If the AudioContext is suspended (common after lock), ask user to tap
@@ -6789,6 +6813,7 @@
                 }
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
+                syncMobileAnalyzerPlayback();
             });
             musicPlayer.addEventListener('ended', () => {
                 playNextTrack();
