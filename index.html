@@ -4824,7 +4824,13 @@
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            // iOS background playback is more reliable when the main mobile player
+            // stays as a direct media element (not routed through Web Audio).
+            if (!isMobile) {
+                sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            } else {
+                sourceMain = null;
+            }
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -4914,9 +4920,7 @@
             wetMixB.connect(analyser);
             
             // --- Connect Main Player (via gainMain) ---
-            // sourceMain will be routed through gainMain -> either directly to analyser or through bitcrusher
-            // The actual connection is done in toggleBitcrusher()
-            sourceMain.connect(gainMain);
+            // sourceMain routing is configured once below so bitcrusher path is consistent.
 
             // --- Bitcrusher setup ---
             bitCrusherNode = audioContext.createWaveShaper();
@@ -4941,14 +4945,24 @@
             initTr808Fx();
 
             // --- Connect Main Player ---
-            sourceMain.connect(gainMain); 
-            // The bitcrusher logic will handle connecting gainMain to the right place
-            toggleBitcrusher(true); // Run once on setup to establish connection
+            if (sourceMain) {
+                sourceMain.connect(gainMain);
+                // The bitcrusher logic will handle connecting gainMain to the right place
+                toggleBitcrusher(true); // Run once on setup to establish connection
+            } else if (bitcrushToggle) {
+                // No main-source routing on mobile; keep bitcrusher visibly off.
+                bitcrushToggle.classList.remove('active');
+            }
         }
 
         // Toggle bitcrusher on/off
         function toggleBitcrusher(forceReconnect = false) {
             if (!analyser) return; 
+            if (!sourceMain || !gainMain) {
+                isBitcrushActive = false;
+                if (bitcrushToggle) bitcrushToggle.classList.remove('active');
+                return;
+            }
             
             if (!forceReconnect) {
                 isBitcrushActive = !isBitcrushActive;
@@ -6755,6 +6769,7 @@
         
         // Bitcrusher toggle
         bitcrushToggle.addEventListener('click', () => {
+            if (isMobile) return;
             if (!audioContext) setupAudioContext();
             toggleBitcrusher();
         });
