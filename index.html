@@ -4790,6 +4790,7 @@
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
+        let mobileMeterAnalyser = null;
 
         // Audio nodes for all sources
         let sourceMain = null, sourceDeckA = null, sourceDeckB = null;
@@ -4821,6 +4822,7 @@
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
+            mobileMeterAnalyser = null;
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
@@ -4947,9 +4949,17 @@
 
             // --- Connect Main Player ---
             if (sourceMain) {
-                sourceMain.connect(gainMain);
-                // The bitcrusher logic will handle connecting gainMain to the right place
-                toggleBitcrusher(true); // Run once on setup to establish connection
+                if (isMobile) {
+                    // Mobile: analyze hidden element without routing it to destination.
+                    mobileMeterAnalyser = audioContext.createAnalyser();
+                    mobileMeterAnalyser.fftSize = 2048;
+                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
+                    sourceMain.connect(mobileMeterAnalyser);
+                } else {
+                    sourceMain.connect(gainMain);
+                    // The bitcrusher logic will handle connecting gainMain to the right place
+                    toggleBitcrusher(true); // Run once on setup to establish connection
+                }
             } else if (bitcrushToggle) {
                 // No main-source routing on mobile; keep bitcrusher visibly off.
                 bitcrushToggle.classList.remove('active');
@@ -5011,8 +5021,6 @@
                 if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
                     visibleAudioEl.src = musicPlayer.src;
                 }
-                visibleAudioEl.muted = true;
-                visibleAudioEl.volume = 0;
                 if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.35) {
                     visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
                 }
@@ -5321,6 +5329,8 @@
         }
         
         function drawVUMeterVisualizer() {
+            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
+            if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
             initVUMeterTicks('mobile-ticks-group');
@@ -5329,7 +5339,7 @@
             resizeVUMeter();
 
             // Get volume
-            analyser.getByteFrequencyData(frequencyData);
+            vuAnalyser.getByteFrequencyData(frequencyData);
             let sum = 0;
             // Only average the lower-to-mid frequencies
             const length = Math.floor(frequencyData.length * 0.5); 
@@ -6823,6 +6833,7 @@
                 if (!musicPlayer.duration || musicPlayer.paused) return;
                 const remaining = musicPlayer.duration - musicPlayer.currentTime;
                 if (remaining <= 12) ensurePreloadNext();
+                syncMobileAnalyzerPlayback();
             });
             musicPlayer.addEventListener('playing', () => {
                 try {
