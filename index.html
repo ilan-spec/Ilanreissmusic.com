@@ -4790,6 +4790,7 @@
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
+        let mobileMeterAnalyser = null;
         let mobileAnalyzerSyncTimer = null;
 
         // Audio nodes for all sources
@@ -4822,14 +4823,18 @@
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
+            mobileMeterAnalyser = null;
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            if (musicPlayer) {
-                // Must be set before creating MediaElementSourceNode to avoid CORS meter failures.
-                musicPlayer.crossOrigin = 'anonymous';
+            // iOS background playback is more reliable when the main mobile player
+            // stays as a direct media element (not routed through Web Audio).
+            // For mobile VU metering, route the hidden UI audio element into the analyser.
+            if (!isMobile) {
+                sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            } else {
+                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
             }
-            sourceMain = musicPlayer ? audioContext.createMediaElementSource(musicPlayer) : null;
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -4946,9 +4951,11 @@
             // --- Connect Main Player ---
             if (sourceMain) {
                 if (isMobile) {
-                    // Mobile fix: meter follows musicPlayer while preserving audible output.
-                    sourceMain.connect(analyser);
-                    sourceMain.connect(audioContext.destination);
+                    // Mobile: analyze hidden element without routing it to destination.
+                    mobileMeterAnalyser = audioContext.createAnalyser();
+                    mobileMeterAnalyser.fftSize = 2048;
+                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
+                    sourceMain.connect(mobileMeterAnalyser);
                 } else {
                     sourceMain.connect(gainMain);
                     // The bitcrusher logic will handle connecting gainMain to the right place
@@ -5342,7 +5349,7 @@
         }
         
         function drawVUMeterVisualizer() {
-            const vuAnalyser = analyser;
+            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
             if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
