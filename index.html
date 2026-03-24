@@ -389,13 +389,7 @@
 
         /* Hidden audio element */
         #audio-player {
-            position: fixed;
-            width: 1px;
-            height: 1px;
-            left: -9999px;
-            top: -9999px;
-            opacity: 0;
-            pointer-events: none;
+            display: none;
         }
         
         /* Scrubber and Volume slider styling */
@@ -4302,7 +4296,6 @@
         const sortAzButton = document.getElementById('sort-az');
         const sortZaButton = document.getElementById('sort-za');
         const bitcrushToggle = document.getElementById('bitcrush-toggle');
-        let mobileSearchFilterRaf = null;
 
         function updateNowPlayingText(text) {
             if (nowPlayingElement) nowPlayingElement.textContent = text;
@@ -4322,19 +4315,15 @@
 
         function applyMobileSearchFilter(searchTerm = '') {
             const normalizedSearch = String(searchTerm || '').toLowerCase().trim();
-            const showingMixes = !!(mobileTabMixesBtn && mobileTabMixesBtn.classList.contains('active'));
+            const filteredTracks = normalizedSearch
+                ? currentTracklist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
+                : currentTracklist;
+            const filteredMixes = normalizedSearch
+                ? currentMixlist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
+                : currentMixlist;
 
-            if (showingMixes) {
-                const filteredMixes = normalizedSearch
-                    ? currentMixlist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
-                    : currentMixlist;
-                populateMobileMixList(filteredMixes);
-            } else {
-                const filteredTracks = normalizedSearch
-                    ? currentTracklist.filter(fileObj => fileObj.name.toLowerCase().replace('.mp3', '').includes(normalizedSearch))
-                    : currentTracklist;
-                populateMobileTrackList(filteredTracks);
-            }
+            populateMobileTrackList(filteredTracks);
+            populateMobileMixList(filteredMixes);
 
             const activeFilename = (document.querySelector('#file-list li.active, #mix-list li.active') || {}).dataset?.filename;
             if (activeFilename) {
@@ -4404,12 +4393,7 @@
             }
 
             mobileSearchInput.addEventListener('input', (e) => {
-                const nextValue = e.target.value;
-                if (mobileSearchFilterRaf) cancelAnimationFrame(mobileSearchFilterRaf);
-                mobileSearchFilterRaf = requestAnimationFrame(() => {
-                    applyMobileSearchFilter(nextValue);
-                    mobileSearchFilterRaf = null;
-                });
+                applyMobileSearchFilter(e.target.value);
             });
 
             mobileSearchInput.addEventListener('keydown', (e) => {
@@ -4806,6 +4790,7 @@
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
+        let mobileMeterAnalyser = null;
         let mobileAnalyzerSyncTimer = null;
 
         // Audio nodes for all sources
@@ -4838,12 +4823,18 @@
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
+            mobileMeterAnalyser = null;
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            // Route the actual playing main audio element through Web Audio so
-            // mobile VU needles follow real playback without changing UI layout.
-            sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            // iOS background playback is more reliable when the main mobile player
+            // stays as a direct media element (not routed through Web Audio).
+            // For mobile VU metering, route the hidden UI audio element into the analyser.
+            if (!isMobile) {
+                sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            } else {
+                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
+            }
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -4959,11 +4950,19 @@
 
             // --- Connect Main Player ---
             if (sourceMain) {
-                sourceMain.connect(gainMain);
-                // Route main source into analyser and keep output audible.
-                toggleBitcrusher(true); // Run once on setup to establish connection
+                if (isMobile) {
+                    // Mobile: analyze hidden element without routing it to destination.
+                    mobileMeterAnalyser = audioContext.createAnalyser();
+                    mobileMeterAnalyser.fftSize = 2048;
+                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
+                    sourceMain.connect(mobileMeterAnalyser);
+                } else {
+                    sourceMain.connect(gainMain);
+                    // The bitcrusher logic will handle connecting gainMain to the right place
+                    toggleBitcrusher(true); // Run once on setup to establish connection
+                }
             } else if (bitcrushToggle) {
-                // Keep bitcrusher visibly off if no main source is available.
+                // No main-source routing on mobile; keep bitcrusher visibly off.
                 bitcrushToggle.classList.remove('active');
             }
         }
@@ -5023,12 +5022,12 @@
                 if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
                     visibleAudioEl.src = musicPlayer.src;
                 }
-                // Keep the hidden UI element synced for metadata/time UI only.
-                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.015) {
+                // Keep analyser feed tightly locked to audible playback to avoid VU lag.
+                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.04) {
                     visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
                 }
                 visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
-                visibleAudioEl.volume = musicPlayer.volume;
+                visibleAudioEl.play().catch(() => {});
             } catch (e) {
                 // Best-effort only; main playback remains on musicPlayer.
             }
@@ -5037,17 +5036,15 @@
         function startMobileAnalyzerSyncLoop() {
             if (!isMobile) return;
             if (mobileAnalyzerSyncTimer) return;
-            const tick = () => {
+            mobileAnalyzerSyncTimer = setInterval(() => {
                 if (!musicPlayer || musicPlayer.paused) return;
                 syncMobileAnalyzerPlayback();
-                mobileAnalyzerSyncTimer = requestAnimationFrame(tick);
-            };
-            mobileAnalyzerSyncTimer = requestAnimationFrame(tick);
+            }, 90);
         }
 
         function stopMobileAnalyzerSyncLoop() {
             if (!mobileAnalyzerSyncTimer) return;
-            cancelAnimationFrame(mobileAnalyzerSyncTimer);
+            clearInterval(mobileAnalyzerSyncTimer);
             mobileAnalyzerSyncTimer = null;
         }
 
@@ -5352,7 +5349,7 @@
         }
         
         function drawVUMeterVisualizer() {
-            const vuAnalyser = analyser;
+            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
             if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
@@ -5405,11 +5402,7 @@
                 needle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
             }
             if (mobileNeedles && mobileNeedles.length) {
-                const mobileNeedleHeight = 220 + (volume * 26);
                 mobileNeedles.forEach((el) => {
-                    if (isMobile) {
-                        el.style.height = mobileNeedleHeight.toFixed(1) + 'px';
-                    }
                     el.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
                 });
             }
