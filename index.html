@@ -4790,6 +4790,7 @@
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
+        let mobileMeterAnalyser = null;
         let mobileAnalyzerSyncTimer = null;
 
         // Audio nodes for all sources
@@ -4822,18 +4823,18 @@
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
+            mobileMeterAnalyser = null;
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            if (musicPlayer) {
-                musicPlayer.crossOrigin = 'anonymous';
-                musicPlayer.setAttribute('playsinline', '');
-                musicPlayer.setAttribute('webkit-playsinline', '');
-                musicPlayer.playsInline = true;
+            // iOS background playback is more reliable when the main mobile player
+            // stays as a direct media element (not routed through Web Audio).
+            // For mobile VU metering, route the hidden UI audio element into the analyser.
+            if (!isMobile) {
+                sourceMain = audioContext.createMediaElementSource(musicPlayer);
+            } else {
+                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
             }
-
-            // Always meter the actual playback element.
-            sourceMain = musicPlayer ? audioContext.createMediaElementSource(musicPlayer) : null;
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -4921,14 +4922,6 @@
             feedbackB.connect(delayB);
             delayB.connect(wetMixB);
             wetMixB.connect(analyser);
-
-            if (isMobile) {
-                // Keep analyser meter-only on mobile to avoid parallel audible paths.
-                gainA.connect(audioContext.destination);
-                wetMixA.connect(audioContext.destination);
-                gainB.connect(audioContext.destination);
-                wetMixB.connect(audioContext.destination);
-            }
             
             // --- Connect Main Player (via gainMain) ---
             // sourceMain routing is configured once below so bitcrusher path is consistent.
@@ -4943,10 +4936,8 @@
             }
             bitCrusherNode.curve = curve;
             
-            // Desktop keeps analyser in the audible chain; mobile uses it for metering only.
-            if (!isMobile) {
-                analyser.connect(audioContext.destination);
-            }
+            // Analyser connects to destination (speakers)
+            analyser.connect(audioContext.destination);
             
             // Setup data arrays for visualizer
             bufferLength = analyser.frequencyBinCount;
@@ -4960,18 +4951,18 @@
             // --- Connect Main Player ---
             if (sourceMain) {
                 if (isMobile) {
-                    // Mobile parallel route: meter + direct output with no processing nodes.
-                    sourceMain.connect(analyser);
-                    sourceMain.connect(audioContext.destination);
-                    isBitcrushActive = false;
-                    if (bitcrushToggle) bitcrushToggle.classList.remove('active');
+                    // Mobile: analyze hidden element without routing it to destination.
+                    mobileMeterAnalyser = audioContext.createAnalyser();
+                    mobileMeterAnalyser.fftSize = 2048;
+                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
+                    sourceMain.connect(mobileMeterAnalyser);
                 } else {
                     sourceMain.connect(gainMain);
                     // The bitcrusher logic will handle connecting gainMain to the right place
                     toggleBitcrusher(true); // Run once on setup to establish connection
                 }
             } else if (bitcrushToggle) {
-                // Keep bitcrusher visibly off when no main source is available.
+                // No main-source routing on mobile; keep bitcrusher visibly off.
                 bitcrushToggle.classList.remove('active');
             }
         }
@@ -5036,6 +5027,7 @@
                     visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
                 }
                 visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
+                visibleAudioEl.play().catch(() => {});
             } catch (e) {
                 // Best-effort only; main playback remains on musicPlayer.
             }
@@ -5357,7 +5349,8 @@
         }
         
         function drawVUMeterVisualizer() {
-            if (!analyser || !frequencyData) return;
+            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
+            if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
             initVUMeterTicks('mobile-ticks-group');
@@ -5366,7 +5359,7 @@
             resizeVUMeter();
 
             // Get volume
-            analyser.getByteFrequencyData(frequencyData);
+            vuAnalyser.getByteFrequencyData(frequencyData);
             let sum = 0;
             // Only average the lower-to-mid frequencies
             const length = Math.floor(frequencyData.length * 0.5); 
