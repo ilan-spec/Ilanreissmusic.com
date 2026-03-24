@@ -4806,7 +4806,6 @@
         let bufferLength;
         let visualizerActive = false;
         let animationFrameId;
-        let mobileMeterAnalyser = null;
         let mobileAnalyzerSyncTimer = null;
 
         // Audio nodes for all sources
@@ -4839,18 +4838,12 @@
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
-            mobileMeterAnalyser = null;
             
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            // iOS background playback is more reliable when the main mobile player
-            // stays as a direct media element (not routed through Web Audio).
-            // For mobile VU metering, route the hidden UI audio element into the analyser.
-            if (!isMobile) {
-                sourceMain = audioContext.createMediaElementSource(musicPlayer);
-            } else {
-                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
-            }
+            // Route the actual playing main audio element through Web Audio so
+            // mobile VU needles follow real playback without changing UI layout.
+            sourceMain = audioContext.createMediaElementSource(musicPlayer);
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
             
@@ -4966,19 +4959,11 @@
 
             // --- Connect Main Player ---
             if (sourceMain) {
-                if (isMobile) {
-                    // Mobile: analyze hidden element without routing it to destination.
-                    mobileMeterAnalyser = audioContext.createAnalyser();
-                    mobileMeterAnalyser.fftSize = 2048;
-                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
-                    sourceMain.connect(mobileMeterAnalyser);
-                } else {
-                    sourceMain.connect(gainMain);
-                    // The bitcrusher logic will handle connecting gainMain to the right place
-                    toggleBitcrusher(true); // Run once on setup to establish connection
-                }
+                sourceMain.connect(gainMain);
+                // Route main source into analyser and keep output audible.
+                toggleBitcrusher(true); // Run once on setup to establish connection
             } else if (bitcrushToggle) {
-                // No main-source routing on mobile; keep bitcrusher visibly off.
+                // Keep bitcrusher visibly off if no main source is available.
                 bitcrushToggle.classList.remove('active');
             }
         }
@@ -5038,12 +5023,12 @@
                 if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
                     visibleAudioEl.src = musicPlayer.src;
                 }
-                // Keep analyser feed tightly locked to audible playback to avoid VU lag.
+                // Keep the hidden UI element synced for metadata/time UI only.
                 if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.015) {
                     visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
                 }
                 visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
-                visibleAudioEl.play().catch(() => {});
+                visibleAudioEl.volume = musicPlayer.volume;
             } catch (e) {
                 // Best-effort only; main playback remains on musicPlayer.
             }
@@ -5367,7 +5352,7 @@
         }
         
         function drawVUMeterVisualizer() {
-            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
+            const vuAnalyser = analyser;
             if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
@@ -5420,7 +5405,11 @@
                 needle.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
             }
             if (mobileNeedles && mobileNeedles.length) {
+                const mobileNeedleHeight = 220 + (volume * 26);
                 mobileNeedles.forEach((el) => {
+                    if (isMobile) {
+                        el.style.height = mobileNeedleHeight.toFixed(1) + 'px';
+                    }
                     el.style.transform = `translateX(-50%) rotate(${currentAngle}deg)`;
                 });
             }
