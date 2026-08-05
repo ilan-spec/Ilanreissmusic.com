@@ -2475,6 +2475,41 @@
                 outline-offset: -4px;
             }
 
+            #app-demo-reel {
+                position: fixed;
+                right: 24px;
+                top: 24px;
+                width: 126px;
+                height: 126px;
+                z-index: 8;
+                gap: 8px;
+                font-size: 40px;
+                background: linear-gradient(180deg, #efe9d7, #d8d0bc);
+                box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.18), 0 8px 20px rgba(0, 0, 0, 0.22);
+                animation: demoReelPulse 1.8s ease-in-out infinite;
+            }
+
+            #app-demo-reel .icon-label {
+                font-size: 0.84rem;
+                line-height: 1.1;
+                text-align: center;
+                padding: 0 4px;
+            }
+
+            #app-demo-reel i {
+                animation: demoDiscSpin 3.8s linear infinite;
+            }
+
+            @keyframes demoReelPulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+            }
+
+            @keyframes demoDiscSpin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+
             /* Selection rectangle overlay shown while dragging on desktop */
             #selection-rect {
                 position: fixed;
@@ -3158,6 +3193,11 @@
 
     <!-- Desktop icons (playful / fidget apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
+
+        <div class="desktop-icon" id="app-demo-reel" data-app="demo-reel" title="Play Demo Reel">
+            <i class="fas fa-compact-disc"></i>
+            <div class="icon-label">Demo Reel</div>
+        </div>
         
         <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
             <i class="fas fa-pencil-alt"></i>
@@ -4494,6 +4534,34 @@
             return !(b.left > a.right || b.right < a.left || b.top > a.bottom || b.bottom < a.top);
         }
 
+        function isDemoReelSource(src) {
+            return /(?:^|\/)Demo-Reel\.mp3(?:[?#].*)?$/i.test(src || '');
+        }
+
+        function playDesktopDemoReel() {
+            const demoFileUrl = 'Demo-Reel.mp3';
+
+            // Stop other running sources first, then route through the same main player path.
+            document.getElementById('deck-a-audio').pause();
+            document.getElementById('deck-b-audio').pause();
+            tr808IsPlaying = false;
+            if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
+
+            initPlayersOnGesture();
+            const audioEl = document.getElementById('audio-player');
+            audioEl.src = demoFileUrl;
+            musicPlayer.src = demoFileUrl;
+
+            if (!audioContext) setupAudioContext();
+            tryStartSilentAudio();
+
+            updateNowPlayingText('Demo Reel');
+            document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+            updateMediaSession('Demo Reel', false);
+            startVisualizer();
+            musicPlayer.play().catch(() => {});
+        }
+
         // Start selection only when clicking outside of any existing window
         document.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return; // left button only
@@ -4560,6 +4628,10 @@
                     return;
                 }
                 const app = icon.dataset.app;
+                if (app === 'demo-reel') {
+                    playDesktopDemoReel();
+                    return;
+                }
                 openMiniApp(app, icon);
             });
         });
@@ -6402,6 +6474,9 @@
 
         tr808PlayBtn && tr808PlayBtn.addEventListener('click', () => {
             if (tr808IsPlaying) return;
+            if (musicPlayer && !musicPlayer.paused && isDemoReelSource(musicPlayer.src)) {
+                musicPlayer.pause();
+            }
             tr808IsPlaying = true;
             tr808Step = 0;
             // initialize swing value into global so scheduler can read it
