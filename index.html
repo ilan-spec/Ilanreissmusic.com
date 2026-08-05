@@ -2482,11 +2482,15 @@
                 width: 126px;
                 height: 126px;
                 z-index: 8;
-                gap: 8px;
-                font-size: 40px;
-                background: linear-gradient(180deg, #efe9d7, #d8d0bc);
-                box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.18), 0 8px 20px rgba(0, 0, 0, 0.22);
-                animation: demoReelPulse 1.8s ease-in-out infinite;
+                gap: 6px;
+                font-size: 42px;
+                color: #000080;
+                background: #c0c0c0;
+                border-top: 3px solid #fff;
+                border-left: 3px solid #fff;
+                border-right: 3px solid #404040;
+                border-bottom: 3px solid #404040;
+                box-shadow: 2px 2px 0 1px #000;
             }
 
             #app-demo-reel .icon-label {
@@ -2494,20 +2498,8 @@
                 line-height: 1.1;
                 text-align: center;
                 padding: 0 4px;
-            }
-
-            #app-demo-reel i {
-                animation: demoDiscSpin 3.8s linear infinite;
-            }
-
-            @keyframes demoReelPulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.05); }
-            }
-
-            @keyframes demoDiscSpin {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
+                font-weight: 700;
+                color: #000;
             }
 
             /* Selection rectangle overlay shown while dragging on desktop */
@@ -4535,11 +4527,11 @@
         }
 
         function isDemoReelSource(src) {
-            return /(?:^|\/)Demo-Reel\.mp3(?:[?#].*)?$/i.test(src || '');
+            return /(?:^|\/)Reiss(?:%20|\s)+Demo(?:%20|\s)+Reel\.wav(?:[?#].*)?$/i.test(src || '');
         }
 
         function playDesktopDemoReel() {
-            const demoFileUrl = 'Demo-Reel.mp3';
+            const demoFileUrl = 'Reiss Demo Reel.wav';
 
             // Stop other running sources first, then route through the same main player path.
             document.getElementById('deck-a-audio').pause();
@@ -4555,9 +4547,9 @@
             if (!audioContext) setupAudioContext();
             tryStartSilentAudio();
 
-            updateNowPlayingText('Demo Reel');
+            updateNowPlayingText('Reiss Demo Reel');
             document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
-            updateMediaSession('Demo Reel', false);
+            updateMediaSession('Reiss Demo Reel', false);
             startVisualizer();
             musicPlayer.play().catch(() => {});
         }
