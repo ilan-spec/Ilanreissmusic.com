@@ -2475,6 +2475,33 @@
                 outline-offset: -4px;
             }
 
+            #app-demo-reel {
+                position: fixed;
+                right: 24px;
+                top: 24px;
+                width: 126px;
+                height: 126px;
+                z-index: 8;
+                gap: 6px;
+                font-size: 42px;
+                color: #000080;
+                background: #c0c0c0;
+                border-top: 3px solid #fff;
+                border-left: 3px solid #fff;
+                border-right: 3px solid #404040;
+                border-bottom: 3px solid #404040;
+                box-shadow: 2px 2px 0 1px #000;
+            }
+
+            #app-demo-reel .icon-label {
+                font-size: 0.84rem;
+                line-height: 1.1;
+                text-align: center;
+                padding: 0 4px;
+                font-weight: 700;
+                color: #000;
+            }
+
             /* Selection rectangle overlay shown while dragging on desktop */
             #selection-rect {
                 position: fixed;
@@ -3158,6 +3185,11 @@
 
     <!-- Desktop icons (playful / fidget apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
+
+        <div class="desktop-icon" id="app-demo-reel" data-app="demo-reel" title="Play Demo Reel">
+            <i class="fas fa-compact-disc"></i>
+            <div class="icon-label">Demo Reel</div>
+        </div>
         
         <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
             <i class="fas fa-pencil-alt"></i>
@@ -4494,6 +4526,34 @@
             return !(b.left > a.right || b.right < a.left || b.top > a.bottom || b.bottom < a.top);
         }
 
+        function isDemoReelSource(src) {
+            return /(?:^|\/)Reiss(?:%20|\s)+Demo(?:%20|\s)+Reel\.wav(?:[?#].*)?$/i.test(src || '');
+        }
+
+        function playDesktopDemoReel() {
+            const demoFileUrl = 'Reiss Demo Reel.wav';
+
+            // Stop other running sources first, then route through the same main player path.
+            document.getElementById('deck-a-audio').pause();
+            document.getElementById('deck-b-audio').pause();
+            tr808IsPlaying = false;
+            if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
+
+            initPlayersOnGesture();
+            const audioEl = document.getElementById('audio-player');
+            audioEl.src = demoFileUrl;
+            musicPlayer.src = demoFileUrl;
+
+            if (!audioContext) setupAudioContext();
+            tryStartSilentAudio();
+
+            updateNowPlayingText('Reiss Demo Reel');
+            document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+            updateMediaSession('Reiss Demo Reel', false);
+            startVisualizer();
+            musicPlayer.play().catch(() => {});
+        }
+
         // Start selection only when clicking outside of any existing window
         document.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return; // left button only
@@ -4560,6 +4620,10 @@
                     return;
                 }
                 const app = icon.dataset.app;
+                if (app === 'demo-reel') {
+                    playDesktopDemoReel();
+                    return;
+                }
                 openMiniApp(app, icon);
             });
         });
@@ -6402,6 +6466,9 @@
 
         tr808PlayBtn && tr808PlayBtn.addEventListener('click', () => {
             if (tr808IsPlaying) return;
+            if (musicPlayer && !musicPlayer.paused && isDemoReelSource(musicPlayer.src)) {
+                musicPlayer.pause();
+            }
             tr808IsPlaying = true;
             tr808Step = 0;
             // initialize swing value into global so scheduler can read it
