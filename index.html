@@ -3246,8 +3246,8 @@
                     <input type="range" id="volume-slider" min="0" max="100" value="100" style="width: 50px; height: 12px; background: #808080; border: 1px inset #dfdfdf; cursor: pointer;">
                 </div>
                 
-                <!-- Hidden audio element for actual playback -->
-                <audio id="audio-player" crossorigin="anonymous" playsinline webkit-playsinline></audio>
+                <!-- Hidden UI audio element. On iPhone this must stay muted/paused so it cannot steal lock-screen playback from musicPlayer. -->
+                <audio id="audio-player" crossorigin="anonymous" playsinline webkit-playsinline muted></audio>
             </div>
             
             <div class="content-inner">
@@ -3939,11 +3939,27 @@
         window.addEventListener('resize', applyInterfaceMode);
         window.addEventListener('orientationchange', applyInterfaceMode);
 
+        function prepareMobileMeterElement(el) {
+            if (!el) return;
+            // Keep the analyser clone silent so iOS Now Playing stays on musicPlayer.
+            el.muted = true;
+            el.volume = 0;
+            el.setAttribute('muted', '');
+            el.playsInline = true;
+            el.setAttribute('playsinline', '');
+            el.setAttribute('webkit-playsinline', '');
+            try { el.disableRemotePlayback = true; } catch (e) {}
+        }
+
         function initPlayersOnGesture() {
             if (musicPlayer) return;
             musicPlayer = new Audio();
             musicPlayer.crossOrigin = "anonymous";
             musicPlayer.preload = 'metadata';
+            // Keep this element as the only audible / Now Playing source on iOS.
+            musicPlayer.playsInline = true;
+            musicPlayer.setAttribute('playsinline', '');
+            musicPlayer.setAttribute('webkit-playsinline', '');
 
             silentWarmup = new Audio();
             silentWarmup.crossOrigin = "anonymous";
@@ -3955,6 +3971,7 @@
             // Mirror play/pause state to media element UI if present (best-effort)
             const visibleAudioEl = document.getElementById('audio-player');
             if (visibleAudioEl) {
+                prepareMobileMeterElement(visibleAudioEl);
                 // Custom player controls
                 const playPauseBtn = document.getElementById('play-pause-btn');
                 const scrubberBar = document.getElementById('scrubber-bar');
@@ -4024,8 +4041,12 @@
                 if (volumeSlider) {
                     volumeSlider.addEventListener('input', (e) => {
                         const vol = parseFloat(e.target.value) / 100;
-                        visibleAudioEl.volume = vol;
                         if (musicPlayer) musicPlayer.volume = vol;
+                        if (!isMobile) {
+                            visibleAudioEl.volume = vol;
+                        } else {
+                            prepareMobileMeterElement(visibleAudioEl);
+                        }
                     });
                 }
                 
@@ -4856,6 +4877,10 @@
         let animationFrameId;
         let mobileMeterAnalyser = null;
         let mobileAnalyzerSyncTimer = null;
+        let mobileMeterBuffer = null;
+        let mobileMeterBufferUrl = '';
+        let mobileMeterLoadId = 0;
+        let mobileMeterSampleRate = 11025;
 
         // Audio nodes for all sources
         let sourceMain = null, sourceDeckA = null, sourceDeckB = null;
@@ -4876,6 +4901,9 @@
         
         function setupAudioContext() {
             if (audioContext) return;
+            // A live Web Audio graph on iPhone steals the native media session and
+            // kills lock-screen playback. Mobile VU meters use a silent decoded buffer.
+            if (isMobile) return;
             
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -4888,16 +4916,16 @@
             analyser.fftSize = 2048;
             analyser.smoothingTimeConstant = 0.8; 
             mobileMeterAnalyser = null;
-            
+
             // Create sources from HTML audio elements
             if (!musicPlayer) initPlayersOnGesture();
-            // iOS background playback is more reliable when the main mobile player
-            // stays as a direct media element (not routed through Web Audio).
-            // For mobile VU metering, route the hidden UI audio element into the analyser.
+            // iOS lock-screen playback requires the main player to stay a native
+            // media element. Never route musicPlayer through Web Audio on mobile.
             if (!isMobile) {
                 sourceMain = audioContext.createMediaElementSource(musicPlayer);
             } else {
-                sourceMain = visibleAudioEl ? audioContext.createMediaElementSource(visibleAudioEl) : null;
+                if (visibleAudioEl) prepareMobileMeterElement(visibleAudioEl);
+                sourceMain = null;
             }
             sourceDeckA = audioContext.createMediaElementSource(document.getElementById('deck-a-audio'));
             sourceDeckB = audioContext.createMediaElementSource(document.getElementById('deck-b-audio'));
@@ -5014,17 +5042,9 @@
 
             // --- Connect Main Player ---
             if (sourceMain) {
-                if (isMobile) {
-                    // Mobile: analyze hidden element without routing it to destination.
-                    mobileMeterAnalyser = audioContext.createAnalyser();
-                    mobileMeterAnalyser.fftSize = 2048;
-                    mobileMeterAnalyser.smoothingTimeConstant = 0.8;
-                    sourceMain.connect(mobileMeterAnalyser);
-                } else {
-                    sourceMain.connect(gainMain);
-                    // The bitcrusher logic will handle connecting gainMain to the right place
-                    toggleBitcrusher(true); // Run once on setup to establish connection
-                }
+                sourceMain.connect(gainMain);
+                // The bitcrusher logic will handle connecting gainMain to the right place
+                toggleBitcrusher(true); // Run once on setup to establish connection
             } else if (bitcrushToggle) {
                 // No main-source routing on mobile; keep bitcrusher visibly off.
                 bitcrushToggle.classList.remove('active');
@@ -5065,7 +5085,8 @@
             if (visualizerActive && animationFrameId) {
                 cancelAnimationFrame(animationFrameId); 
             }
-            if (audioContext) audioContext.resume(); // Resume context if suspended
+            // Do not resume Web Audio on iPhone; that session change stops lock-screen audio.
+            if (audioContext && !isMobile) audioContext.resume();
             visualizerActive = true;
             visualizerWindow.style.display = 'flex';
             drawVisualizer();
@@ -5078,32 +5099,70 @@
             }
         }
 
-        function syncMobileAnalyzerPlayback() {
-            if (!isMobile || !visibleAudioEl || !musicPlayer) return;
-            if (!musicPlayer.src) return;
-
+        async function ensureMobileMeterBuffer(src) {
+            if (!isMobile || !src) return;
+            if (mobileMeterBuffer && mobileMeterBufferUrl === src) return;
+            const loadId = ++mobileMeterLoadId;
             try {
-                if (!visibleAudioEl.src || visibleAudioEl.src !== musicPlayer.src) {
-                    visibleAudioEl.src = musicPlayer.src;
+                const res = await fetch(src);
+                if (!res.ok) return;
+                const ab = await res.arrayBuffer();
+                let decoded = null;
+                try {
+                    const offline = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, 1, 44100);
+                    decoded = await offline.decodeAudioData(ab.slice(0));
+                } catch (decodeErr) {
+                    // Never create a live AudioContext on iPhone; it steals lock-screen audio.
+                    throw decodeErr;
                 }
-                // Keep analyser feed tightly locked to audible playback to avoid VU lag.
-                if (Math.abs((visibleAudioEl.currentTime || 0) - (musicPlayer.currentTime || 0)) > 0.04) {
-                    visibleAudioEl.currentTime = musicPlayer.currentTime || 0;
+                if (loadId !== mobileMeterLoadId) return;
+                const envelopeRate = 50;
+                const ch0 = decoded.getChannelData(0);
+                const ch1 = decoded.numberOfChannels > 1 ? decoded.getChannelData(1) : null;
+                const windowSize = Math.max(1, Math.floor(decoded.sampleRate / envelopeRate));
+                const envelope = new Float32Array(Math.max(1, Math.floor(ch0.length / windowSize)));
+                for (let i = 0; i < envelope.length; i++) {
+                    const start = i * windowSize;
+                    const end = Math.min(ch0.length, start + windowSize);
+                    let sum = 0;
+                    for (let j = start; j < end; j++) {
+                        const s = ch1 ? ((ch0[j] + ch1[j]) * 0.5) : ch0[j];
+                        sum += s * s;
+                    }
+                    const n = end - start;
+                    envelope[i] = n ? Math.sqrt(sum / n) : 0;
                 }
-                visibleAudioEl.playbackRate = musicPlayer.playbackRate || 1;
-                visibleAudioEl.play().catch(() => {});
+                mobileMeterBuffer = envelope;
+                mobileMeterSampleRate = envelopeRate;
+                mobileMeterBufferUrl = src;
             } catch (e) {
-                // Best-effort only; main playback remains on musicPlayer.
+                if (loadId === mobileMeterLoadId) {
+                    mobileMeterBuffer = null;
+                    mobileMeterBufferUrl = '';
+                }
             }
+        }
+
+        function getMobileVuVolume() {
+            if (!mobileMeterBuffer || !musicPlayer || musicPlayer.paused) return 0;
+            const t = musicPlayer.currentTime || 0;
+            const idx = Math.max(0, Math.min(mobileMeterBuffer.length - 1, Math.floor(t * mobileMeterSampleRate)));
+            return Math.min(1, mobileMeterBuffer[idx] * 4.5);
+        }
+
+        function syncMobileAnalyzerPlayback() {
+            if (!isMobile || !musicPlayer) return;
+            if (!musicPlayer.src) return;
+            if (visibleAudioEl) {
+                prepareMobileMeterElement(visibleAudioEl);
+                try { visibleAudioEl.pause(); } catch (e) {}
+            }
+            ensureMobileMeterBuffer(musicPlayer.currentSrc || musicPlayer.src);
         }
 
         function startMobileAnalyzerSyncLoop() {
             if (!isMobile) return;
-            if (mobileAnalyzerSyncTimer) return;
-            mobileAnalyzerSyncTimer = setInterval(() => {
-                if (!musicPlayer || musicPlayer.paused) return;
-                syncMobileAnalyzerPlayback();
-            }, 90);
+            syncMobileAnalyzerPlayback();
         }
 
         function stopMobileAnalyzerSyncLoop() {
@@ -5130,7 +5189,7 @@
         async function attemptResumeWithGesture() {
             hideResumePrompt();
             try {
-                if (audioContext && audioContext.state === 'suspended') {
+                if (!isMobile && audioContext && audioContext.state === 'suspended') {
                     await audioContext.resume();
                 }
             } catch (e) {
@@ -5152,12 +5211,8 @@
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 stopVisualizer();
-                // Try to resume AudioContext and a silent loop to keep audio alive on iOS
-                try {
-                    if (audioContext && audioContext.state === 'suspended') {
-                        audioContext.resume().catch(() => {});
-                    }
-                } catch (e) {}
+                // Keep native iPhone playback alive. Do not resume Web Audio here;
+                // that session change is what kills lock-screen controls.
                 tryStartSilentAudio();
                 if (isMobile && visibleAudioEl) {
                     try { visibleAudioEl.pause(); } catch (e) {}
@@ -5191,6 +5246,11 @@
             }
 
             animationFrameId = requestAnimationFrame(drawVisualizer);
+
+            if (isMobile && activeVisualizer === 'vuMeter') {
+                drawVUMeterVisualizer();
+                return;
+            }
 
             if (!analyser) {
                 return;
@@ -5411,10 +5471,8 @@
             meterWrapper.style.width = (baseWidth * scale) + 'px';
             meterWrapper.style.height = (baseHeight * scale) + 'px';
         }
-        
+
         function drawVUMeterVisualizer() {
-            const vuAnalyser = (isMobile && mobileMeterAnalyser) ? mobileMeterAnalyser : analyser;
-            if (!vuAnalyser) return;
             // Initialize ticks on first call
             initVUMeterTicks();
             initVUMeterTicks('mobile-ticks-group');
@@ -5422,23 +5480,23 @@
             initVUMeterTicks('mobile-corner-right-ticks');
             resizeVUMeter();
 
-            // Get volume
-            vuAnalyser.getByteFrequencyData(frequencyData);
-            let sum = 0;
-            // Only average the lower-to-mid frequencies
-            const length = Math.floor(frequencyData.length * 0.5); 
-            
-            for (let i = 0; i < length; i++) {
-                sum += frequencyData[i];
+            let volume = 0;
+            if (isMobile) {
+                volume = getMobileVuVolume();
+            } else {
+                const vuAnalyser = analyser;
+                if (!vuAnalyser || !frequencyData) return;
+                vuAnalyser.getByteFrequencyData(frequencyData);
+                let sum = 0;
+                const length = Math.floor(frequencyData.length * 0.5);
+                for (let i = 0; i < length; i++) {
+                    sum += frequencyData[i];
+                }
+                let average = sum / length;
+                average = average * 1.3;
+                if (average > 255) average = 255;
+                volume = average / 255;
             }
-            
-            let average = sum / length;
-            
-            // Gain adjustment: Lower sensitivity for more subtle deflection
-            average = average * 1.3; 
-            if (average > 255) average = 255;
-            
-            const volume = average / 255; // 0.0 to 1.0
 
             // Map to angle
             // Map volume (0.0 - 1.0) to Angle (-45 to +50 degrees)
@@ -6900,17 +6958,15 @@
             if (!musicPlayer) return;
             musicPlayer.addEventListener('pause', () => { 
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
-                // reflect in visible element UI
                 try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
                 stopMobileAnalyzerSyncLoop();
             });
             musicPlayer.addEventListener('play', () => {
-                if (audioContext) {
-                    audioContext.resume();
-                    startVisualizer();
-                }
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
+                if (document.hidden) return;
+                if (audioContext && !isMobile) audioContext.resume();
+                startVisualizer();
                 syncMobileAnalyzerPlayback();
                 startMobileAnalyzerSyncLoop();
             });
@@ -6926,7 +6982,6 @@
                 if (!musicPlayer.duration || musicPlayer.paused) return;
                 const remaining = musicPlayer.duration - musicPlayer.currentTime;
                 if (remaining <= 12) ensurePreloadNext();
-                syncMobileAnalyzerPlayback();
             });
             musicPlayer.addEventListener('playing', () => {
                 try {
