@@ -81,8 +81,8 @@
             top: 8mm; /* a few mm from the top by default */
             left: 50%;
             transform: translateX(-50%);
-            width: 200px; /* default visible size, scales down on small screens */
-            max-width: 40%;
+            width: 360px; /* default visible size, scales down on small screens */
+            max-width: 56%;
             height: auto;
             z-index: 2; /* above 3D canvas so the logo stays draggable */
             pointer-events: auto; /* allow dragging/clicks */
@@ -226,6 +226,10 @@
             border-right: none;
             z-index: 1000;
         }
+        #digital-clock .clock-time,
+        #digital-clock .clock-date {
+            display: block;
+        }
         
         /* Clock controls container - no longer needed but kept for compatibility */
         #clock-controls {
@@ -295,6 +299,50 @@
         
         .sort-button:active {
             transform: translateY(1px);
+        }
+
+        .finder-sort-bar {
+            display: flex;
+            align-items: stretch;
+            height: 22px;
+            background: #fff;
+            border: 2px inset #808080;
+            border-top-color: #404040;
+            border-left-color: #404040;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+        .finder-sort-btn {
+            flex: 1;
+            border: none;
+            border-right: 1px solid #c0c0c0;
+            background: transparent;
+            font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            font-size: 11px;
+            text-align: left;
+            padding: 0 8px;
+            cursor: pointer;
+            color: #000;
+            min-width: 0;
+            height: auto;
+            line-height: 18px;
+        }
+        .finder-sort-btn:last-child { border-right: none; }
+        .finder-sort-btn:hover { background: #e8f0ff; }
+        .finder-sort-btn.active {
+            font-weight: 700;
+            background: #d4d0c8;
+        }
+        .finder-sort-btn .sort-arrow {
+            float: right;
+            font-size: 10px;
+            opacity: 0.85;
+        }
+        #feeling-lucky-button.shuffle-on {
+            background: #000080;
+            color: #fff;
         }
 
         #search-bar::placeholder {
@@ -770,6 +818,30 @@
 
         #info-window p {
             margin-bottom: 8px;
+        }
+
+        #recycle-window {
+            width: 560px;
+            height: 480px;
+            min-width: 320px;
+            min-height: 240px;
+            display: none;
+        }
+        #recycle-window .content {
+            padding: 8px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #recycle-window img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
         }
         
         /* Buttons at the bottom of the main player */
@@ -2447,78 +2519,395 @@
                 color: var(--tr-dark);
             }
 
-            .tr808-row .row-label {
-                background: linear-gradient(180deg, #fff, #f6f6ea);
-                border-radius: 6px;
-            }
-
             /* --- Desktop icons & selection rectangle --- */
             #desktop-icons {
                 position: absolute;
-                left: 24px;
-                top: 24px;
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
+                left: 0;
+                top: 0;
+                right: 0;
+                bottom: 36px;
+                display: block;
                 z-index: 5; /* behind windows (windows default z-index:10) */
-                pointer-events: auto;
+                pointer-events: none;
+            }
+            #app-recycle {
+                margin-top: 0;
             }
 
             .desktop-icon {
-                width: 64px;
-                height: 64px;
+                position: absolute;
+                width: 96px;
+                height: auto;
+                background: transparent;
+                border: none;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 6px;
+                font-size: 18px;
+                color: #fff;
+                border-radius: 0;
+                cursor: pointer;
+                user-select: none;
+                padding: 4px 2px;
+                pointer-events: auto;
+                touch-action: none;
+            }
+            .desktop-icon.dragging {
+                opacity: 0.92;
+                z-index: 6;
+            }
+            .desktop-icon.demo-playing .win-icon {
+                animation: demo-reel-spin 1.1s linear infinite;
+            }
+            @keyframes demo-reel-spin {
+                to { transform: rotate(360deg); }
+            }
+            #demo-reel-flash {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 8;
+                opacity: 0;
+                background:
+                    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.38), rgba(255,255,255,0) 42%),
+                    linear-gradient(180deg, rgba(0,0,128,0.18), rgba(0,0,0,0));
+            }
+            #demo-reel-flash.on {
+                animation: demo-reel-flash 720ms ease-out forwards;
+            }
+            @keyframes demo-reel-flash {
+                0% { opacity: 1; }
+                100% { opacity: 0; }
+            }
+
+            .desktop-icon:hover { transform: none; box-shadow: none; }
+
+            .desktop-icon .icon-label {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px;
+                font-weight: 400;
+                color: #fff;
+                text-shadow: 1px 1px 0 #000;
+                text-align: center;
+                line-height: 1.15;
+                padding: 1px 3px;
+                max-width: 92px;
+            }
+
+            .desktop-icon.selected {
+                outline: none;
+            }
+
+            .desktop-icon.selected .icon-label {
+                background: #000080;
+                color: #fff;
+                text-shadow: none;
+            }
+
+            .desktop-icon.selected .win-icon {
+                outline: 1px dotted #fff;
+                outline-offset: 1px;
+            }
+
+            .win-icon {
+                width: 48px;
+                height: 48px;
+                display: block;
+                image-rendering: pixelated;
+                background-repeat: no-repeat;
+                background-size: 48px 48px;
+                flex-shrink: 0;
+            }
+            .win-icon-music {
+                image-rendering: auto;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='38%25' r='62%25'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='.28' stop-color='%23d5e2ea'/%3E%3Cstop offset='.48' stop-color='%236ec7ff'/%3E%3Cstop offset='.66' stop-color='%23d48cff'/%3E%3Cstop offset='.84' stop-color='%23ffd36a'/%3E%3Cstop offset='1' stop-color='%238fcdc4'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='13.5' cy='18.5' r='11.5' fill='url(%23g)' stroke='%23444444' stroke-width='1'/%3E%3Ccircle cx='13.5' cy='18.5' r='4' fill='%232b2b2b' stroke='%23f3f3f3' stroke-width='1.1'/%3E%3Ccircle cx='13.5' cy='18.5' r='1.35' fill='%23cfd3d8'/%3E%3Cellipse cx='24.4' cy='12.4' rx='3.5' ry='2.3' fill='%23111111' transform='rotate(-20 24.4 12.4)'/%3E%3Crect x='26.6' y='3.4' width='1.8' height='9.3' fill='%23111111' transform='rotate(-12 27.5 8)'/%3E%3Cpath d='M28 3.2c2.3.3 4.1 1.2 4.2 2.7-.8-.4-2-.7-3.4-.8V3.2z' fill='%23111111'/%3E%3C/svg%3E");
+            }
+            .win-icon-recycle { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='8' y='10' width='16' height='18' rx='2' fill='%23c8c8c8' stroke='%23444'/%3E%3Crect x='10' y='12' width='3' height='14' fill='%23999999'/%3E%3Crect x='14.5' y='12' width='3' height='14' fill='%23999999'/%3E%3Crect x='19' y='12' width='3' height='14' fill='%23999999'/%3E%3Crect x='7' y='8' width='18' height='3' rx='1' fill='%23dddddd' stroke='%23444'/%3E%3Crect x='12' y='5' width='8' height='4' rx='1' fill='%23bbbbbb' stroke='%23444'/%3E%3C/svg%3E"); }
+            .win-icon-mixes { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='4' y='8' width='14' height='4' fill='%23f0c040'/%3E%3Crect x='4' y='10' width='24' height='16' fill='%23f8d878'/%3E%3Crect x='4' y='10' width='24' height='2' fill='%23d4a017'/%3E%3Crect x='6' y='14' width='20' height='10' fill='%23fff8dc'/%3E%3Crect x='8' y='16' width='6' height='6' fill='%23000080'/%3E%3Crect x='16' y='17' width='8' height='2' fill='%23000080'/%3E%3Crect x='16' y='21' width='6' height='2' fill='%23808080'/%3E%3C/svg%3E"); }
+            .win-icon-dj { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='2' y='8' width='16' height='16' rx='8' fill='%23111111'/%3E%3Crect x='6' y='12' width='8' height='8' rx='4' fill='%23808080'/%3E%3Crect x='8' y='14' width='4' height='4' fill='%23c0c0c0'/%3E%3Crect x='14' y='10' width='16' height='16' rx='8' fill='%23222222'/%3E%3Crect x='18' y='14' width='8' height='8' rx='4' fill='%23aa0000'/%3E%3Crect x='20' y='16' width='4' height='4' fill='%23c0c0c0'/%3E%3C/svg%3E"); }
+            .win-icon-beats { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='3' y='6' width='26' height='20' fill='%23c0c0c0' stroke='%23000' stroke-width='1'/%3E%3Crect x='5' y='8' width='6' height='6' fill='%23dd1d00'/%3E%3Crect x='13' y='8' width='6' height='6' fill='%23f27900'/%3E%3Crect x='21' y='8' width='6' height='6' fill='%23ddda00'/%3E%3Crect x='5' y='16' width='6' height='6' fill='%232f2e3e'/%3E%3Crect x='13' y='16' width='6' height='6' fill='%23dd1d00'/%3E%3Crect x='21' y='16' width='6' height='6' fill='%23e6e8bf'/%3E%3C/svg%3E"); }
+            .win-icon-cards { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='6' y='4' width='16' height='22' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='8' y='6' width='12' height='18' fill='%23000080'/%3E%3Crect x='11' y='12' width='6' height='6' fill='%23fff'/%3E%3Crect x='10' y='8' width='18' height='22' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Ctext x='13' y='18' font-size='10' fill='%23c00000' font-family='Tahoma'%3E%E2%99%A5%3C/text%3E%3Ctext x='19' y='26' font-size='8' fill='%23c00000' font-family='Tahoma'%3EA%3C/text%3E%3C/svg%3E"); }
+            .win-icon-demo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='4' y='4' width='24' height='24' rx='12' fill='%23c0c0c0'/%3E%3Crect x='6' y='6' width='20' height='20' rx='10' fill='%23111111'/%3E%3Crect x='12' y='12' width='8' height='8' rx='4' fill='%23c0c0c0'/%3E%3Crect x='14' y='14' width='4' height='4' fill='%23000080'/%3E%3Crect x='15' y='4' width='2' height='6' fill='%23fff'/%3E%3C/svg%3E"); }
+            .win-icon-doodle { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='7' y='4' width='14' height='18' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='9' y='6' width='10' height='3' fill='%23ff4060'/%3E%3Crect x='9' y='10' width='10' height='3' fill='%232060ff'/%3E%3Crect x='9' y='14' width='10' height='3' fill='%2320ffa0'/%3E%3Crect x='18' y='20' width='8' height='8' fill='%23f0c040'/%3E%3Crect x='20' y='16' width='3' height='8' fill='%23804a00'/%3E%3C/svg%3E"); }
+            .win-icon-about { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='6' y='4' width='20' height='24' fill='%23c0c0c0' stroke='%23000' stroke-width='1'/%3E%3Crect x='8' y='6' width='16' height='10' fill='%23000080'/%3E%3Crect x='14' y='8' width='4' height='6' fill='%23fff'/%3E%3Crect x='10' y='18' width='12' height='2' fill='%23000'/%3E%3Crect x='10' y='22' width='8' height='2' fill='%23808080'/%3E%3C/svg%3E"); }
+
+            #desktop-os #player-container {
+                display: none;
+                left: 92px;
+                top: 28px;
+            }
+
+            #desktop-os .title-bar-buttons .window-button:not(.visualizer-tab) {
+                width: 16px;
+                height: 14px;
+                min-width: 16px;
+                min-height: 14px;
+                line-height: 12px;
+                font-size: 10px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            }
+
+            #desktop-os #color-picker-container {
+                left: 0;
+                right: 0;
+                width: 100%;
+                height: 36px;
+                padding: 2px 132px 2px 2px;
+                border-top: 2px solid #fff;
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
+                gap: 4px;
+            }
+
+            #desktop-os #open-dj-app-icon,
+            #desktop-os #open-solitaire-icon,
+            #desktop-os #open-tr808-icon {
+                display: none !important;
+            }
+
+            #desktop-os #minimized-player-icon {
+                display: none !important;
+            }
+
+            #desktop-os #minimized-dj-icon,
+            #desktop-os #minimized-solitaire-icon,
+            #desktop-os #minimized-tr808-icon {
+                width: 22px;
+                height: 22px;
+                margin-left: 2px;
+            }
+
+            #desktop-os .taskbar-swatch {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                height: 26px;
+                padding: 0 7px;
                 background: #c0c0c0;
                 border-top: 2px solid #fff;
                 border-left: 2px solid #fff;
                 border-right: 2px solid #404040;
                 border-bottom: 2px solid #404040;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px;
+                color: #000;
+                flex-shrink: 0;
+            }
+            #desktop-os .taskbar-swatch span {
+                font-weight: 700;
+                line-height: 1;
+            }
+            #desktop-os .taskbar-swatch input[type='color'] {
+                width: 18px;
+                height: 18px;
+                padding: 0;
+                margin: 0;
+                border: 1px solid #808080;
+                background: #fff;
+                cursor: pointer;
+            }
+            #desktop-os .taskbar-swatch input[type='color']::-webkit-color-swatch-wrapper {
+                padding: 1px;
+            }
+            #desktop-os .taskbar-swatch input[type='color']::-webkit-color-swatch {
+                border: 1px solid #404040;
+            }
+
+            #start-button {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                height: 30px;
+                padding: 0 12px 0 6px;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 13px;
+                font-weight: 700;
+                color: #000;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            #start-button.active,
+            #start-button:active {
+                border-top: 2px solid #404040;
+                border-left: 2px solid #404040;
+                border-right: 2px solid #fff;
+                border-bottom: 2px solid #fff;
+            }
+            .start-logo {
+                width: 22px;
+                height: 22px;
+                display: block;
+                object-fit: contain;
+                image-rendering: auto;
+                flex-shrink: 0;
+            }
+
+            #start-menu {
+                display: none;
+                position: fixed;
+                left: 2px;
+                bottom: 36px;
+                z-index: 3000;
+                width: min(340px, calc(100vw - 16px));
+                min-height: 280px;
+                max-height: calc(100vh - 52px);
+                overflow: hidden;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #000;
+                border-bottom: 2px solid #000;
+                box-shadow: 1px 1px 0 #000;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            }
+            #start-menu.open { display: flex; flex-direction: row; align-items: stretch; }
+            .start-banner {
+                width: 32px;
+                background: linear-gradient(#000080, #1084d0);
+                color: #fff;
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                font-weight: 700;
+                font-size: 16px;
+                letter-spacing: 1px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                padding: 10px 0;
+                flex-shrink: 0;
+            }
+            .start-items {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 4px 0;
+                overflow-y: auto;
+            }
+            .start-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: transparent;
+                border: none;
+                text-align: left;
+                padding: 8px 14px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 13px;
+                color: #000;
+                cursor: pointer;
+            }
+            .start-item:hover {
+                background: #000080;
+                color: #fff;
+            }
+            .start-item .win-icon {
+                width: 32px;
+                height: 32px;
+                background-size: 32px 32px;
+            }
+            .start-sep {
+                height: 2px;
+                margin: 3px 4px;
+                border-top: 1px solid #808080;
+                border-bottom: 1px solid #fff;
+            }
+
+            body:not(.mobile-mode) .window.win-anim {
+                transition: transform 160ms ease-out, opacity 160ms ease-out;
+            }
+
+            .doodle-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                margin: 0 0 8px;
+                padding: 6px 8px;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                flex-shrink: 0;
+            }
+            .doodle-field {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                color: #000;
+                white-space: nowrap;
+            }
+            .doodle-field input[type="color"] {
+                width: 32px;
+                height: 24px;
+                min-width: 32px;
+                padding: 0;
+                border: 1px solid #808080;
+                background: #fff;
+                cursor: pointer;
+            }
+            .doodle-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 1px; }
+            .doodle-field input[type="color"]::-webkit-color-swatch { border: 1px solid #404040; }
+            .doodle-field input[type="range"] {
+                width: 90px;
+            }
+            .doodle-clear {
+                margin-left: auto;
+            }
+            .doodle-canvas-wrap {
+                position: relative;
+                flex: 1;
+                min-height: 0;
+                background: #fff;
+                border: 2px inset #808080;
+            }
+            .doodle-canvas-wrap canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+                cursor: crosshair;
+            }
+
+            body:not(.mobile-mode) #digital-clock {
+                height: 36px;
+                min-width: 124px;
+                padding: 0 10px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
-                gap: 4px;
-                font-size: 18px;
-                color: var(--tr-dark);
-                border-radius: 8px;
-                cursor: pointer;
-                user-select: none;
-                transition: transform 160ms ease, box-shadow 120ms;
-            }
-
-            .desktop-icon:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
-
-            .desktop-icon .icon-label { font-size: 0.72rem; font-weight:700; color: var(--tr-dark); }
-
-            .desktop-icon.selected {
-                outline: 3px solid rgba(21, 101, 192, 0.9);
-                outline-offset: -4px;
-            }
-
-            #app-demo-reel {
-                position: fixed;
-                right: 24px;
-                top: 24px;
-                width: 126px;
-                height: 126px;
-                z-index: 8;
-                gap: 6px;
-                font-size: 42px;
-                color: #000080;
-                background: #c0c0c0;
-                border-top: 3px solid #fff;
-                border-left: 3px solid #fff;
-                border-right: 3px solid #404040;
-                border-bottom: 3px solid #404040;
-                box-shadow: 2px 2px 0 1px #000;
-            }
-
-            #app-demo-reel .icon-label {
-                font-size: 0.84rem;
-                line-height: 1.1;
+                gap: 0;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 13px;
+                font-weight: 400;
+                line-height: 1;
                 text-align: center;
-                padding: 0 4px;
+                border-top: 2px solid #808080;
+                border-left: 2px solid #808080;
+                border-right: 2px solid #fff;
+                border-bottom: none;
+                box-sizing: border-box;
+            }
+            body:not(.mobile-mode) #digital-clock .clock-time {
+                font-size: 14px;
                 font-weight: 700;
-                color: #000;
+                letter-spacing: 0.03em;
+                line-height: 16px;
+            }
+            body:not(.mobile-mode) #digital-clock .clock-date {
+                font-size: 10px;
+                line-height: 12px;
+                color: #222;
             }
 
             /* Selection rectangle overlay shown while dragging on desktop */
@@ -2589,6 +2978,11 @@
             }
 
             body.mobile-mode #digital-clock {
+                display: none !important;
+            }
+
+            body.mobile-mode #start-button,
+            body.mobile-mode #start-menu {
                 display: none !important;
             }
 
@@ -3203,24 +3597,41 @@
     <!-- Particle canvas (behind windows, interactive visual background) -->
     <canvas id="particle-canvas" style="position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;"></canvas>
 
-    <!-- Desktop icons (playful / fidget apps) -->
+    <!-- Desktop icons (Win95-style apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
-
+        <div class="desktop-icon" id="app-music" data-app="music" title="Music & Mixes">
+            <span class="win-icon win-icon-music" aria-hidden="true"></span>
+            <div class="icon-label">Music</div>
+        </div>
+        <div class="desktop-icon" id="app-dj" data-app="dj" title="DJ Decks">
+            <span class="win-icon win-icon-dj" aria-hidden="true"></span>
+            <div class="icon-label">DJ</div>
+        </div>
+        <div class="desktop-icon" id="app-beats" data-app="beats" title="TR-808 Sequencer">
+            <span class="win-icon win-icon-beats" aria-hidden="true"></span>
+            <div class="icon-label">Beats</div>
+        </div>
+        <div class="desktop-icon" id="app-cards" data-app="cards" title="Cards">
+            <span class="win-icon win-icon-cards" aria-hidden="true"></span>
+            <div class="icon-label">Cards</div>
+        </div>
         <div class="desktop-icon" id="app-demo-reel" data-app="demo-reel" title="Play Demo Reel">
-            <i class="fas fa-compact-disc"></i>
+            <span class="win-icon win-icon-demo" aria-hidden="true"></span>
             <div class="icon-label">Demo Reel</div>
         </div>
-        
         <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
-            <i class="fas fa-pencil-alt"></i>
+            <span class="win-icon win-icon-doodle" aria-hidden="true"></span>
             <div class="icon-label">Doodle</div>
         </div>
-        
-        
+        <div class="desktop-icon" id="app-recycle" data-app="recycle" title="Recycle Bin">
+            <span class="win-icon win-icon-recycle" aria-hidden="true"></span>
+            <div class="icon-label">Recycle Bin</div>
+        </div>
     </div>
 
     <!-- Selection rectangle used for click-drag selecting desktop icons -->
     <div id="selection-rect" aria-hidden="true"></div>
+    <div id="demo-reel-flash" aria-hidden="true"></div>
 
 
     <!-- Main Player Window -->
@@ -3274,10 +3685,16 @@
                 <div class="search-sort-container">
                     <input type="text" id="search-bar" placeholder="Search tracks...">
                     <button id="clear-search" class="window-button sort-button" title="Clear search">⊗</button>
-                    <button id="sort-az" class="window-button sort-button" title="Sort A-Z">A-Z</button>
-                    <button id="sort-za" class="window-button sort-button" title="Sort Z-A">Z-A</button>
-                    <button id="sort-date" class="window-button sort-button" title="Sort by Date Added">📅</button>
+                    <button id="sort-az" class="window-button sort-button" title="Sort A-Z" style="display:none;">A-Z</button>
+                    <button id="sort-za" class="window-button sort-button" title="Sort Z-A" style="display:none;">Z-A</button>
+                    <button id="sort-date" class="window-button sort-button" title="Sort by Date Added" style="display:none;">📅</button>
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
+                </div>
+                <div class="finder-sort-bar" id="finder-sort-bar" role="toolbar" aria-label="Sort tracks">
+                    <button type="button" class="finder-sort-btn active" data-sort="date" title="Sort by date">Date <span class="sort-arrow">▼</span></button>
+                    <button type="button" class="finder-sort-btn" data-sort="name" title="Sort by name">Name <span class="sort-arrow"></span></button>
+                    <button type="button" class="finder-sort-btn" data-sort="bpm" title="Sort by BPM">BPM <span class="sort-arrow"></span></button>
+                    <button type="button" class="finder-sort-btn" data-sort="random" title="Random order">Shuffle</button>
                 </div>
 
                 <div class="file-browser" id="file-browser-main">
@@ -3299,13 +3716,13 @@
                 </div>
                 
                  <div class="player-bottom-buttons">
-                     <button id="info-button" class="window-button">i</button>
+                     <button id="info-button" class="window-button" title="About">i</button>
                      <button id="open-playlists-button" class="window-button" title="Open Playlists">
                          <i class="fas fa-folder"></i>
                      </button>
                      <button id="add-track-now-playing" class="window-button" title="Add Current Track to Playlist">+</button>
-                     <button id="feeling-lucky-button" class="window-button" title="Feeling Lucky — Play a random track">
-                         <i class="fas fa-dice"></i>
+                     <button id="feeling-lucky-button" class="window-button" title="Shuffle — play in random order">
+                         <i class="fas fa-random"></i>
                      </button>
                  </div>
             </div>
@@ -3363,6 +3780,19 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="resize-handle"></div>
+    </div>
+
+    <div id="recycle-window" class="window">
+        <div class="title-bar">
+            <span class="title-bar-text">Recycle Bin</span>
+            <div class="title-bar-buttons">
+                <button class="window-button close-button" data-target="recycle-window">X</button>
+            </div>
+        </div>
+        <div class="content">
+            <img src="kobe1.jpg" alt="Kobe">
         </div>
         <div class="resize-handle"></div>
     </div>
@@ -3709,10 +4139,23 @@
     
     <!-- Bottom Bar: Color Picker & Minimized Icons -->
     <div id="color-picker-container">
-        <label for="bg-color-picker">BG:</label>
-        <input type="color" id="bg-color-picker" value="#008080">
-        <label for="viz-bg-picker">Viz:</label>
-        <input type="color" id="viz-bg-picker" value="#000000" title="Visualizer background color">
+        <button type="button" id="start-button" title="Start">
+            <svg class="start-logo" viewBox="0 0 88 88" aria-hidden="true" focusable="false">
+                <polygon fill="#F25022" points="4,16 41,12 41,42 4,42"/>
+                <polygon fill="#7FBA00" points="45,11 84,6 84,42 45,42"/>
+                <polygon fill="#00A4EF" points="4,46 41,46 41,76 4,72"/>
+                <polygon fill="#FFB900" points="45,46 84,46 84,82 45,77"/>
+            </svg>
+            Start
+        </button>
+        <label class="taskbar-swatch" for="bg-color-picker" title="Desktop background color">
+            <span>BG</span>
+            <input type="color" id="bg-color-picker" value="#008080">
+        </label>
+        <label class="taskbar-swatch" for="viz-bg-picker" title="Visualizer background color">
+            <span>Viz</span>
+            <input type="color" id="viz-bg-picker" value="#000000">
+        </label>
         
         <div id="minimized-player-icon" title="Restore Music Player">
             <i class="fas fa-headphones"></i> 
@@ -3738,6 +4181,37 @@
             <i class="fas fa-th-large"></i>
         </div>
         <!-- Visual mode toggle moved to bottom-left clock controls -->
+    </div>
+
+    <div id="start-menu" role="menu" aria-hidden="true">
+        <div class="start-banner">Ilan Reiss</div>
+        <div class="start-items">
+            <button type="button" class="start-item" data-start="info">
+                <span class="win-icon win-icon-about" aria-hidden="true"></span>
+                About this computer
+            </button>
+            <div class="start-sep"></div>
+            <button type="button" class="start-item" data-start="music">
+                <span class="win-icon win-icon-music" aria-hidden="true"></span>
+                Music
+            </button>
+            <button type="button" class="start-item" data-start="dj">
+                <span class="win-icon win-icon-dj" aria-hidden="true"></span>
+                DJ
+            </button>
+            <button type="button" class="start-item" data-start="beats">
+                <span class="win-icon win-icon-beats" aria-hidden="true"></span>
+                Beats
+            </button>
+            <button type="button" class="start-item" data-start="cards">
+                <span class="win-icon win-icon-cards" aria-hidden="true"></span>
+                Cards
+            </button>
+            <button type="button" class="start-item" data-start="recycle">
+                <span class="win-icon win-icon-recycle" aria-hidden="true"></span>
+                Recycle Bin
+            </button>
+        </div>
     </div>
  
     <!-- Context Menu (hidden) -->
@@ -4307,6 +4781,11 @@
         let selectedDjTrack = null; 
         let djSortAscending = true; 
         let currentMainPlayerTab = 'tracks'; // State for main player tabs
+        let trackSortKey = 'date';
+        let trackSortDir = { date: 'desc', name: 'asc', bpm: 'asc' };
+        let shuffleEnabled = false;
+        let shuffleQueue = [];
+        let shufflePos = 0;
         
         // Favorites storage (localStorage)
         let favorites = new Set();
@@ -4486,6 +4965,7 @@
         const playerContainer = document.getElementById('player-container');
         const visualizerWindow = document.getElementById('visualizer-window');
         const infoWindow = document.getElementById('info-window');
+        const recycleWindow = document.getElementById('recycle-window');
         const infoButton = document.getElementById('info-button');
         const digitalClock = document.getElementById('digital-clock');
         const bgColorPicker = document.getElementById('bg-color-picker');
@@ -4572,8 +5052,34 @@
             return /(?:^|\/)Reiss(?:%20|\s)+Demo(?:%20|\s)+Reel\.wav(?:[?#].*)?$/i.test(src || '');
         }
 
+        function setDemoReelFx(on) {
+            const demoIcon = document.getElementById('app-demo-reel');
+            if (demoIcon) demoIcon.classList.toggle('demo-playing', !!on && !isMobile);
+        }
+
+        function isDemoReelPlaying() {
+            return !!(musicPlayer && !musicPlayer.paused && isDemoReelSource(musicPlayer.src));
+        }
+
+        function stopDesktopDemoReel() {
+            try {
+                if (musicPlayer && isDemoReelSource(musicPlayer.src)) musicPlayer.pause();
+            } catch (e) {}
+            try {
+                const audioEl = document.getElementById('audio-player');
+                if (audioEl && isDemoReelSource(audioEl.src)) audioEl.pause();
+            } catch (e) {}
+            setDemoReelFx(false);
+        }
+
         function playDesktopDemoReel() {
+            if (isDemoReelPlaying()) {
+                stopDesktopDemoReel();
+                return;
+            }
+
             const demoFileUrl = 'Reiss Demo Reel.wav';
+            const resumeSame = !!(musicPlayer && isDemoReelSource(musicPlayer.src) && musicPlayer.paused);
 
             // Stop other running sources first, then route through the same main player path.
             document.getElementById('deck-a-audio').pause();
@@ -4583,8 +5089,10 @@
 
             initPlayersOnGesture();
             const audioEl = document.getElementById('audio-player');
-            audioEl.src = demoFileUrl;
-            musicPlayer.src = demoFileUrl;
+            if (!resumeSame) {
+                audioEl.src = demoFileUrl;
+                musicPlayer.src = demoFileUrl;
+            }
 
             if (!audioContext) setupAudioContext();
             tryStartSilentAudio();
@@ -4592,6 +5100,30 @@
             updateNowPlayingText('Reiss Demo Reel');
             document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
             updateMediaSession('Reiss Demo Reel', false);
+
+            if (!isMobile) {
+                setDemoReelFx(true);
+                if (!resumeSame) {
+                    const flash = document.getElementById('demo-reel-flash');
+                    if (flash) {
+                        flash.classList.remove('on');
+                        void flash.offsetWidth;
+                        flash.classList.add('on');
+                        setTimeout(() => flash.classList.remove('on'), 800);
+                    }
+                    try {
+                        const starTab = document.querySelector('#visualizer-tabs .visualizer-tab[data-visualizer="starfield"]');
+                        if (starTab && activeVisualizer !== 'starfield') starTab.click();
+                        else if (typeof initStars === 'function') initStars();
+                    } catch (e) {}
+                    try {
+                        if (window.__desktopThreeBg && typeof window.__desktopThreeBg.cycleAccent === 'function') {
+                            window.__desktopThreeBg.cycleAccent();
+                        }
+                    } catch (e) {}
+                }
+            }
+
             startVisualizer();
             musicPlayer.play().catch(() => {});
         }
@@ -4599,7 +5131,7 @@
         // Start selection only when clicking outside of any existing window
         document.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return; // left button only
-            if (e.target.closest('.window')) return; // don't start selection when interacting with windows
+            if (e.target.closest('.window, #desktop-icons, #color-picker-container, #start-menu, #digital-clock, #background1')) return;
             if (window.__desktopThreeDragging) return; // grabbing a 3D sphere
             // begin selection
             isSelecting = true;
@@ -4655,32 +5187,323 @@
             selectionRect.style.display = 'none';
         }
 
+        function isDesktopWindowOpen(el) {
+            return !!(el && el.style.display === 'flex');
+        }
+
+        function centerDesktopWindow(el, width, height) {
+            if (!el) return;
+            const w = width || el.offsetWidth || parseFloat(el.style.width) || 640;
+            const h = height || el.offsetHeight || parseFloat(el.style.height) || 480;
+            const taskbar = 40;
+            el.style.left = Math.max(12, Math.floor((window.innerWidth - w) / 2)) + 'px';
+            el.style.top = Math.max(12, Math.floor((window.innerHeight - h - taskbar) / 2)) + 'px';
+        }
+
+        function playOpenWindowAnim(el, iconEl) {
+            if (isMobile || !el) return;
+            el.classList.add('win-anim');
+            const destLeft = parseFloat(el.style.left) || 0;
+            const destTop = parseFloat(el.style.top) || 0;
+            const destW = el.offsetWidth || parseFloat(el.style.width) || 640;
+            const destH = el.offsetHeight || parseFloat(el.style.height) || 480;
+            const iconRect = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+            const sx = iconRect ? (iconRect.left + iconRect.width / 2) : 28;
+            const sy = iconRect ? (iconRect.top + iconRect.height / 2) : 80;
+            el.style.transformOrigin = 'center center';
+            el.style.opacity = '0';
+            el.style.transform = 'translate(' + (sx - destLeft - destW / 2) + 'px, ' + (sy - destTop - destH / 2) + 'px) scale(0.08)';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translate(0,0) scale(1)';
+                });
+            });
+            setTimeout(() => {
+                el.classList.remove('win-anim');
+                el.style.transform = '';
+                el.style.opacity = '';
+            }, 180);
+        }
+
+        function hideDesktopWindow(el, iconEl) {
+            if (!el) return;
+            if (isMobile) {
+                el.style.display = 'none';
+                return;
+            }
+            el.classList.add('win-anim');
+            const iconRect = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+            if (iconRect) {
+                const destLeft = parseFloat(el.style.left) || el.getBoundingClientRect().left;
+                const destTop = parseFloat(el.style.top) || el.getBoundingClientRect().top;
+                const destW = el.offsetWidth || 1;
+                const destH = el.offsetHeight || 1;
+                el.style.transformOrigin = 'center center';
+                el.style.transform = 'translate(' + ((iconRect.left + iconRect.width / 2) - destLeft - destW / 2) + 'px, ' + ((iconRect.top + iconRect.height / 2) - destTop - destH / 2) + 'px) scale(0.08)';
+            } else {
+                el.style.transformOrigin = 'center center';
+                el.style.transform = 'scale(0.08)';
+            }
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.style.display = 'none';
+                el.style.transform = '';
+                el.style.opacity = '';
+                el.classList.remove('win-anim');
+            }, 160);
+        }
+
+        function showDesktopWindow(el, iconEl, width, height) {
+            if (!el) return;
+            el.style.display = 'flex';
+            if (!isMobile) {
+                centerDesktopWindow(el, width, height);
+                playOpenWindowAnim(el, iconEl);
+                bringWindowToFront(el);
+            }
+        }
+
+        function openDesktopPlayer(tab) {
+            if (isMobile) return;
+            showDesktopWindow(playerContainer, document.getElementById('app-music'));
+            minimizedPlayerIcon.style.display = 'none';
+            const tabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="' + tab + '"]');
+            if (tabBtn) tabBtn.click();
+        }
+
+        let doodleWindowEl = null;
+
+        function launchDesktopApp(app) {
+            if (app === 'demo-reel') {
+                playDesktopDemoReel();
+                return;
+            }
+            if (app === 'music' || app === 'mixes') {
+                if (isDesktopWindowOpen(playerContainer)) {
+                    hideDesktopWindow(playerContainer, document.getElementById('app-music'));
+                    minimizedPlayerIcon.style.display = 'none';
+                } else {
+                    openDesktopPlayer(app === 'mixes' ? 'mixes' : 'tracks');
+                }
+                return;
+            }
+            if (app === 'dj') {
+                if (isDesktopWindowOpen(djAppWindow)) {
+                    hideDesktopWindow(djAppWindow, document.getElementById('app-dj'));
+                    minimizedDjIcon.style.display = 'none';
+                } else if (openDjAppIcon) {
+                    openDjAppIcon.click();
+                }
+                return;
+            }
+            if (app === 'beats') {
+                if (isDesktopWindowOpen(tr808Window)) {
+                    hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
+                    minimizedTr808Icon.style.display = 'none';
+                } else if (openTr808Icon) {
+                    openTr808Icon.click();
+                }
+                return;
+            }
+            if (app === 'cards') {
+                if (isDesktopWindowOpen(solitaireWindow)) {
+                    hideDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
+                    minimizedSolitaireIcon.style.display = 'none';
+                } else if (openSolitaireIcon) {
+                    openSolitaireIcon.click();
+                }
+                return;
+            }
+            if (app === 'recycle') {
+                if (isDesktopWindowOpen(recycleWindow)) {
+                    hideDesktopWindow(recycleWindow, document.getElementById('app-recycle'));
+                } else {
+                    showDesktopWindow(recycleWindow, document.getElementById('app-recycle'), 560, 480);
+                }
+                return;
+            }
+            if (app === 'info' && infoButton) { infoButton.click(); return; }
+            const iconEl = document.querySelector('#desktop-icons .desktop-icon[data-app="' + app + '"]');
+            if (app === 'doodle') {
+                if (doodleWindowEl && document.body.contains(doodleWindowEl)) {
+                    hideDesktopWindow(doodleWindowEl, iconEl);
+                    setTimeout(() => { try { doodleWindowEl.remove(); } catch (err) {} doodleWindowEl = null; }, 170);
+                } else {
+                    openMiniApp(app, iconEl);
+                }
+            }
+        }
+
         // Wire up clicks on icons: ctrl/cmd-click toggles selection; regular click opens mini-app
         desktopIcons.forEach(icon => {
             icon.addEventListener('click', (e) => {
+                if (icon._justDragged) {
+                    icon._justDragged = false;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 if (e.ctrlKey || e.metaKey) {
                     icon.classList.toggle('selected');
                     return;
                 }
-                const app = icon.dataset.app;
-                if (app === 'demo-reel') {
-                    playDesktopDemoReel();
-                    return;
-                }
-                openMiniApp(app, icon);
+                launchDesktopApp(icon.dataset.app);
             });
+        });
+
+        const ICON_POS_KEY = 'desktopIconPos';
+        const DESKTOP_ICON_W = 96;
+        const DESKTOP_ICON_H = 86;
+        const DESKTOP_TASKBAR_H = 36;
+
+        function defaultIconLayout() {
+            const order = ['app-music', 'app-dj', 'app-beats', 'app-cards', 'app-demo-reel', 'app-doodle'];
+            const pos = {};
+            order.forEach((id, i) => {
+                pos[id] = { x: 8, y: 8 + i * (DESKTOP_ICON_H + 10) };
+            });
+            pos['app-recycle'] = {
+                x: 8,
+                y: Math.max(8, window.innerHeight - DESKTOP_TASKBAR_H - DESKTOP_ICON_H - 8)
+            };
+            return pos;
+        }
+
+        function clampIconPos(x, y, el) {
+            const w = (el && el.offsetWidth) ? el.offsetWidth : DESKTOP_ICON_W;
+            const h = (el && el.offsetHeight) ? el.offsetHeight : DESKTOP_ICON_H;
+            const maxX = Math.max(0, window.innerWidth - w);
+            const maxY = Math.max(0, window.innerHeight - DESKTOP_TASKBAR_H - h);
+            return {
+                x: Math.round(Math.max(0, Math.min(x, maxX))),
+                y: Math.round(Math.max(0, Math.min(y, maxY)))
+            };
+        }
+
+        function loadIconPositions() {
+            let saved = {};
+            try { saved = JSON.parse(localStorage.getItem(ICON_POS_KEY) || '{}') || {}; } catch (e) { saved = {}; }
+            const defaults = defaultIconLayout();
+            desktopIcons.forEach(icon => {
+                const src = saved[icon.id] || defaults[icon.id] || { x: 8, y: 8 };
+                const p = clampIconPos(src.x, src.y, icon);
+                icon.style.left = p.x + 'px';
+                icon.style.top = p.y + 'px';
+            });
+        }
+
+        function saveIconPositions() {
+            const pos = {};
+            desktopIcons.forEach(icon => {
+                pos[icon.id] = {
+                    x: parseFloat(icon.style.left) || 0,
+                    y: parseFloat(icon.style.top) || 0
+                };
+            });
+            try { localStorage.setItem(ICON_POS_KEY, JSON.stringify(pos)); } catch (e) {}
+        }
+
+        function initDesktopIconDrag() {
+            loadIconPositions();
+            desktopIcons.forEach(icon => {
+                if (icon._dragBound) return;
+                icon._dragBound = true;
+                let dragging = false;
+                let moved = false;
+                let startX = 0, startY = 0, origX = 0, origY = 0;
+                icon.addEventListener('pointerdown', (e) => {
+                    if (isMobile) return;
+                    if (e.button != null && e.button !== 0) return;
+                    if (e.ctrlKey || e.metaKey) return;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    origX = parseFloat(icon.style.left) || 0;
+                    origY = parseFloat(icon.style.top) || 0;
+                    dragging = true;
+                    moved = false;
+                    try { icon.setPointerCapture(e.pointerId); } catch (err) {}
+                });
+                icon.addEventListener('pointermove', (e) => {
+                    if (!dragging || isMobile) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    if (!moved && Math.hypot(dx, dy) < 6) return;
+                    moved = true;
+                    icon.classList.add('dragging');
+                    const p = clampIconPos(origX + dx, origY + dy, icon);
+                    icon.style.left = p.x + 'px';
+                    icon.style.top = p.y + 'px';
+                });
+                const endDrag = () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    icon.classList.remove('dragging');
+                    if (moved) {
+                        icon._justDragged = true;
+                        saveIconPositions();
+                    }
+                };
+                icon.addEventListener('pointerup', endDrag);
+                icon.addEventListener('pointercancel', endDrag);
+            });
+            requestAnimationFrame(loadIconPositions);
+        }
+
+        initDesktopIconDrag();
+        document.addEventListener('interface-mode-changed', () => {
+            if (!isMobile) loadIconPositions();
+        });
+        window.addEventListener('resize', () => {
+            if (isMobile) return;
+            desktopIcons.forEach(icon => {
+                const p = clampIconPos(parseFloat(icon.style.left) || 0, parseFloat(icon.style.top) || 0, icon);
+                icon.style.left = p.x + 'px';
+                icon.style.top = p.y + 'px';
+            });
+        });
+
+        const startButton = document.getElementById('start-button');
+        const startMenu = document.getElementById('start-menu');
+        function closeStartMenu() {
+            if (!startMenu || !startButton) return;
+            startMenu.classList.remove('open');
+            startButton.classList.remove('active');
+            startMenu.setAttribute('aria-hidden', 'true');
+        }
+        function toggleStartMenu() {
+            if (!startMenu || !startButton || isMobile) return;
+            const open = !startMenu.classList.contains('open');
+            startMenu.classList.toggle('open', open);
+            startButton.classList.toggle('active', open);
+            startMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+        }
+        if (startButton) {
+            startButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleStartMenu();
+            });
+        }
+        if (startMenu) {
+            startMenu.addEventListener('click', (e) => {
+                const item = e.target.closest('.start-item');
+                if (!item) return;
+                closeStartMenu();
+                launchDesktopApp(item.dataset.start);
+            });
+        }
+        document.addEventListener('mousedown', (e) => {
+            if (!startMenu || !startMenu.classList.contains('open')) return;
+            if (e.target.closest('#start-menu, #start-button')) return;
+            closeStartMenu();
         });
 
         // Create a small window for mini-apps and attach basic drag/resize/close handlers
         function openMiniApp(appId, iconEl) {
-            // position near the icon
-            const iconRect = iconEl ? iconEl.getBoundingClientRect() : { left: 120, top: 120 };
             const win = document.createElement('div');
             win.className = 'window mini-app-window';
             win.style.width = '360px';
             win.style.height = '300px';
-            win.style.left = (iconRect.left + 80) + 'px';
-            win.style.top = (iconRect.top) + 'px';
             win.style.zIndex = 20;
 
             const titleBar = document.createElement('div');
@@ -4697,8 +5520,8 @@
 
             // populate app content
             if (appId === 'doodle') {
-                // larger default canvas; window will be enlarged below
-                content.innerHTML = `<canvas id="doodle-canvas" width="320" height="200" style="border:1px dashed rgba(0,0,0,0.08);background:#fff;"></canvas><div style="margin-top:6px;display:flex;gap:8px;"><button id="clear-doodle" class="window-button">Clear</button></div>`;
+                content.style.padding = '8px';
+                content.innerHTML = `<div class="doodle-canvas-wrap"><canvas id="doodle-canvas"></canvas></div>`;
             } else {
                 content.innerHTML = `<div style="padding:12px;">Mini app: ${appId}</div>`;
             }
@@ -4713,13 +5536,15 @@
                 const h = Math.min(window.innerHeight - 120, 680);
                 win.style.width = w + 'px';
                 win.style.height = h + 'px';
-                // center near middle of screen
-                win.style.left = Math.max(20, (window.innerWidth - w) / 2) + 'px';
-                win.style.top = Math.max(40, (window.innerHeight - h) / 2) + 'px';
+                doodleWindowEl = win;
             }
 
-            // close handler
-            closeBtn.addEventListener('click', () => { try { win.remove(); } catch(e){} });
+            showDesktopWindow(win, iconEl);
+
+            closeBtn.addEventListener('click', () => {
+                hideDesktopWindow(win, iconEl);
+                setTimeout(() => { try { win.remove(); } catch(e){} if (doodleWindowEl === win) doodleWindowEl = null; }, 170);
+            });
 
             // attach drag/resize listeners for this window (reuse existing handlers)
             titleBar.addEventListener('mousedown', (e) => handleDragStart(e, win));
@@ -4727,30 +5552,65 @@
             resizeHandle.addEventListener('mousedown', (e) => handleResizeStart(e, win));
             resizeHandle.addEventListener('touchstart', (e) => handleResizeStart(e, win), { passive: false });
 
-            bringWindowToFront(win);
-
-            // initialize mini-app behaviors
             if (appId === 'doodle') {
-                // larger doodle window with color and brush size controls
                 const canvasEl = content.querySelector('#doodle-canvas');
-                // resize canvas to be roomy
-                const w = 780, h = 520;
-                canvasEl.width = w; canvasEl.height = h; canvasEl.style.width = w+'px'; canvasEl.style.height = h+'px';
-                const controlsWrap = document.createElement('div'); controlsWrap.style.display='flex'; controlsWrap.style.gap='8px'; controlsWrap.style.marginTop='8px';
-                const colorInput = document.createElement('input'); colorInput.type='color'; colorInput.value='#2F2E3E';
-                const sizeInput = document.createElement('input'); sizeInput.type='range'; sizeInput.min='1'; sizeInput.max='48'; sizeInput.value='6'; sizeInput.style.width='140px';
-                const clearBtn = document.createElement('button'); clearBtn.className='window-button'; clearBtn.textContent='Clear';
-                controlsWrap.appendChild(colorInput); controlsWrap.appendChild(sizeInput); controlsWrap.appendChild(clearBtn);
-                content.appendChild(controlsWrap);
+                const wrap = content.querySelector('.doodle-canvas-wrap');
+                const controlsWrap = document.createElement('div');
+                controlsWrap.className = 'doodle-toolbar';
+                const colorField = document.createElement('label');
+                colorField.className = 'doodle-field';
+                colorField.appendChild(document.createTextNode('Color'));
+                const colorInput = document.createElement('input'); colorInput.type='color'; colorInput.value='#2F2E3E'; colorInput.title='Brush color';
+                colorField.appendChild(colorInput);
+                const sizeField = document.createElement('label');
+                sizeField.className = 'doodle-field';
+                sizeField.appendChild(document.createTextNode('Size'));
+                const sizeInput = document.createElement('input'); sizeInput.type='range'; sizeInput.min='1'; sizeInput.max='48'; sizeInput.value='6';
+                sizeField.appendChild(sizeInput);
+                const clearBtn = document.createElement('button'); clearBtn.className='window-button doodle-clear'; clearBtn.textContent='Clear';
+                controlsWrap.appendChild(colorField); controlsWrap.appendChild(sizeField); controlsWrap.appendChild(clearBtn);
+                content.insertBefore(controlsWrap, wrap);
                 const ctx2 = canvasEl.getContext('2d'); ctx2.lineCap='round'; ctx2.lineJoin='round';
                 let drawing = false; let brushColor = colorInput.value; let brushSize = parseInt(sizeInput.value,10);
+                function doodlePoint(ev) {
+                    const r = canvasEl.getBoundingClientRect();
+                    const sx = r.width ? canvasEl.width / r.width : 1;
+                    const sy = r.height ? canvasEl.height / r.height : 1;
+                    return { x: (ev.clientX - r.left) * sx, y: (ev.clientY - r.top) * sy };
+                }
+                function fitDoodleCanvas() {
+                    const r = wrap.getBoundingClientRect();
+                    const nextW = Math.max(2, Math.floor(r.width));
+                    const nextH = Math.max(2, Math.floor(r.height));
+                    if (canvasEl.width !== nextW || canvasEl.height !== nextH) {
+                        canvasEl.width = nextW;
+                        canvasEl.height = nextH;
+                    }
+                }
+                requestAnimationFrame(fitDoodleCanvas);
                 colorInput.addEventListener('input', (e)=> brushColor = e.target.value);
-                sizeInput.addEventListener('input', (e)=> brushSize = parseInt(e.target.value,10));
-                canvasEl.addEventListener('pointerdown', (p) => { drawing = true; ctx2.beginPath(); ctx2.moveTo(p.offsetX, p.offsetY); ctx2.strokeStyle = brushColor; ctx2.lineWidth = brushSize; });
-                canvasEl.addEventListener('pointermove', (p) => { if(!drawing) return; ctx2.lineTo(p.offsetX, p.offsetY); ctx2.strokeStyle = brushColor; ctx2.lineWidth = brushSize; ctx2.stroke(); });
-                canvasEl.addEventListener('pointerup', () => drawing=false);
+                sizeInput.addEventListener('input', (e)=> brushSize = parseInt(e.target.value,10) || 6);
+                canvasEl.addEventListener('pointerdown', (p) => {
+                    drawing = true;
+                    try { canvasEl.setPointerCapture(p.pointerId); } catch (err) {}
+                    const pt = doodlePoint(p);
+                    ctx2.beginPath();
+                    ctx2.moveTo(pt.x, pt.y);
+                    ctx2.strokeStyle = brushColor;
+                    ctx2.lineWidth = brushSize;
+                });
+                canvasEl.addEventListener('pointermove', (p) => {
+                    if (!drawing) return;
+                    const pt = doodlePoint(p);
+                    ctx2.lineTo(pt.x, pt.y);
+                    ctx2.strokeStyle = brushColor;
+                    ctx2.lineWidth = brushSize;
+                    ctx2.stroke();
+                });
+                const stopDraw = () => { drawing = false; };
+                canvasEl.addEventListener('pointerup', stopDraw);
+                canvasEl.addEventListener('pointercancel', stopDraw);
                 clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
-
             }
         }
         
@@ -5103,6 +5963,25 @@
         }
 
         // --- Visualizer Logic ---
+        function placeVisualizerWindow() {
+            if (isMobile || !visualizerWindow) return;
+            if (document.fullscreenElement === visualizerWindow) return;
+            const w = visualizerWindow.offsetWidth || 550;
+            const h = visualizerWindow.offsetHeight || 420;
+            const iconCol = 118;
+            const taskbar = 40;
+            const gap = 16;
+            let left;
+            if (window.innerWidth >= w + iconCol + gap) {
+                left = Math.max(iconCol, window.innerWidth - w - gap);
+            } else {
+                left = Math.max(iconCol, Math.floor((window.innerWidth - w) / 2));
+            }
+            const top = Math.max(12, Math.floor((window.innerHeight - h - taskbar) / 2));
+            visualizerWindow.style.left = left + 'px';
+            visualizerWindow.style.top = top + 'px';
+        }
+
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
                 cancelAnimationFrame(animationFrameId); 
@@ -5110,7 +5989,12 @@
             // Do not resume Web Audio on iPhone; that session change stops lock-screen audio.
             if (audioContext && !isMobile) audioContext.resume();
             visualizerActive = true;
+            const wasHidden = !visualizerWindow || visualizerWindow.style.display !== 'flex';
             visualizerWindow.style.display = 'flex';
+            if (!isMobile && wasHidden) {
+                placeVisualizerWindow();
+                bringWindowToFront(visualizerWindow);
+            }
             drawVisualizer();
         }
 
@@ -5782,6 +6666,81 @@
             return li;
         }
 
+        function shuffleArrayCopy(list) {
+            const arr = list.slice();
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = tmp;
+            }
+            return arr;
+        }
+
+        function getActivePlayerList() {
+            return currentMainPlayerTab === 'mixes' ? currentMixlist : currentTracklist;
+        }
+
+        function rebuildShuffleQueue(fromName) {
+            const source = getActivePlayerList();
+            shuffleQueue = shuffleArrayCopy(source);
+            shufflePos = 0;
+            if (fromName) {
+                const idx = shuffleQueue.findIndex(t => t.name === fromName);
+                if (idx >= 0) shufflePos = idx;
+            }
+        }
+
+        function applyTrackSort(list, isMix) {
+            if (trackSortKey === 'random') return shuffleArrayCopy(list);
+            const dir = trackSortDir[trackSortKey] === 'asc' ? 1 : -1;
+            return list.slice().sort((a, b) => {
+                if (trackSortKey === 'name') return a.name.localeCompare(b.name) * dir;
+                if (trackSortKey === 'bpm') {
+                    if (isMix) return a.name.localeCompare(b.name) * dir;
+                    return ((a.bpm || 0) - (b.bpm || 0)) * dir;
+                }
+                return ((a.dateIndex || 0) - (b.dateIndex || 0)) * dir;
+            });
+        }
+
+        function refreshFinderSortBar() {
+            const bar = document.getElementById('finder-sort-bar');
+            if (!bar) return;
+            bar.querySelectorAll('.finder-sort-btn').forEach(btn => {
+                const key = btn.dataset.sort;
+                const arrow = btn.querySelector('.sort-arrow');
+                btn.classList.toggle('active', key === trackSortKey);
+                if (!arrow) return;
+                if (key === 'random') {
+                    arrow.textContent = trackSortKey === 'random' ? '•' : '';
+                } else if (key === trackSortKey) {
+                    arrow.textContent = trackSortDir[key] === 'asc' ? '▲' : '▼';
+                } else {
+                    arrow.textContent = '';
+                }
+            });
+        }
+
+        function applyCurrentSortAndRender() {
+            if (currentMainPlayerTab === 'mixes') {
+                currentMixlist = applyTrackSort(mixFileObjects, true);
+                populateMixList(currentMixlist);
+            } else {
+                currentTracklist = applyTrackSort(audioFileObjects, false);
+                populateFileList(currentTracklist);
+            }
+            refreshFinderSortBar();
+            if (shuffleEnabled) rebuildShuffleQueue();
+        }
+
+        function updateShuffleButton() {
+            const btn = document.getElementById('feeling-lucky-button');
+            if (!btn) return;
+            btn.classList.toggle('shuffle-on', shuffleEnabled);
+            btn.title = shuffleEnabled ? 'Shuffle on — click to turn off' : 'Shuffle — play in random order';
+        }
+
         // Populate "All Tracks" list
         function populateFileList(files) {
             fileListElement.innerHTML = ''; 
@@ -5790,7 +6749,6 @@
             });
             populateMobileTrackList(files);
         }
-        populateFileList(currentTracklist); // Initial population
 
         function populateMobileTrackList(files) {
             if (!mobileTrackListElement) return;
@@ -5920,12 +6878,12 @@
                 if (!Array.isArray(data)) return;
                 const files = data
                     .filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3'))
-                    .map(item => ({
+                    .map((item, index) => ({
                         name: item.name,
                         url: item.download_url,
-                        bpm: bpmMap.get(item.name) || 120.00
-                    }))
-                    .sort((a, b) => a.name.localeCompare(b.name));
+                        bpm: bpmMap.get(item.name) || 120.00,
+                        dateIndex: index
+                    }));
                 if (files.length > 0) {
                     audioFileObjects = files.map((f, index) => ({ 
                         name: f.name, 
@@ -5935,7 +6893,7 @@
                     }));
                     currentTracklist = [...audioFileObjects];
                     currentDjTracklist = [...audioFileObjects];
-                    populateFileList(currentTracklist);
+                    applyCurrentSortAndRender();
                     populateDjLibrary(currentDjTracklist);
                     console.log('Loaded', files.length, 'audio files from GitHub audio/ folder.');
                 }
@@ -5965,12 +6923,11 @@
                         bpm: 0,
                         url: item.download_url,
                         dateIndex: index
-                    }))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-
+                    }));
                 if (files.length > 0) {
+                    mixFileObjects.splice(0, mixFileObjects.length, ...files);
                     currentMixlist = files;
-                    populateMixList(currentMixlist);
+                    applyCurrentSortAndRender();
                     console.log('Loaded', files.length, 'mix files from GitHub mixes/ folder.');
                 }
             } catch (e) {
@@ -5989,6 +6946,7 @@
             populateMobileMixList(files);
         }
         populateMixList(currentMixlist); // Initial population
+        applyCurrentSortAndRender();
 
         // --- Feeling Lucky (random track) ---
         function playRandomTrack() {
@@ -6038,124 +6996,88 @@
         }
 
         const feelingLuckyBtn = document.getElementById('feeling-lucky-button');
-        if (feelingLuckyBtn) feelingLuckyBtn.addEventListener('click', playRandomTrack);
+        if (feelingLuckyBtn) {
+            feelingLuckyBtn.addEventListener('click', () => {
+                shuffleEnabled = !shuffleEnabled;
+                updateShuffleButton();
+                if (shuffleEnabled) {
+                    const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+                    rebuildShuffleQueue(activeItem && activeItem.dataset.filename);
+                    if (!activeItem) playRandomTrack();
+                } else {
+                    shuffleQueue = [];
+                    shufflePos = 0;
+                }
+            });
+            updateShuffleButton();
+        }
+
+        function playNamedTrack(track) {
+            if (!track) return;
+            const isMix = currentMainPlayerTab === 'mixes';
+            const listEl = isMix ? mixListElement : fileListElement;
+            let li = listEl.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (!li) {
+                if (isMix) populateMixList(currentMixlist);
+                else populateFileList(currentTracklist);
+                li = listEl.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            }
+            if (li) {
+                li.click();
+                return;
+            }
+            const fileUrl = (track.url && track.url.length) ? track.url : ((isMix ? 'mixes/' : 'audio/') + track.name);
+            document.getElementById('deck-a-audio').pause();
+            document.getElementById('deck-b-audio').pause();
+            initPlayersOnGesture();
+            try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
+            if (!audioContext) setupAudioContext();
+            musicPlayer.src = fileUrl;
+            musicPlayer.play().catch(() => {});
+            tryStartSilentAudio();
+            updateNowPlayingText(track.name.replace('.mp3',''));
+            syncMobileActiveTrackByName(track.name);
+            document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+            const match = listEl.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (match) match.classList.add('active');
+            updateMediaSession(track.name.replace('.mp3',''), isMix);
+        }
 
         // --- Skip to Next Track ---
         function skipToNextTrack() {
-            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            const tracks = getActivePlayerList();
             if (!tracks || tracks.length === 0) return;
-
-            // Find the currently playing track
             const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+            if (shuffleEnabled) {
+                if (!shuffleQueue.length) rebuildShuffleQueue(activeItem && activeItem.dataset.filename);
+                shufflePos = (shufflePos + 1) % shuffleQueue.length;
+                playNamedTrack(shuffleQueue[shufflePos]);
+                return;
+            }
             let currentIndex = -1;
-            
             if (activeItem && activeItem.dataset.filename) {
-                const filename = activeItem.dataset.filename;
-                currentIndex = tracks.findIndex(t => t.name === filename);
+                currentIndex = tracks.findIndex(t => t.name === activeItem.dataset.filename);
             }
-
-            // Get next track index
-            const nextIndex = (currentIndex + 1) % tracks.length;
-            const track = tracks[nextIndex];
-
-            // Ensure main tab is shown if playing from tracks
-            if (currentMainPlayerTab !== 'mixes' && !currentMainPlayerTab === 'tracks') {
-                currentMainPlayerTab = 'tracks';
-                playerTabs.forEach(t => t.classList.remove('active'));
-                const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
-                if (tracksTabBtn) tracksTabBtn.classList.add('active');
-                playerTabContents.forEach(content => {
-                    if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
-                    else { content.style.display = 'none'; content.classList.remove('active'); }
-                });
-            }
-
-            // Try to find the DOM list item and trigger its click
-            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            if (!li) {
-                populateFileList(currentTracklist);
-                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            }
-
-            if (li) {
-                li.click();
-            } else {
-                // Fallback: directly set audio src and update UI
-                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
-                document.getElementById('deck-a-audio').pause();
-                document.getElementById('deck-b-audio').pause();
-                initPlayersOnGesture();
-                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
-                if (!audioContext) setupAudioContext();
-                musicPlayer.src = fileUrl;
-                musicPlayer.play().catch(() => {});
-                tryStartSilentAudio();
-                updateNowPlayingText(track.name.replace('.mp3',''));
-                syncMobileActiveTrackByName(track.name);
-                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
-                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-                if (match) match.classList.add('active');
-                updateMediaSession(track.name.replace('.mp3',''), false);
-            }
+            const track = tracks[(currentIndex + 1) % tracks.length];
+            playNamedTrack(track);
         }
 
-        // --- Skip to Previous Track ---
         function skipToPreviousTrack() {
-            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            const tracks = getActivePlayerList();
             if (!tracks || tracks.length === 0) return;
-
-            // Find the currently playing track
             const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+            if (shuffleEnabled) {
+                if (!shuffleQueue.length) rebuildShuffleQueue(activeItem && activeItem.dataset.filename);
+                shufflePos = (shufflePos - 1 + shuffleQueue.length) % shuffleQueue.length;
+                playNamedTrack(shuffleQueue[shufflePos]);
+                return;
+            }
             let currentIndex = 0;
-            
             if (activeItem && activeItem.dataset.filename) {
-                const filename = activeItem.dataset.filename;
-                currentIndex = tracks.findIndex(t => t.name === filename);
+                currentIndex = tracks.findIndex(t => t.name === activeItem.dataset.filename);
             }
-
-            // Get previous track index
-            const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
-            const track = tracks[prevIndex];
-
-            // Ensure main tab is shown if playing from tracks
-            if (currentMainPlayerTab !== 'mixes' && !currentMainPlayerTab === 'tracks') {
-                currentMainPlayerTab = 'tracks';
-                playerTabs.forEach(t => t.classList.remove('active'));
-                const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
-                if (tracksTabBtn) tracksTabBtn.classList.add('active');
-                playerTabContents.forEach(content => {
-                    if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
-                    else { content.style.display = 'none'; content.classList.remove('active'); }
-                });
-            }
-
-            // Try to find the DOM list item and trigger its click
-            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            if (!li) {
-                populateFileList(currentTracklist);
-                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            }
-
-            if (li) {
-                li.click();
-            } else {
-                // Fallback: directly set audio src and update UI
-                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
-                document.getElementById('deck-a-audio').pause();
-                document.getElementById('deck-b-audio').pause();
-                initPlayersOnGesture();
-                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
-                if (!audioContext) setupAudioContext();
-                musicPlayer.src = fileUrl;
-                musicPlayer.play().catch(() => {});
-                tryStartSilentAudio();
-                updateNowPlayingText(track.name.replace('.mp3',''));
-                syncMobileActiveTrackByName(track.name);
-                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
-                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-                if (match) match.classList.add('active');
-                updateMediaSession(track.name.replace('.mp3',''), false);
-            }
+            const prevIndex = currentIndex <= 0 ? tracks.length - 1 : currentIndex - 1;
+            playNamedTrack(tracks[prevIndex]);
         }
 
         // Add event listeners for skip next and skip prev buttons
@@ -6172,6 +7094,7 @@
                 tab.classList.add('active');
                 
                 currentMainPlayerTab = tab.dataset.tab;
+                applyCurrentSortAndRender();
                 
                 playerTabContents.forEach(content => {
                     if (content.dataset.tabContent === currentMainPlayerTab) {
@@ -6190,37 +7113,45 @@
         });
 
         // --- Main Player: Search & Sort ---
-        sortAzButton.addEventListener('click', () => {
-            if (currentMainPlayerTab === 'tracks') {
-                currentTracklist.sort((a, b) => a.name.localeCompare(b.name));
-                populateFileList(currentTracklist);
-            } else {
-                currentMixlist.sort((a, b) => a.name.localeCompare(b.name));
-                populateMixList(currentMixlist);
-            }
-        });
-
-        sortZaButton.addEventListener('click', () => {
-            if (currentMainPlayerTab === 'tracks') {
-                currentTracklist.sort((a, b) => b.name.localeCompare(a.name));
-                populateFileList(currentTracklist);
-            } else {
-                currentMixlist.sort((a, b) => b.name.localeCompare(a.name));
-                populateMixList(currentMixlist);
-            }
-        });
-        
-        // Sort by Date Added (newest/most recent first)
-        document.getElementById('sort-date').addEventListener('click', () => {
-            if (currentMainPlayerTab === 'tracks') {
-                // Sort by dateIndex in descending order (higher index = more recent)
-                currentTracklist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
-                populateFileList(currentTracklist);
-            } else {
-                currentMixlist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
-                populateMixList(currentMixlist);
-            }
-        });
+        const finderSortBar = document.getElementById('finder-sort-bar');
+        if (finderSortBar) {
+            finderSortBar.addEventListener('click', (e) => {
+                const btn = e.target.closest('.finder-sort-btn');
+                if (!btn) return;
+                const key = btn.dataset.sort;
+                if (key === 'random') {
+                    trackSortKey = 'random';
+                } else if (trackSortKey === key) {
+                    trackSortDir[key] = trackSortDir[key] === 'asc' ? 'desc' : 'asc';
+                } else {
+                    trackSortKey = key;
+                    if (!trackSortDir[key]) trackSortDir[key] = key === 'date' ? 'desc' : 'asc';
+                }
+                applyCurrentSortAndRender();
+            });
+        }
+        if (sortAzButton) {
+            sortAzButton.addEventListener('click', () => {
+                trackSortKey = 'name';
+                trackSortDir.name = 'asc';
+                applyCurrentSortAndRender();
+            });
+        }
+        if (sortZaButton) {
+            sortZaButton.addEventListener('click', () => {
+                trackSortKey = 'name';
+                trackSortDir.name = 'desc';
+                applyCurrentSortAndRender();
+            });
+        }
+        const sortDateButton = document.getElementById('sort-date');
+        if (sortDateButton) {
+            sortDateButton.addEventListener('click', () => {
+                trackSortKey = 'date';
+                trackSortDir.date = 'desc';
+                applyCurrentSortAndRender();
+            });
+        }
         
         searchBar.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -6982,10 +7913,12 @@
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                 try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
                 stopMobileAnalyzerSyncLoop();
+                setDemoReelFx(false);
             });
             musicPlayer.addEventListener('play', () => {
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
+                setDemoReelFx(isDemoReelSource(musicPlayer.src));
                 if (document.hidden) return;
                 if (audioContext && !isMobile) audioContext.resume();
                 startVisualizer();
@@ -6994,6 +7927,7 @@
             });
             musicPlayer.addEventListener('ended', () => {
                 stopMobileAnalyzerSyncLoop();
+                setDemoReelFx(false);
                 playNextTrack();
             });
             musicPlayer.addEventListener('seeking', syncMobileAnalyzerPlayback);
@@ -7039,13 +7973,10 @@
         }
         
         function playNextTrack() {
-            const nextTrackLi = getTrackElement(1);
-            if (nextTrackLi) nextTrackLi.click(); // Simulate click
+            skipToNextTrack();
         }
-        
         function playPreviousTrack() {
-            const prevTrackLi = getTrackElement(-1);
-            if (prevTrackLi) prevTrackLi.click();
+            skipToPreviousTrack();
         }
 
         // Auto-play next track handled in wired musicPlayer events (see wireMusicPlayerEvents())
@@ -7100,27 +8031,22 @@
         
         // Info button
         infoButton.addEventListener('click', () => {
-            infoWindow.style.display = 'flex';
-            if (!isMobile) bringWindowToFront(infoWindow);
-            // Load and show the animated GIF only when the info window opens
+            if (!isMobile) {
+                showDesktopWindow(infoWindow, document.getElementById('start-button'), 600, 700);
+            } else {
+                infoWindow.style.display = 'flex';
+            }
             const _infoGif = document.getElementById('info-gif');
             if (_infoGif) {
-                // Use the data-src attribute so the GIF doesn't load until requested
-                // Prepend ./ to ensure relative path and encode spaces
                 const raw = _infoGif.dataset.src || '';
                 _infoGif.src = raw ? './' + encodeURI(raw) : '';
                 _infoGif.style.display = 'block';
                 _infoGif.style.width = '100%';
                 _infoGif.style.maxWidth = '720px';
             }
-            // Make sure the info window is large enough and centered so GIF is visible
             try {
-                const winW = 600;
-                const winH = 700;
-                infoWindow.style.width = winW + 'px';
-                infoWindow.style.height = winH + 'px';
-                infoWindow.style.left = Math.max(12, (window.innerWidth - winW) / 2) + 'px';
-                infoWindow.style.top = Math.max(12, (window.innerHeight - winH) / 2) + 'px';
+                infoWindow.style.width = '600px';
+                infoWindow.style.height = '700px';
             } catch (e) {}
         });
         
@@ -7170,35 +8096,40 @@
                 const targetWindowId = e.target.dataset.target;
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
-                    windowToClose.style.display = 'none';
                     windowToClose.classList.remove('mobile-fullscreen');
                     hideMobileClose();
+                    const iconMap = {
+                        'player-container': document.getElementById('app-music'),
+                        'dj-app-window': document.getElementById('app-dj'),
+                        'solitaire-window': document.getElementById('app-cards'),
+                        'tr808-window': document.getElementById('app-beats'),
+                        'info-window': document.getElementById('start-button'),
+                        'recycle-window': document.getElementById('app-recycle')
+                    };
+                    if (!isMobile) hideDesktopWindow(windowToClose, iconMap[targetWindowId]);
+                    else windowToClose.style.display = 'none';
                     if (targetWindowId === 'player-container') {
-                        minimizedPlayerIcon.style.display = 'flex';
+                        minimizedPlayerIcon.style.display = isMobile ? 'flex' : 'none';
                     } else if (targetWindowId === 'dj-app-window') {
-                        minimizedDjIcon.style.display = 'none'; // Hide minimized icon
-                        openDjAppIcon.style.display = 'flex'; // Show open icon
+                        minimizedDjIcon.style.display = 'none';
+                        openDjAppIcon.style.display = 'flex';
                     } else if (targetWindowId === 'visualizer-window') {
                         stopVisualizer();
                     } else if (targetWindowId === 'info-window') {
-                        // When info window is closed, hide and clear the GIF so it stops
                         const _infoGif = document.getElementById('info-gif');
                         if (_infoGif) {
                             _infoGif.src = '';
                             _infoGif.style.display = 'none';
                         }
-                        // Reset size if it was expanded
                         try {
                             infoWindow.style.width = '';
                             infoWindow.style.height = '';
-                        } catch (e) {}
-                    } else if (targetWindowId === 'solitaire-window') { // NEW
+                        } catch (err) {}
+                    } else if (targetWindowId === 'solitaire-window') {
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
-                        // Clear cooldown interval if closing while active
                         if (bjCooldownInterval) clearInterval(bjCooldownInterval);
                     } else if (targetWindowId === 'tr808-window') {
-                        // When the TR-808 window is closed, minimize it to the bottom bar
                         minimizedTr808Icon.style.display = 'flex';
                         openTr808Icon.style.display = 'none';
                     }
@@ -7208,13 +8139,14 @@
 
         // Player Minimize/Restore
         minimizePlayerButton.addEventListener('click', () => {
-            // If on mobile, remove fullscreen class before hiding
             if (isMobile) {
                 playerContainer.classList.remove('mobile-fullscreen');
                 hideMobileClose();
+                playerContainer.style.display = 'none';
+            } else {
+                hideDesktopWindow(playerContainer, document.getElementById('app-music'));
             }
-            playerContainer.style.display = 'none';
-            minimizedPlayerIcon.style.display = 'flex';
+            minimizedPlayerIcon.style.display = isMobile ? 'flex' : 'none';
         });
 
         minimizedPlayerIcon.addEventListener('click', () => {
@@ -7225,12 +8157,13 @@
                 playerContainer.style.width = '100%';
                 playerContainer.style.height = '100%';
                 showMobileCloseFor('player-container');
+                playerContainer.style.display = 'flex';
+            } else {
+                showDesktopWindow(playerContainer, document.getElementById('app-music'));
             }
-            playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(playerContainer);
         });
-        
+
         // DJ App Minimize/Restore
         openDjAppIcon.addEventListener('click', () => {
             if (isMobile) {
@@ -7240,21 +8173,24 @@
                 djAppWindow.style.width = '100%';
                 djAppWindow.style.height = '100%';
                 showMobileCloseFor('dj-app-window');
+                djAppWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(djAppWindow, document.getElementById('app-dj'));
             }
-            djAppWindow.style.display = 'flex';
-            openDjAppIcon.style.display = 'none'; 
-            minimizedDjIcon.style.display = 'none'; 
-            if (!isMobile) bringWindowToFront(djAppWindow);
+            openDjAppIcon.style.display = 'none';
+            minimizedDjIcon.style.display = 'none';
         });
-        
+
         minimizeDjButton.addEventListener('click', () => {
             if (isMobile) {
                 djAppWindow.classList.remove('mobile-fullscreen');
                 hideMobileClose();
+                djAppWindow.style.display = 'none';
+            } else {
+                hideDesktopWindow(djAppWindow, document.getElementById('app-dj'));
             }
-            djAppWindow.style.display = 'none';
-            minimizedDjIcon.style.display = 'flex'; 
-            openDjAppIcon.style.display = 'none'; 
+            minimizedDjIcon.style.display = 'flex';
+            openDjAppIcon.style.display = 'none';
         });
 
         // TR-808 Minimize/Restore (open centers window and sizes to fit)
@@ -7270,21 +8206,17 @@
                 tr808Window.style.minHeight = '0';
                 showMobileCloseFor('tr808-window');
             } else {
-                // Size to a comfortable landscape default that fits most screens (bigger than before)
                 const targetWidth = Math.min(980, Math.floor(window.innerWidth * 0.94));
                 const targetHeight = Math.min(620, Math.floor(window.innerHeight * 0.78));
                 tr808Window.style.width = targetWidth + 'px';
                 tr808Window.style.height = targetHeight + 'px';
                 tr808Window.style.maxHeight = '90vh';
                 tr808Window.style.minHeight = '220px';
-                // Center on screen with small margin
-                tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - targetWidth) / 2)) + 'px';
-                tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - targetHeight) / 2)) + 'px';
+                showDesktopWindow(tr808Window, document.getElementById('app-beats'), targetWidth, targetHeight);
             }
-            tr808Window.style.display = 'flex';
             openTr808Icon.style.display = 'none';
             minimizedTr808Icon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(tr808Window);
+            if (isMobile) tr808Window.style.display = 'flex';
         });
 
         if (minimizeTr808Button) minimizeTr808Button.addEventListener('click', () => {
@@ -7292,18 +8224,16 @@
                 tr808Window.classList.remove('mobile-fullscreen');
                 hideMobileClose();
             }
-            tr808Window.style.display = 'none';
+            if (!isMobile) hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
+            else tr808Window.style.display = 'none';
             minimizedTr808Icon.style.display = 'flex';
             openTr808Icon.style.display = 'none';
             // Keep mobile-fullscreen class but hide window when minimized on mobile
         });
 
         if (minimizedTr808Icon) minimizedTr808Icon.addEventListener('click', () => {
-            // Restore previous size if present, otherwise center
-            tr808Window.style.display = 'flex';
             minimizedTr808Icon.style.display = 'none';
             openTr808Icon.style.display = 'none';
-            // If we're on mobile, ensure fullscreen class is applied
             if (isMobile) {
                 tr808Window.classList.add('mobile-fullscreen');
                 tr808Window.style.left = '0px';
@@ -7311,18 +8241,10 @@
                 tr808Window.style.width = '100%';
                 tr808Window.style.height = '100%';
                 showMobileCloseFor('tr808-window');
+                tr808Window.style.display = 'flex';
             } else {
-                // If window had no explicit position, center it
-                if (!tr808Window.style.left) {
-                    const w = Math.min(760, Math.floor(window.innerWidth * 0.92));
-                    const h = Math.min(520, Math.floor(window.innerHeight * 0.72));
-                    tr808Window.style.width = w + 'px';
-                    tr808Window.style.height = h + 'px';
-                    tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - w) / 2)) + 'px';
-                    tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - h) / 2)) + 'px';
-                }
+                showDesktopWindow(tr808Window, document.getElementById('app-beats'));
             }
-            if (!isMobile) bringWindowToFront(tr808Window);
         });
         
         minimizedDjIcon.addEventListener('click', () => {
@@ -7332,15 +8254,15 @@
                 djAppWindow.style.top = '0px';
                 djAppWindow.style.width = '100%';
                 djAppWindow.style.height = '100%';
-                showMobileCloseFor('dj-app-window');
+                djAppWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(djAppWindow, document.getElementById('app-dj'));
             }
-            djAppWindow.style.display = 'flex';
-            minimizedDjIcon.style.display = 'none'; 
-            openDjAppIcon.style.display = 'none'; 
-            if (!isMobile) bringWindowToFront(djAppWindow);
+            minimizedDjIcon.style.display = 'none';
+            openDjAppIcon.style.display = 'none';
         });
         
-        // Solitaire Minimize/Restore (NEW)
+        // Solitaire Minimize/Restore
         openSolitaireIcon.addEventListener('click', () => {
             if (isMobile) {
                 solitaireWindow.classList.add('mobile-fullscreen');
@@ -7348,20 +8270,22 @@
                 solitaireWindow.style.top = '0px';
                 solitaireWindow.style.width = '100%';
                 solitaireWindow.style.height = '100%';
-                showMobileCloseFor('solitaire-window');
+                solitaireWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
             }
-            solitaireWindow.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(solitaireWindow);
         });
 
         minimizeSolitaireButton.addEventListener('click', () => {
             if (isMobile) {
                 solitaireWindow.classList.remove('mobile-fullscreen');
                 hideMobileClose();
+                solitaireWindow.style.display = 'none';
+            } else {
+                hideDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
             }
-            solitaireWindow.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
         });
@@ -7373,11 +8297,12 @@
                 solitaireWindow.style.top = '0px';
                 solitaireWindow.style.width = '100%';
                 solitaireWindow.style.height = '100%';
+                solitaireWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
             }
-            solitaireWindow.style.display = 'flex';
             minimizedSolitaireIcon.style.display = 'none';
             openSolitaireIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(solitaireWindow);
         });
 
         // Games tab switching (Solitaire/Blackjack)
@@ -7589,13 +8514,25 @@
 
         // --- Digital Clock ---
         function updateClock() {
+            if (!digitalClock) return;
             const now = new Date();
             let hours = now.getHours();
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
             hours = hours ? hours : 12; // 0 o'clock is 12
-            digitalClock.textContent = `${hours}:${minutes} ${ampm}`;
+            const timeStr = `${hours}:${minutes} ${ampm}`;
+            const dateStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+            let timeEl = digitalClock.querySelector('.clock-time');
+            let dateEl = digitalClock.querySelector('.clock-date');
+            if (!timeEl || !dateEl) {
+                digitalClock.innerHTML = '<span class="clock-time"></span><span class="clock-date"></span>';
+                timeEl = digitalClock.querySelector('.clock-time');
+                dateEl = digitalClock.querySelector('.clock-date');
+            }
+            timeEl.textContent = timeStr;
+            dateEl.textContent = dateStr;
+            digitalClock.title = dateStr + '  ' + timeStr;
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -8518,6 +9455,7 @@
             let lastT = 0;
             let accent = 0;
             let bgHex = '#008080';
+            let hueShift = 0;
             const pointer = {
                 x: 0, y: 0, z: 0,
                 px: 0, py: 0, pz: 0,
@@ -8600,6 +9538,24 @@
                 bgHex = hex || bgHex;
                 if (!scene || !THREE) return;
                 scene.background = new THREE.Color(bgHex);
+                if (scene.userData.bgTintLight) {
+                    scene.userData.bgTintLight.color.set(bgHex);
+                }
+                refreshSphereTints();
+            }
+
+            function refreshSphereTints() {
+                if (!THREE || !bodies.length) return;
+                const tint = new THREE.Color(bgHex);
+                const hsl = { h: 0, s: 0, l: 0 };
+                for (let i = 0; i < bodies.length; i++) {
+                    const b = bodies[i];
+                    if (!b.baseColor) continue;
+                    b.baseColor.getHSL(hsl);
+                    const rotated = b.baseColor.clone();
+                    rotated.setHSL((hsl.h + hueShift) % 1, hsl.s, hsl.l);
+                    b.targetColor.copy(rotated).lerp(tint, 0.14);
+                }
             }
 
             function viewportSize() {
@@ -8623,13 +9579,15 @@
                 accent = ((next % ACCENTS.length) + ACCENTS.length) % ACCENTS.length;
                 const connectors = shuffleConnectors(accent);
                 for (let i = 0; i < bodies.length && i < connectors.length; i++) {
-                    bodies[i].targetColor.set(connectors[i].color);
+                    if (!bodies[i].baseColor) bodies[i].baseColor = new THREE.Color();
+                    bodies[i].baseColor.set(connectors[i].color);
                 }
+                refreshSphereTints();
             }
 
             function uiBlocksPointer(target) {
                 if (!target || target === canvas) return false;
-                return !!(target.closest && target.closest('.window, #desktop-icons, #background1, #color-picker-container, #digital-clock, button, input, a, canvas:not(#three-bg)'));
+                return !!(target.closest && target.closest('.window, #desktop-icons, #background1, #color-picker-container, #start-menu, #start-button, #digital-clock, button, input, a, canvas:not(#three-bg)'));
             }
 
             function onPointerMove(e) {
@@ -8783,6 +9741,8 @@
                 if (!running) return;
                 const dt = Math.min(0.1, (now - lastT) / 1000 || 0.016);
                 lastT = now;
+                hueShift = (hueShift + dt * 0.035) % 1;
+                refreshSphereTints();
                 stepPhysics(dt);
                 renderer.render(scene, camera);
                 rafId = requestAnimationFrame(tick);
@@ -8804,6 +9764,10 @@
                 rim.position.set(10, 10, 0);
                 scene.add(rim);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 0.55));
+                const bgTintLight = new THREE.PointLight(0x008080, 6, 70);
+                bgTintLight.position.set(-8, 4, 8);
+                scene.add(bgTintLight);
+                scene.userData.bgTintLight = bgTintLight;
 
                 if (scene.userData.envMap) scene.userData.envMap.dispose();
                 const env = makeEnvMap();
@@ -8824,16 +9788,21 @@
                         clearcoatRoughness: 0.25
                     });
                     const mesh = new THREE.Mesh(geo, mat);
+                    const edge = i % 4;
+                    let x = 0, y = 0, z = (Math.random() - 0.5) * 4;
+                    if (edge === 0) { x = -18 - Math.random() * 6; y = (Math.random() - 0.5) * 12; }
+                    else if (edge === 1) { x = 18 + Math.random() * 6; y = (Math.random() - 0.5) * 12; }
+                    else if (edge === 2) { x = (Math.random() - 0.5) * 14; y = 12 + Math.random() * 5; }
+                    else { x = (Math.random() - 0.5) * 14; y = -12 - Math.random() * 5; }
                     const body = {
                         mesh,
                         r: 1,
                         mass: (4 / 3) * Math.PI,
-                        x: (Math.random() - 0.5) * 10,
-                        y: (Math.random() - 0.5) * 10,
-                        z: (Math.random() - 0.5) * 10,
-                        vx: 0,
-                        vy: 0,
-                        vz: 0,
+                        x, y, z,
+                        vx: -x * 0.08,
+                        vy: -y * 0.08,
+                        vz: -z * 0.04,
+                        baseColor: new THREE.Color(spec.color),
                         targetColor: new THREE.Color(spec.color)
                     };
                     mesh.position.set(body.x, body.y, body.z);
@@ -8851,6 +9820,7 @@
                         }
                     }
                 } catch (err) {}
+                refreshSphereTints();
                 setBackground(bgHex);
             }
 
@@ -8947,7 +9917,8 @@
                 setBackground,
                 start,
                 stop,
-                sync: syncDesktopThree
+                sync: syncDesktopThree,
+                cycleAccent: function () { applyAccent(accent + 1); }
             };
 
             document.addEventListener('interface-mode-changed', syncDesktopThree);
@@ -9061,6 +10032,7 @@
 
             function onPointerUp() {
                 if (!dragging) return;
+                const moved = Math.hypot((parseFloat(bgImage.style.left) || 0) - startLeft, (parseFloat(bgImage.style.top) || 0) - startTop) > 6;
                 dragging = false;
                 bgImage.style.cursor = 'grab';
                 document.removeEventListener('mousemove', onPointerMove);
@@ -9068,7 +10040,12 @@
                 document.removeEventListener('mouseup', onPointerUp);
                 document.removeEventListener('touchend', onPointerUp);
 
-                // Persist position
+                if (!moved && !isMobile && bgColorPicker) {
+                    const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    bgColorPicker.value = randomColor;
+                    bgColorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+
                 try {
                     const left = parseFloat(bgImage.style.left || 0);
                     const top = parseFloat(bgImage.style.top || 0);
@@ -9477,7 +10454,10 @@
 </script>
 
     <!-- Digital Clock (bottom right corner) -->
-    <div id="digital-clock"></div>
+    <div id="digital-clock" title="Date and time">
+        <span class="clock-time"></span>
+        <span class="clock-date"></span>
+    </div>
 
 </body>
-</html>
+</html> 

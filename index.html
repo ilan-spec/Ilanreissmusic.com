@@ -226,6 +226,10 @@
             border-right: none;
             z-index: 1000;
         }
+        #digital-clock .clock-time,
+        #digital-clock .clock-date {
+            display: block;
+        }
         
         /* Clock controls container - no longer needed but kept for compatibility */
         #clock-controls {
@@ -2518,20 +2522,20 @@
             /* --- Desktop icons & selection rectangle --- */
             #desktop-icons {
                 position: absolute;
-                left: 8px;
-                top: 8px;
-                bottom: 44px;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
+                left: 0;
+                top: 0;
+                right: 0;
+                bottom: 36px;
+                display: block;
                 z-index: 5; /* behind windows (windows default z-index:10) */
-                pointer-events: auto;
+                pointer-events: none;
             }
             #app-recycle {
-                margin-top: auto;
+                margin-top: 0;
             }
 
             .desktop-icon {
+                position: absolute;
                 width: 96px;
                 height: auto;
                 background: transparent;
@@ -2547,6 +2551,35 @@
                 cursor: pointer;
                 user-select: none;
                 padding: 4px 2px;
+                pointer-events: auto;
+                touch-action: none;
+            }
+            .desktop-icon.dragging {
+                opacity: 0.92;
+                z-index: 6;
+            }
+            .desktop-icon.demo-playing .win-icon {
+                animation: demo-reel-spin 1.1s linear infinite;
+            }
+            @keyframes demo-reel-spin {
+                to { transform: rotate(360deg); }
+            }
+            #demo-reel-flash {
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 8;
+                opacity: 0;
+                background:
+                    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.38), rgba(255,255,255,0) 42%),
+                    linear-gradient(180deg, rgba(0,0,128,0.18), rgba(0,0,0,0));
+            }
+            #demo-reel-flash.on {
+                animation: demo-reel-flash 720ms ease-out forwards;
+            }
+            @keyframes demo-reel-flash {
+                0% { opacity: 1; }
+                100% { opacity: 0; }
             }
 
             .desktop-icon:hover { transform: none; box-shadow: none; }
@@ -2621,7 +2654,7 @@
                 right: 0;
                 width: 100%;
                 height: 36px;
-                padding: 2px 108px 2px 2px;
+                padding: 2px 132px 2px 2px;
                 border-top: 2px solid #fff;
                 border-left: none;
                 border-right: none;
@@ -2847,15 +2880,34 @@
 
             body:not(.mobile-mode) #digital-clock {
                 height: 36px;
-                min-width: 96px;
-                padding: 6px 10px;
+                min-width: 124px;
+                padding: 0 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0;
                 font-family: Tahoma, 'MS Sans Serif', sans-serif;
-                font-size: 12px;
+                font-size: 13px;
                 font-weight: 400;
+                line-height: 1;
+                text-align: center;
                 border-top: 2px solid #808080;
                 border-left: 2px solid #808080;
                 border-right: 2px solid #fff;
                 border-bottom: none;
+                box-sizing: border-box;
+            }
+            body:not(.mobile-mode) #digital-clock .clock-time {
+                font-size: 14px;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                line-height: 16px;
+            }
+            body:not(.mobile-mode) #digital-clock .clock-date {
+                font-size: 10px;
+                line-height: 12px;
+                color: #222;
             }
 
             /* Selection rectangle overlay shown while dragging on desktop */
@@ -3579,6 +3631,7 @@
 
     <!-- Selection rectangle used for click-drag selecting desktop icons -->
     <div id="selection-rect" aria-hidden="true"></div>
+    <div id="demo-reel-flash" aria-hidden="true"></div>
 
 
     <!-- Main Player Window -->
@@ -4999,8 +5052,34 @@
             return /(?:^|\/)Reiss(?:%20|\s)+Demo(?:%20|\s)+Reel\.wav(?:[?#].*)?$/i.test(src || '');
         }
 
+        function setDemoReelFx(on) {
+            const demoIcon = document.getElementById('app-demo-reel');
+            if (demoIcon) demoIcon.classList.toggle('demo-playing', !!on && !isMobile);
+        }
+
+        function isDemoReelPlaying() {
+            return !!(musicPlayer && !musicPlayer.paused && isDemoReelSource(musicPlayer.src));
+        }
+
+        function stopDesktopDemoReel() {
+            try {
+                if (musicPlayer && isDemoReelSource(musicPlayer.src)) musicPlayer.pause();
+            } catch (e) {}
+            try {
+                const audioEl = document.getElementById('audio-player');
+                if (audioEl && isDemoReelSource(audioEl.src)) audioEl.pause();
+            } catch (e) {}
+            setDemoReelFx(false);
+        }
+
         function playDesktopDemoReel() {
+            if (isDemoReelPlaying()) {
+                stopDesktopDemoReel();
+                return;
+            }
+
             const demoFileUrl = 'Reiss Demo Reel.wav';
+            const resumeSame = !!(musicPlayer && isDemoReelSource(musicPlayer.src) && musicPlayer.paused);
 
             // Stop other running sources first, then route through the same main player path.
             document.getElementById('deck-a-audio').pause();
@@ -5010,8 +5089,10 @@
 
             initPlayersOnGesture();
             const audioEl = document.getElementById('audio-player');
-            audioEl.src = demoFileUrl;
-            musicPlayer.src = demoFileUrl;
+            if (!resumeSame) {
+                audioEl.src = demoFileUrl;
+                musicPlayer.src = demoFileUrl;
+            }
 
             if (!audioContext) setupAudioContext();
             tryStartSilentAudio();
@@ -5019,6 +5100,30 @@
             updateNowPlayingText('Reiss Demo Reel');
             document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
             updateMediaSession('Reiss Demo Reel', false);
+
+            if (!isMobile) {
+                setDemoReelFx(true);
+                if (!resumeSame) {
+                    const flash = document.getElementById('demo-reel-flash');
+                    if (flash) {
+                        flash.classList.remove('on');
+                        void flash.offsetWidth;
+                        flash.classList.add('on');
+                        setTimeout(() => flash.classList.remove('on'), 800);
+                    }
+                    try {
+                        const starTab = document.querySelector('#visualizer-tabs .visualizer-tab[data-visualizer="starfield"]');
+                        if (starTab && activeVisualizer !== 'starfield') starTab.click();
+                        else if (typeof initStars === 'function') initStars();
+                    } catch (e) {}
+                    try {
+                        if (window.__desktopThreeBg && typeof window.__desktopThreeBg.cycleAccent === 'function') {
+                            window.__desktopThreeBg.cycleAccent();
+                        }
+                    } catch (e) {}
+                }
+            }
+
             startVisualizer();
             musicPlayer.play().catch(() => {});
         }
@@ -5233,11 +5338,128 @@
         // Wire up clicks on icons: ctrl/cmd-click toggles selection; regular click opens mini-app
         desktopIcons.forEach(icon => {
             icon.addEventListener('click', (e) => {
+                if (icon._justDragged) {
+                    icon._justDragged = false;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 if (e.ctrlKey || e.metaKey) {
                     icon.classList.toggle('selected');
                     return;
                 }
                 launchDesktopApp(icon.dataset.app);
+            });
+        });
+
+        const ICON_POS_KEY = 'desktopIconPos';
+        const DESKTOP_ICON_W = 96;
+        const DESKTOP_ICON_H = 86;
+        const DESKTOP_TASKBAR_H = 36;
+
+        function defaultIconLayout() {
+            const order = ['app-music', 'app-dj', 'app-beats', 'app-cards', 'app-demo-reel', 'app-doodle'];
+            const pos = {};
+            order.forEach((id, i) => {
+                pos[id] = { x: 8, y: 8 + i * (DESKTOP_ICON_H + 10) };
+            });
+            pos['app-recycle'] = {
+                x: 8,
+                y: Math.max(8, window.innerHeight - DESKTOP_TASKBAR_H - DESKTOP_ICON_H - 8)
+            };
+            return pos;
+        }
+
+        function clampIconPos(x, y, el) {
+            const w = (el && el.offsetWidth) ? el.offsetWidth : DESKTOP_ICON_W;
+            const h = (el && el.offsetHeight) ? el.offsetHeight : DESKTOP_ICON_H;
+            const maxX = Math.max(0, window.innerWidth - w);
+            const maxY = Math.max(0, window.innerHeight - DESKTOP_TASKBAR_H - h);
+            return {
+                x: Math.round(Math.max(0, Math.min(x, maxX))),
+                y: Math.round(Math.max(0, Math.min(y, maxY)))
+            };
+        }
+
+        function loadIconPositions() {
+            let saved = {};
+            try { saved = JSON.parse(localStorage.getItem(ICON_POS_KEY) || '{}') || {}; } catch (e) { saved = {}; }
+            const defaults = defaultIconLayout();
+            desktopIcons.forEach(icon => {
+                const src = saved[icon.id] || defaults[icon.id] || { x: 8, y: 8 };
+                const p = clampIconPos(src.x, src.y, icon);
+                icon.style.left = p.x + 'px';
+                icon.style.top = p.y + 'px';
+            });
+        }
+
+        function saveIconPositions() {
+            const pos = {};
+            desktopIcons.forEach(icon => {
+                pos[icon.id] = {
+                    x: parseFloat(icon.style.left) || 0,
+                    y: parseFloat(icon.style.top) || 0
+                };
+            });
+            try { localStorage.setItem(ICON_POS_KEY, JSON.stringify(pos)); } catch (e) {}
+        }
+
+        function initDesktopIconDrag() {
+            loadIconPositions();
+            desktopIcons.forEach(icon => {
+                if (icon._dragBound) return;
+                icon._dragBound = true;
+                let dragging = false;
+                let moved = false;
+                let startX = 0, startY = 0, origX = 0, origY = 0;
+                icon.addEventListener('pointerdown', (e) => {
+                    if (isMobile) return;
+                    if (e.button != null && e.button !== 0) return;
+                    if (e.ctrlKey || e.metaKey) return;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    origX = parseFloat(icon.style.left) || 0;
+                    origY = parseFloat(icon.style.top) || 0;
+                    dragging = true;
+                    moved = false;
+                    try { icon.setPointerCapture(e.pointerId); } catch (err) {}
+                });
+                icon.addEventListener('pointermove', (e) => {
+                    if (!dragging || isMobile) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    if (!moved && Math.hypot(dx, dy) < 6) return;
+                    moved = true;
+                    icon.classList.add('dragging');
+                    const p = clampIconPos(origX + dx, origY + dy, icon);
+                    icon.style.left = p.x + 'px';
+                    icon.style.top = p.y + 'px';
+                });
+                const endDrag = () => {
+                    if (!dragging) return;
+                    dragging = false;
+                    icon.classList.remove('dragging');
+                    if (moved) {
+                        icon._justDragged = true;
+                        saveIconPositions();
+                    }
+                };
+                icon.addEventListener('pointerup', endDrag);
+                icon.addEventListener('pointercancel', endDrag);
+            });
+            requestAnimationFrame(loadIconPositions);
+        }
+
+        initDesktopIconDrag();
+        document.addEventListener('interface-mode-changed', () => {
+            if (!isMobile) loadIconPositions();
+        });
+        window.addEventListener('resize', () => {
+            if (isMobile) return;
+            desktopIcons.forEach(icon => {
+                const p = clampIconPos(parseFloat(icon.style.left) || 0, parseFloat(icon.style.top) || 0, icon);
+                icon.style.left = p.x + 'px';
+                icon.style.top = p.y + 'px';
             });
         });
 
@@ -5741,6 +5963,25 @@
         }
 
         // --- Visualizer Logic ---
+        function placeVisualizerWindow() {
+            if (isMobile || !visualizerWindow) return;
+            if (document.fullscreenElement === visualizerWindow) return;
+            const w = visualizerWindow.offsetWidth || 550;
+            const h = visualizerWindow.offsetHeight || 420;
+            const iconCol = 118;
+            const taskbar = 40;
+            const gap = 16;
+            let left;
+            if (window.innerWidth >= w + iconCol + gap) {
+                left = Math.max(iconCol, window.innerWidth - w - gap);
+            } else {
+                left = Math.max(iconCol, Math.floor((window.innerWidth - w) / 2));
+            }
+            const top = Math.max(12, Math.floor((window.innerHeight - h - taskbar) / 2));
+            visualizerWindow.style.left = left + 'px';
+            visualizerWindow.style.top = top + 'px';
+        }
+
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
                 cancelAnimationFrame(animationFrameId); 
@@ -5748,7 +5989,12 @@
             // Do not resume Web Audio on iPhone; that session change stops lock-screen audio.
             if (audioContext && !isMobile) audioContext.resume();
             visualizerActive = true;
+            const wasHidden = !visualizerWindow || visualizerWindow.style.display !== 'flex';
             visualizerWindow.style.display = 'flex';
+            if (!isMobile && wasHidden) {
+                placeVisualizerWindow();
+                bringWindowToFront(visualizerWindow);
+            }
             drawVisualizer();
         }
 
@@ -7667,10 +7913,12 @@
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                 try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
                 stopMobileAnalyzerSyncLoop();
+                setDemoReelFx(false);
             });
             musicPlayer.addEventListener('play', () => {
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 tryStartSilentAudio();
+                setDemoReelFx(isDemoReelSource(musicPlayer.src));
                 if (document.hidden) return;
                 if (audioContext && !isMobile) audioContext.resume();
                 startVisualizer();
@@ -7679,6 +7927,7 @@
             });
             musicPlayer.addEventListener('ended', () => {
                 stopMobileAnalyzerSyncLoop();
+                setDemoReelFx(false);
                 playNextTrack();
             });
             musicPlayer.addEventListener('seeking', syncMobileAnalyzerPlayback);
@@ -8265,13 +8514,25 @@
 
         // --- Digital Clock ---
         function updateClock() {
+            if (!digitalClock) return;
             const now = new Date();
             let hours = now.getHours();
             const minutes = now.getMinutes().toString().padStart(2, '0');
             const ampm = hours >= 12 ? 'PM' : 'AM';
             hours = hours % 12;
             hours = hours ? hours : 12; // 0 o'clock is 12
-            digitalClock.textContent = `${hours}:${minutes} ${ampm}`;
+            const timeStr = `${hours}:${minutes} ${ampm}`;
+            const dateStr = (now.getMonth() + 1) + '/' + now.getDate() + '/' + now.getFullYear();
+            let timeEl = digitalClock.querySelector('.clock-time');
+            let dateEl = digitalClock.querySelector('.clock-date');
+            if (!timeEl || !dateEl) {
+                digitalClock.innerHTML = '<span class="clock-time"></span><span class="clock-date"></span>';
+                timeEl = digitalClock.querySelector('.clock-time');
+                dateEl = digitalClock.querySelector('.clock-date');
+            }
+            timeEl.textContent = timeStr;
+            dateEl.textContent = dateStr;
+            digitalClock.title = dateStr + '  ' + timeStr;
         }
         setInterval(updateClock, 1000);
         updateClock();
@@ -9656,7 +9917,8 @@
                 setBackground,
                 start,
                 stop,
-                sync: syncDesktopThree
+                sync: syncDesktopThree,
+                cycleAccent: function () { applyAccent(accent + 1); }
             };
 
             document.addEventListener('interface-mode-changed', syncDesktopThree);
@@ -10192,7 +10454,10 @@
 </script>
 
     <!-- Digital Clock (bottom right corner) -->
-    <div id="digital-clock"></div>
+    <div id="digital-clock" title="Date and time">
+        <span class="clock-time"></span>
+        <span class="clock-date"></span>
+    </div>
 
 </body>
 </html> 
