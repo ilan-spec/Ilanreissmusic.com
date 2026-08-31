@@ -56,16 +56,35 @@
             -webkit-text-size-adjust: 100%; /* Prevent font scaling on orientation change */
         }
 
+        /* Desktop-only Three.js background. Behind windows/icons, above the teal fallback. */
+        #three-bg {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            display: none;
+            outline: none;
+            touch-action: none;
+            background: transparent;
+        }
+
+        body.mobile-mode #three-bg {
+            display: none !important;
+            pointer-events: none !important;
+        }
+
         /* Floating background/logo image that sits behind all windows. */
         #background1 {
             position: fixed;
             top: 8mm; /* a few mm from the top by default */
             left: 50%;
             transform: translateX(-50%);
-            width: 200px; /* default visible size, scales down on small screens */
-            max-width: 40%;
+            width: 360px; /* default visible size, scales down on small screens */
+            max-width: 56%;
             height: auto;
-            z-index: 0; /* behind windows (windows use z-index >= 10) */
+            z-index: 2; /* above 3D canvas so the logo stays draggable */
             pointer-events: auto; /* allow dragging/clicks */
             cursor: grab;
             touch-action: none; /* handle touch dragging manually */
@@ -276,6 +295,50 @@
         
         .sort-button:active {
             transform: translateY(1px);
+        }
+
+        .finder-sort-bar {
+            display: flex;
+            align-items: stretch;
+            height: 22px;
+            background: #fff;
+            border: 2px inset #808080;
+            border-top-color: #404040;
+            border-left-color: #404040;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+        .finder-sort-btn {
+            flex: 1;
+            border: none;
+            border-right: 1px solid #c0c0c0;
+            background: transparent;
+            font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            font-size: 11px;
+            text-align: left;
+            padding: 0 8px;
+            cursor: pointer;
+            color: #000;
+            min-width: 0;
+            height: auto;
+            line-height: 18px;
+        }
+        .finder-sort-btn:last-child { border-right: none; }
+        .finder-sort-btn:hover { background: #e8f0ff; }
+        .finder-sort-btn.active {
+            font-weight: 700;
+            background: #d4d0c8;
+        }
+        .finder-sort-btn .sort-arrow {
+            float: right;
+            font-size: 10px;
+            opacity: 0.85;
+        }
+        #feeling-lucky-button.shuffle-on {
+            background: #000080;
+            color: #fff;
         }
 
         #search-bar::placeholder {
@@ -751,6 +814,30 @@
 
         #info-window p {
             margin-bottom: 8px;
+        }
+
+        #recycle-window {
+            width: 560px;
+            height: 480px;
+            min-width: 320px;
+            min-height: 240px;
+            display: none;
+        }
+        #recycle-window .content {
+            padding: 8px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        #recycle-window img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
         }
         
         /* Buttons at the bottom of the main player */
@@ -2428,78 +2515,347 @@
                 color: var(--tr-dark);
             }
 
-            .tr808-row .row-label {
-                background: linear-gradient(180deg, #fff, #f6f6ea);
-                border-radius: 6px;
-            }
-
             /* --- Desktop icons & selection rectangle --- */
             #desktop-icons {
                 position: absolute;
-                left: 24px;
-                top: 24px;
+                left: 8px;
+                top: 8px;
+                bottom: 44px;
                 display: flex;
                 flex-direction: column;
-                gap: 12px;
+                gap: 10px;
                 z-index: 5; /* behind windows (windows default z-index:10) */
                 pointer-events: auto;
             }
+            #app-recycle {
+                margin-top: auto;
+            }
 
             .desktop-icon {
-                width: 64px;
-                height: 64px;
+                width: 96px;
+                height: auto;
+                background: transparent;
+                border: none;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 6px;
+                font-size: 18px;
+                color: #fff;
+                border-radius: 0;
+                cursor: pointer;
+                user-select: none;
+                padding: 4px 2px;
+            }
+
+            .desktop-icon:hover { transform: none; box-shadow: none; }
+
+            .desktop-icon .icon-label {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px;
+                font-weight: 400;
+                color: #fff;
+                text-shadow: 1px 1px 0 #000;
+                text-align: center;
+                line-height: 1.15;
+                padding: 1px 3px;
+                max-width: 92px;
+            }
+
+            .desktop-icon.selected {
+                outline: none;
+            }
+
+            .desktop-icon.selected .icon-label {
+                background: #000080;
+                color: #fff;
+                text-shadow: none;
+            }
+
+            .desktop-icon.selected .win-icon {
+                outline: 1px dotted #fff;
+                outline-offset: 1px;
+            }
+
+            .win-icon {
+                width: 48px;
+                height: 48px;
+                display: block;
+                image-rendering: pixelated;
+                background-repeat: no-repeat;
+                background-size: 48px 48px;
+                flex-shrink: 0;
+            }
+            .win-icon-music {
+                image-rendering: auto;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='38%25' r='62%25'%3E%3Cstop offset='0' stop-color='%23ffffff'/%3E%3Cstop offset='.28' stop-color='%23d5e2ea'/%3E%3Cstop offset='.48' stop-color='%236ec7ff'/%3E%3Cstop offset='.66' stop-color='%23d48cff'/%3E%3Cstop offset='.84' stop-color='%23ffd36a'/%3E%3Cstop offset='1' stop-color='%238fcdc4'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='13.5' cy='18.5' r='11.5' fill='url(%23g)' stroke='%23444444' stroke-width='1'/%3E%3Ccircle cx='13.5' cy='18.5' r='4' fill='%232b2b2b' stroke='%23f3f3f3' stroke-width='1.1'/%3E%3Ccircle cx='13.5' cy='18.5' r='1.35' fill='%23cfd3d8'/%3E%3Cellipse cx='24.4' cy='12.4' rx='3.5' ry='2.3' fill='%23111111' transform='rotate(-20 24.4 12.4)'/%3E%3Crect x='26.6' y='3.4' width='1.8' height='9.3' fill='%23111111' transform='rotate(-12 27.5 8)'/%3E%3Cpath d='M28 3.2c2.3.3 4.1 1.2 4.2 2.7-.8-.4-2-.7-3.4-.8V3.2z' fill='%23111111'/%3E%3C/svg%3E");
+            }
+            .win-icon-recycle { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='8' y='10' width='16' height='18' rx='2' fill='%23c8c8c8' stroke='%23444'/%3E%3Crect x='10' y='12' width='3' height='14' fill='%23999999'/%3E%3Crect x='14.5' y='12' width='3' height='14' fill='%23999999'/%3E%3Crect x='19' y='12' width='3' height='14' fill='%23999999'/%3E%3Crect x='7' y='8' width='18' height='3' rx='1' fill='%23dddddd' stroke='%23444'/%3E%3Crect x='12' y='5' width='8' height='4' rx='1' fill='%23bbbbbb' stroke='%23444'/%3E%3C/svg%3E"); }
+            .win-icon-mixes { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='4' y='8' width='14' height='4' fill='%23f0c040'/%3E%3Crect x='4' y='10' width='24' height='16' fill='%23f8d878'/%3E%3Crect x='4' y='10' width='24' height='2' fill='%23d4a017'/%3E%3Crect x='6' y='14' width='20' height='10' fill='%23fff8dc'/%3E%3Crect x='8' y='16' width='6' height='6' fill='%23000080'/%3E%3Crect x='16' y='17' width='8' height='2' fill='%23000080'/%3E%3Crect x='16' y='21' width='6' height='2' fill='%23808080'/%3E%3C/svg%3E"); }
+            .win-icon-dj { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='2' y='8' width='16' height='16' rx='8' fill='%23111111'/%3E%3Crect x='6' y='12' width='8' height='8' rx='4' fill='%23808080'/%3E%3Crect x='8' y='14' width='4' height='4' fill='%23c0c0c0'/%3E%3Crect x='14' y='10' width='16' height='16' rx='8' fill='%23222222'/%3E%3Crect x='18' y='14' width='8' height='8' rx='4' fill='%23aa0000'/%3E%3Crect x='20' y='16' width='4' height='4' fill='%23c0c0c0'/%3E%3C/svg%3E"); }
+            .win-icon-beats { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='3' y='6' width='26' height='20' fill='%23c0c0c0' stroke='%23000' stroke-width='1'/%3E%3Crect x='5' y='8' width='6' height='6' fill='%23dd1d00'/%3E%3Crect x='13' y='8' width='6' height='6' fill='%23f27900'/%3E%3Crect x='21' y='8' width='6' height='6' fill='%23ddda00'/%3E%3Crect x='5' y='16' width='6' height='6' fill='%232f2e3e'/%3E%3Crect x='13' y='16' width='6' height='6' fill='%23dd1d00'/%3E%3Crect x='21' y='16' width='6' height='6' fill='%23e6e8bf'/%3E%3C/svg%3E"); }
+            .win-icon-cards { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='6' y='4' width='16' height='22' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='8' y='6' width='12' height='18' fill='%23000080'/%3E%3Crect x='11' y='12' width='6' height='6' fill='%23fff'/%3E%3Crect x='10' y='8' width='18' height='22' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Ctext x='13' y='18' font-size='10' fill='%23c00000' font-family='Tahoma'%3E%E2%99%A5%3C/text%3E%3Ctext x='19' y='26' font-size='8' fill='%23c00000' font-family='Tahoma'%3EA%3C/text%3E%3C/svg%3E"); }
+            .win-icon-demo { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='4' y='4' width='24' height='24' rx='12' fill='%23c0c0c0'/%3E%3Crect x='6' y='6' width='20' height='20' rx='10' fill='%23111111'/%3E%3Crect x='12' y='12' width='8' height='8' rx='4' fill='%23c0c0c0'/%3E%3Crect x='14' y='14' width='4' height='4' fill='%23000080'/%3E%3Crect x='15' y='4' width='2' height='6' fill='%23fff'/%3E%3C/svg%3E"); }
+            .win-icon-doodle { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='7' y='4' width='14' height='18' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Crect x='9' y='6' width='10' height='3' fill='%23ff4060'/%3E%3Crect x='9' y='10' width='10' height='3' fill='%232060ff'/%3E%3Crect x='9' y='14' width='10' height='3' fill='%2320ffa0'/%3E%3Crect x='18' y='20' width='8' height='8' fill='%23f0c040'/%3E%3Crect x='20' y='16' width='3' height='8' fill='%23804a00'/%3E%3C/svg%3E"); }
+            .win-icon-about { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect x='6' y='4' width='20' height='24' fill='%23c0c0c0' stroke='%23000' stroke-width='1'/%3E%3Crect x='8' y='6' width='16' height='10' fill='%23000080'/%3E%3Crect x='14' y='8' width='4' height='6' fill='%23fff'/%3E%3Crect x='10' y='18' width='12' height='2' fill='%23000'/%3E%3Crect x='10' y='22' width='8' height='2' fill='%23808080'/%3E%3C/svg%3E"); }
+
+            #desktop-os #player-container {
+                display: none;
+                left: 92px;
+                top: 28px;
+            }
+
+            #desktop-os .title-bar-buttons .window-button:not(.visualizer-tab) {
+                width: 16px;
+                height: 14px;
+                min-width: 16px;
+                min-height: 14px;
+                line-height: 12px;
+                font-size: 10px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            }
+
+            #desktop-os #color-picker-container {
+                left: 0;
+                right: 0;
+                width: 100%;
+                height: 36px;
+                padding: 2px 108px 2px 2px;
+                border-top: 2px solid #fff;
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
+                gap: 4px;
+            }
+
+            #desktop-os #open-dj-app-icon,
+            #desktop-os #open-solitaire-icon,
+            #desktop-os #open-tr808-icon {
+                display: none !important;
+            }
+
+            #desktop-os #minimized-player-icon {
+                display: none !important;
+            }
+
+            #desktop-os #minimized-dj-icon,
+            #desktop-os #minimized-solitaire-icon,
+            #desktop-os #minimized-tr808-icon {
+                width: 22px;
+                height: 22px;
+                margin-left: 2px;
+            }
+
+            #desktop-os .taskbar-swatch {
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                height: 26px;
+                padding: 0 7px;
                 background: #c0c0c0;
                 border-top: 2px solid #fff;
                 border-left: 2px solid #fff;
                 border-right: 2px solid #404040;
                 border-bottom: 2px solid #404040;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 4px;
-                font-size: 18px;
-                color: var(--tr-dark);
-                border-radius: 8px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px;
+                color: #000;
+                flex-shrink: 0;
+            }
+            #desktop-os .taskbar-swatch span {
+                font-weight: 700;
+                line-height: 1;
+            }
+            #desktop-os .taskbar-swatch input[type='color'] {
+                width: 18px;
+                height: 18px;
+                padding: 0;
+                margin: 0;
+                border: 1px solid #808080;
+                background: #fff;
                 cursor: pointer;
-                user-select: none;
-                transition: transform 160ms ease, box-shadow 120ms;
+            }
+            #desktop-os .taskbar-swatch input[type='color']::-webkit-color-swatch-wrapper {
+                padding: 1px;
+            }
+            #desktop-os .taskbar-swatch input[type='color']::-webkit-color-swatch {
+                border: 1px solid #404040;
             }
 
-            .desktop-icon:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.12); }
-
-            .desktop-icon .icon-label { font-size: 0.72rem; font-weight:700; color: var(--tr-dark); }
-
-            .desktop-icon.selected {
-                outline: 3px solid rgba(21, 101, 192, 0.9);
-                outline-offset: -4px;
-            }
-
-            #app-demo-reel {
-                position: fixed;
-                right: 24px;
-                top: 24px;
-                width: 126px;
-                height: 126px;
-                z-index: 8;
+            #start-button {
+                display: flex;
+                align-items: center;
                 gap: 6px;
-                font-size: 42px;
-                color: #000080;
+                height: 30px;
+                padding: 0 12px 0 6px;
                 background: #c0c0c0;
-                border-top: 3px solid #fff;
-                border-left: 3px solid #fff;
-                border-right: 3px solid #404040;
-                border-bottom: 3px solid #404040;
-                box-shadow: 2px 2px 0 1px #000;
-            }
-
-            #app-demo-reel .icon-label {
-                font-size: 0.84rem;
-                line-height: 1.1;
-                text-align: center;
-                padding: 0 4px;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 13px;
                 font-weight: 700;
                 color: #000;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            #start-button.active,
+            #start-button:active {
+                border-top: 2px solid #404040;
+                border-left: 2px solid #404040;
+                border-right: 2px solid #fff;
+                border-bottom: 2px solid #fff;
+            }
+            .start-logo {
+                width: 22px;
+                height: 22px;
+                display: block;
+                object-fit: contain;
+                image-rendering: auto;
+                flex-shrink: 0;
+            }
+
+            #start-menu {
+                display: none;
+                position: fixed;
+                left: 2px;
+                bottom: 36px;
+                z-index: 3000;
+                width: min(340px, calc(100vw - 16px));
+                min-height: 280px;
+                max-height: calc(100vh - 52px);
+                overflow: hidden;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #000;
+                border-bottom: 2px solid #000;
+                box-shadow: 1px 1px 0 #000;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            }
+            #start-menu.open { display: flex; flex-direction: row; align-items: stretch; }
+            .start-banner {
+                width: 32px;
+                background: linear-gradient(#000080, #1084d0);
+                color: #fff;
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                font-weight: 700;
+                font-size: 16px;
+                letter-spacing: 1px;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                padding: 10px 0;
+                flex-shrink: 0;
+            }
+            .start-items {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                padding: 4px 0;
+                overflow-y: auto;
+            }
+            .start-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                background: transparent;
+                border: none;
+                text-align: left;
+                padding: 8px 14px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 13px;
+                color: #000;
+                cursor: pointer;
+            }
+            .start-item:hover {
+                background: #000080;
+                color: #fff;
+            }
+            .start-item .win-icon {
+                width: 32px;
+                height: 32px;
+                background-size: 32px 32px;
+            }
+            .start-sep {
+                height: 2px;
+                margin: 3px 4px;
+                border-top: 1px solid #808080;
+                border-bottom: 1px solid #fff;
+            }
+
+            body:not(.mobile-mode) .window.win-anim {
+                transition: transform 160ms ease-out, opacity 160ms ease-out;
+            }
+
+            .doodle-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                margin: 0 0 8px;
+                padding: 6px 8px;
+                background: #c0c0c0;
+                border-top: 2px solid #fff;
+                border-left: 2px solid #fff;
+                border-right: 2px solid #404040;
+                border-bottom: 2px solid #404040;
+                flex-shrink: 0;
+            }
+            .doodle-field {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                color: #000;
+                white-space: nowrap;
+            }
+            .doodle-field input[type="color"] {
+                width: 32px;
+                height: 24px;
+                min-width: 32px;
+                padding: 0;
+                border: 1px solid #808080;
+                background: #fff;
+                cursor: pointer;
+            }
+            .doodle-field input[type="color"]::-webkit-color-swatch-wrapper { padding: 1px; }
+            .doodle-field input[type="color"]::-webkit-color-swatch { border: 1px solid #404040; }
+            .doodle-field input[type="range"] {
+                width: 90px;
+            }
+            .doodle-clear {
+                margin-left: auto;
+            }
+            .doodle-canvas-wrap {
+                position: relative;
+                flex: 1;
+                min-height: 0;
+                background: #fff;
+                border: 2px inset #808080;
+            }
+            .doodle-canvas-wrap canvas {
+                display: block;
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+                cursor: crosshair;
+            }
+
+            body:not(.mobile-mode) #digital-clock {
+                height: 36px;
+                min-width: 96px;
+                padding: 6px 10px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                font-weight: 400;
+                border-top: 2px solid #808080;
+                border-left: 2px solid #808080;
+                border-right: 2px solid #fff;
+                border-bottom: none;
             }
 
             /* Selection rectangle overlay shown while dragging on desktop */
@@ -2570,6 +2926,11 @@
             }
 
             body.mobile-mode #digital-clock {
+                display: none !important;
+            }
+
+            body.mobile-mode #start-button,
+            body.mobile-mode #start-menu {
                 display: none !important;
             }
 
@@ -3177,26 +3538,43 @@
 </head>
 <body>
     <div id="desktop-os">
+    <canvas id="three-bg" aria-hidden="true"></canvas>
     <!-- Floating background/logo image (keeps behind windows and is draggable) -->
     <img id="background1" src="background1.png" alt="background logo" draggable="false">
 
     <!-- Particle canvas (behind windows, interactive visual background) -->
     <canvas id="particle-canvas" style="position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;"></canvas>
 
-    <!-- Desktop icons (playful / fidget apps) -->
+    <!-- Desktop icons (Win95-style apps) -->
     <div id="desktop-icons" aria-label="Desktop icons">
-
+        <div class="desktop-icon" id="app-music" data-app="music" title="Music & Mixes">
+            <span class="win-icon win-icon-music" aria-hidden="true"></span>
+            <div class="icon-label">Music</div>
+        </div>
+        <div class="desktop-icon" id="app-dj" data-app="dj" title="DJ Decks">
+            <span class="win-icon win-icon-dj" aria-hidden="true"></span>
+            <div class="icon-label">DJ</div>
+        </div>
+        <div class="desktop-icon" id="app-beats" data-app="beats" title="TR-808 Sequencer">
+            <span class="win-icon win-icon-beats" aria-hidden="true"></span>
+            <div class="icon-label">Beats</div>
+        </div>
+        <div class="desktop-icon" id="app-cards" data-app="cards" title="Cards">
+            <span class="win-icon win-icon-cards" aria-hidden="true"></span>
+            <div class="icon-label">Cards</div>
+        </div>
         <div class="desktop-icon" id="app-demo-reel" data-app="demo-reel" title="Play Demo Reel">
-            <i class="fas fa-compact-disc"></i>
+            <span class="win-icon win-icon-demo" aria-hidden="true"></span>
             <div class="icon-label">Demo Reel</div>
         </div>
-        
         <div class="desktop-icon" id="app-doodle" data-app="doodle" title="Doodle Pad">
-            <i class="fas fa-pencil-alt"></i>
+            <span class="win-icon win-icon-doodle" aria-hidden="true"></span>
             <div class="icon-label">Doodle</div>
         </div>
-        
-        
+        <div class="desktop-icon" id="app-recycle" data-app="recycle" title="Recycle Bin">
+            <span class="win-icon win-icon-recycle" aria-hidden="true"></span>
+            <div class="icon-label">Recycle Bin</div>
+        </div>
     </div>
 
     <!-- Selection rectangle used for click-drag selecting desktop icons -->
@@ -3254,10 +3632,16 @@
                 <div class="search-sort-container">
                     <input type="text" id="search-bar" placeholder="Search tracks...">
                     <button id="clear-search" class="window-button sort-button" title="Clear search">⊗</button>
-                    <button id="sort-az" class="window-button sort-button" title="Sort A-Z">A-Z</button>
-                    <button id="sort-za" class="window-button sort-button" title="Sort Z-A">Z-A</button>
-                    <button id="sort-date" class="window-button sort-button" title="Sort by Date Added">📅</button>
+                    <button id="sort-az" class="window-button sort-button" title="Sort A-Z" style="display:none;">A-Z</button>
+                    <button id="sort-za" class="window-button sort-button" title="Sort Z-A" style="display:none;">Z-A</button>
+                    <button id="sort-date" class="window-button sort-button" title="Sort by Date Added" style="display:none;">📅</button>
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
+                </div>
+                <div class="finder-sort-bar" id="finder-sort-bar" role="toolbar" aria-label="Sort tracks">
+                    <button type="button" class="finder-sort-btn active" data-sort="date" title="Sort by date">Date <span class="sort-arrow">▼</span></button>
+                    <button type="button" class="finder-sort-btn" data-sort="name" title="Sort by name">Name <span class="sort-arrow"></span></button>
+                    <button type="button" class="finder-sort-btn" data-sort="bpm" title="Sort by BPM">BPM <span class="sort-arrow"></span></button>
+                    <button type="button" class="finder-sort-btn" data-sort="random" title="Random order">Shuffle</button>
                 </div>
 
                 <div class="file-browser" id="file-browser-main">
@@ -3279,13 +3663,13 @@
                 </div>
                 
                  <div class="player-bottom-buttons">
-                     <button id="info-button" class="window-button">i</button>
+                     <button id="info-button" class="window-button" title="About">i</button>
                      <button id="open-playlists-button" class="window-button" title="Open Playlists">
                          <i class="fas fa-folder"></i>
                      </button>
                      <button id="add-track-now-playing" class="window-button" title="Add Current Track to Playlist">+</button>
-                     <button id="feeling-lucky-button" class="window-button" title="Feeling Lucky — Play a random track">
-                         <i class="fas fa-dice"></i>
+                     <button id="feeling-lucky-button" class="window-button" title="Shuffle — play in random order">
+                         <i class="fas fa-random"></i>
                      </button>
                  </div>
             </div>
@@ -3346,6 +3730,19 @@
         </div>
         <div class="resize-handle"></div>
     </div>
+
+    <div id="recycle-window" class="window">
+        <div class="title-bar">
+            <span class="title-bar-text">Recycle Bin</span>
+            <div class="title-bar-buttons">
+                <button class="window-button close-button" data-target="recycle-window">X</button>
+            </div>
+        </div>
+        <div class="content">
+            <img src="kobe1.jpg" alt="Kobe">
+        </div>
+        <div class="resize-handle"></div>
+    </div>
     
     <!-- Info Window -->
     <div id="info-window" class="window">
@@ -3356,9 +3753,10 @@
             </div>
         </div>
         <div class="content" style="overflow-y: auto; -webkit-overflow-scrolling: touch;">
-            <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center;">
-                <label style="font-weight:700;">Particles:</label>
+            <div style="margin-bottom:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <label style="font-weight:700;">Desktop FX:</label>
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="particles-toggle"> Enable background particles</label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="three-spheres-toggle"> Enable 3D spheres</label>
             </div>
             <p>Hi, welcome to Ilan Reiss's site. Here is a collection of my tracks that I have produced over the past year. Dig to find the good ones.</p>
             <p>Version 3.7 (UX Improvements)</p>
@@ -3688,10 +4086,23 @@
     
     <!-- Bottom Bar: Color Picker & Minimized Icons -->
     <div id="color-picker-container">
-        <label for="bg-color-picker">BG:</label>
-        <input type="color" id="bg-color-picker" value="#008080">
-        <label for="viz-bg-picker">Viz:</label>
-        <input type="color" id="viz-bg-picker" value="#000000" title="Visualizer background color">
+        <button type="button" id="start-button" title="Start">
+            <svg class="start-logo" viewBox="0 0 88 88" aria-hidden="true" focusable="false">
+                <polygon fill="#F25022" points="4,16 41,12 41,42 4,42"/>
+                <polygon fill="#7FBA00" points="45,11 84,6 84,42 45,42"/>
+                <polygon fill="#00A4EF" points="4,46 41,46 41,76 4,72"/>
+                <polygon fill="#FFB900" points="45,46 84,46 84,82 45,77"/>
+            </svg>
+            Start
+        </button>
+        <label class="taskbar-swatch" for="bg-color-picker" title="Desktop background color">
+            <span>BG</span>
+            <input type="color" id="bg-color-picker" value="#008080">
+        </label>
+        <label class="taskbar-swatch" for="viz-bg-picker" title="Visualizer background color">
+            <span>Viz</span>
+            <input type="color" id="viz-bg-picker" value="#000000">
+        </label>
         
         <div id="minimized-player-icon" title="Restore Music Player">
             <i class="fas fa-headphones"></i> 
@@ -3717,6 +4128,37 @@
             <i class="fas fa-th-large"></i>
         </div>
         <!-- Visual mode toggle moved to bottom-left clock controls -->
+    </div>
+
+    <div id="start-menu" role="menu" aria-hidden="true">
+        <div class="start-banner">Ilan Reiss</div>
+        <div class="start-items">
+            <button type="button" class="start-item" data-start="info">
+                <span class="win-icon win-icon-about" aria-hidden="true"></span>
+                About this computer
+            </button>
+            <div class="start-sep"></div>
+            <button type="button" class="start-item" data-start="music">
+                <span class="win-icon win-icon-music" aria-hidden="true"></span>
+                Music
+            </button>
+            <button type="button" class="start-item" data-start="dj">
+                <span class="win-icon win-icon-dj" aria-hidden="true"></span>
+                DJ
+            </button>
+            <button type="button" class="start-item" data-start="beats">
+                <span class="win-icon win-icon-beats" aria-hidden="true"></span>
+                Beats
+            </button>
+            <button type="button" class="start-item" data-start="cards">
+                <span class="win-icon win-icon-cards" aria-hidden="true"></span>
+                Cards
+            </button>
+            <button type="button" class="start-item" data-start="recycle">
+                <span class="win-icon win-icon-recycle" aria-hidden="true"></span>
+                Recycle Bin
+            </button>
+        </div>
     </div>
  
     <!-- Context Menu (hidden) -->
@@ -4286,6 +4728,11 @@
         let selectedDjTrack = null; 
         let djSortAscending = true; 
         let currentMainPlayerTab = 'tracks'; // State for main player tabs
+        let trackSortKey = 'date';
+        let trackSortDir = { date: 'desc', name: 'asc', bpm: 'asc' };
+        let shuffleEnabled = false;
+        let shuffleQueue = [];
+        let shufflePos = 0;
         
         // Favorites storage (localStorage)
         let favorites = new Set();
@@ -4465,6 +4912,7 @@
         const playerContainer = document.getElementById('player-container');
         const visualizerWindow = document.getElementById('visualizer-window');
         const infoWindow = document.getElementById('info-window');
+        const recycleWindow = document.getElementById('recycle-window');
         const infoButton = document.getElementById('info-button');
         const digitalClock = document.getElementById('digital-clock');
         const bgColorPicker = document.getElementById('bg-color-picker');
@@ -4578,7 +5026,8 @@
         // Start selection only when clicking outside of any existing window
         document.addEventListener('mousedown', (e) => {
             if (e.button !== 0) return; // left button only
-            if (e.target.closest('.window')) return; // don't start selection when interacting with windows
+            if (e.target.closest('.window, #desktop-icons, #color-picker-container, #start-menu, #digital-clock, #background1')) return;
+            if (window.__desktopThreeDragging) return; // grabbing a 3D sphere
             // begin selection
             isSelecting = true;
             selStartX = e.clientX;
@@ -4633,6 +5082,154 @@
             selectionRect.style.display = 'none';
         }
 
+        function isDesktopWindowOpen(el) {
+            return !!(el && el.style.display === 'flex');
+        }
+
+        function centerDesktopWindow(el, width, height) {
+            if (!el) return;
+            const w = width || el.offsetWidth || parseFloat(el.style.width) || 640;
+            const h = height || el.offsetHeight || parseFloat(el.style.height) || 480;
+            const taskbar = 40;
+            el.style.left = Math.max(12, Math.floor((window.innerWidth - w) / 2)) + 'px';
+            el.style.top = Math.max(12, Math.floor((window.innerHeight - h - taskbar) / 2)) + 'px';
+        }
+
+        function playOpenWindowAnim(el, iconEl) {
+            if (isMobile || !el) return;
+            el.classList.add('win-anim');
+            const destLeft = parseFloat(el.style.left) || 0;
+            const destTop = parseFloat(el.style.top) || 0;
+            const destW = el.offsetWidth || parseFloat(el.style.width) || 640;
+            const destH = el.offsetHeight || parseFloat(el.style.height) || 480;
+            const iconRect = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+            const sx = iconRect ? (iconRect.left + iconRect.width / 2) : 28;
+            const sy = iconRect ? (iconRect.top + iconRect.height / 2) : 80;
+            el.style.transformOrigin = 'center center';
+            el.style.opacity = '0';
+            el.style.transform = 'translate(' + (sx - destLeft - destW / 2) + 'px, ' + (sy - destTop - destH / 2) + 'px) scale(0.08)';
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translate(0,0) scale(1)';
+                });
+            });
+            setTimeout(() => {
+                el.classList.remove('win-anim');
+                el.style.transform = '';
+                el.style.opacity = '';
+            }, 180);
+        }
+
+        function hideDesktopWindow(el, iconEl) {
+            if (!el) return;
+            if (isMobile) {
+                el.style.display = 'none';
+                return;
+            }
+            el.classList.add('win-anim');
+            const iconRect = iconEl && iconEl.getBoundingClientRect ? iconEl.getBoundingClientRect() : null;
+            if (iconRect) {
+                const destLeft = parseFloat(el.style.left) || el.getBoundingClientRect().left;
+                const destTop = parseFloat(el.style.top) || el.getBoundingClientRect().top;
+                const destW = el.offsetWidth || 1;
+                const destH = el.offsetHeight || 1;
+                el.style.transformOrigin = 'center center';
+                el.style.transform = 'translate(' + ((iconRect.left + iconRect.width / 2) - destLeft - destW / 2) + 'px, ' + ((iconRect.top + iconRect.height / 2) - destTop - destH / 2) + 'px) scale(0.08)';
+            } else {
+                el.style.transformOrigin = 'center center';
+                el.style.transform = 'scale(0.08)';
+            }
+            el.style.opacity = '0';
+            setTimeout(() => {
+                el.style.display = 'none';
+                el.style.transform = '';
+                el.style.opacity = '';
+                el.classList.remove('win-anim');
+            }, 160);
+        }
+
+        function showDesktopWindow(el, iconEl, width, height) {
+            if (!el) return;
+            el.style.display = 'flex';
+            if (!isMobile) {
+                centerDesktopWindow(el, width, height);
+                playOpenWindowAnim(el, iconEl);
+                bringWindowToFront(el);
+            }
+        }
+
+        function openDesktopPlayer(tab) {
+            if (isMobile) return;
+            showDesktopWindow(playerContainer, document.getElementById('app-music'));
+            minimizedPlayerIcon.style.display = 'none';
+            const tabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="' + tab + '"]');
+            if (tabBtn) tabBtn.click();
+        }
+
+        let doodleWindowEl = null;
+
+        function launchDesktopApp(app) {
+            if (app === 'demo-reel') {
+                playDesktopDemoReel();
+                return;
+            }
+            if (app === 'music' || app === 'mixes') {
+                if (isDesktopWindowOpen(playerContainer)) {
+                    hideDesktopWindow(playerContainer, document.getElementById('app-music'));
+                    minimizedPlayerIcon.style.display = 'none';
+                } else {
+                    openDesktopPlayer(app === 'mixes' ? 'mixes' : 'tracks');
+                }
+                return;
+            }
+            if (app === 'dj') {
+                if (isDesktopWindowOpen(djAppWindow)) {
+                    hideDesktopWindow(djAppWindow, document.getElementById('app-dj'));
+                    minimizedDjIcon.style.display = 'none';
+                } else if (openDjAppIcon) {
+                    openDjAppIcon.click();
+                }
+                return;
+            }
+            if (app === 'beats') {
+                if (isDesktopWindowOpen(tr808Window)) {
+                    hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
+                    minimizedTr808Icon.style.display = 'none';
+                } else if (openTr808Icon) {
+                    openTr808Icon.click();
+                }
+                return;
+            }
+            if (app === 'cards') {
+                if (isDesktopWindowOpen(solitaireWindow)) {
+                    hideDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
+                    minimizedSolitaireIcon.style.display = 'none';
+                } else if (openSolitaireIcon) {
+                    openSolitaireIcon.click();
+                }
+                return;
+            }
+            if (app === 'recycle') {
+                if (isDesktopWindowOpen(recycleWindow)) {
+                    hideDesktopWindow(recycleWindow, document.getElementById('app-recycle'));
+                } else {
+                    showDesktopWindow(recycleWindow, document.getElementById('app-recycle'), 560, 480);
+                }
+                return;
+            }
+            if (app === 'info' && infoButton) { infoButton.click(); return; }
+            const iconEl = document.querySelector('#desktop-icons .desktop-icon[data-app="' + app + '"]');
+            if (app === 'doodle') {
+                if (doodleWindowEl && document.body.contains(doodleWindowEl)) {
+                    hideDesktopWindow(doodleWindowEl, iconEl);
+                    setTimeout(() => { try { doodleWindowEl.remove(); } catch (err) {} doodleWindowEl = null; }, 170);
+                } else {
+                    openMiniApp(app, iconEl);
+                }
+            }
+        }
+
         // Wire up clicks on icons: ctrl/cmd-click toggles selection; regular click opens mini-app
         desktopIcons.forEach(icon => {
             icon.addEventListener('click', (e) => {
@@ -4640,25 +5237,51 @@
                     icon.classList.toggle('selected');
                     return;
                 }
-                const app = icon.dataset.app;
-                if (app === 'demo-reel') {
-                    playDesktopDemoReel();
-                    return;
-                }
-                openMiniApp(app, icon);
+                launchDesktopApp(icon.dataset.app);
             });
+        });
+
+        const startButton = document.getElementById('start-button');
+        const startMenu = document.getElementById('start-menu');
+        function closeStartMenu() {
+            if (!startMenu || !startButton) return;
+            startMenu.classList.remove('open');
+            startButton.classList.remove('active');
+            startMenu.setAttribute('aria-hidden', 'true');
+        }
+        function toggleStartMenu() {
+            if (!startMenu || !startButton || isMobile) return;
+            const open = !startMenu.classList.contains('open');
+            startMenu.classList.toggle('open', open);
+            startButton.classList.toggle('active', open);
+            startMenu.setAttribute('aria-hidden', open ? 'false' : 'true');
+        }
+        if (startButton) {
+            startButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleStartMenu();
+            });
+        }
+        if (startMenu) {
+            startMenu.addEventListener('click', (e) => {
+                const item = e.target.closest('.start-item');
+                if (!item) return;
+                closeStartMenu();
+                launchDesktopApp(item.dataset.start);
+            });
+        }
+        document.addEventListener('mousedown', (e) => {
+            if (!startMenu || !startMenu.classList.contains('open')) return;
+            if (e.target.closest('#start-menu, #start-button')) return;
+            closeStartMenu();
         });
 
         // Create a small window for mini-apps and attach basic drag/resize/close handlers
         function openMiniApp(appId, iconEl) {
-            // position near the icon
-            const iconRect = iconEl ? iconEl.getBoundingClientRect() : { left: 120, top: 120 };
             const win = document.createElement('div');
             win.className = 'window mini-app-window';
             win.style.width = '360px';
             win.style.height = '300px';
-            win.style.left = (iconRect.left + 80) + 'px';
-            win.style.top = (iconRect.top) + 'px';
             win.style.zIndex = 20;
 
             const titleBar = document.createElement('div');
@@ -4675,8 +5298,8 @@
 
             // populate app content
             if (appId === 'doodle') {
-                // larger default canvas; window will be enlarged below
-                content.innerHTML = `<canvas id="doodle-canvas" width="320" height="200" style="border:1px dashed rgba(0,0,0,0.08);background:#fff;"></canvas><div style="margin-top:6px;display:flex;gap:8px;"><button id="clear-doodle" class="window-button">Clear</button></div>`;
+                content.style.padding = '8px';
+                content.innerHTML = `<div class="doodle-canvas-wrap"><canvas id="doodle-canvas"></canvas></div>`;
             } else {
                 content.innerHTML = `<div style="padding:12px;">Mini app: ${appId}</div>`;
             }
@@ -4691,13 +5314,15 @@
                 const h = Math.min(window.innerHeight - 120, 680);
                 win.style.width = w + 'px';
                 win.style.height = h + 'px';
-                // center near middle of screen
-                win.style.left = Math.max(20, (window.innerWidth - w) / 2) + 'px';
-                win.style.top = Math.max(40, (window.innerHeight - h) / 2) + 'px';
+                doodleWindowEl = win;
             }
 
-            // close handler
-            closeBtn.addEventListener('click', () => { try { win.remove(); } catch(e){} });
+            showDesktopWindow(win, iconEl);
+
+            closeBtn.addEventListener('click', () => {
+                hideDesktopWindow(win, iconEl);
+                setTimeout(() => { try { win.remove(); } catch(e){} if (doodleWindowEl === win) doodleWindowEl = null; }, 170);
+            });
 
             // attach drag/resize listeners for this window (reuse existing handlers)
             titleBar.addEventListener('mousedown', (e) => handleDragStart(e, win));
@@ -4705,30 +5330,65 @@
             resizeHandle.addEventListener('mousedown', (e) => handleResizeStart(e, win));
             resizeHandle.addEventListener('touchstart', (e) => handleResizeStart(e, win), { passive: false });
 
-            bringWindowToFront(win);
-
-            // initialize mini-app behaviors
             if (appId === 'doodle') {
-                // larger doodle window with color and brush size controls
                 const canvasEl = content.querySelector('#doodle-canvas');
-                // resize canvas to be roomy
-                const w = 780, h = 520;
-                canvasEl.width = w; canvasEl.height = h; canvasEl.style.width = w+'px'; canvasEl.style.height = h+'px';
-                const controlsWrap = document.createElement('div'); controlsWrap.style.display='flex'; controlsWrap.style.gap='8px'; controlsWrap.style.marginTop='8px';
-                const colorInput = document.createElement('input'); colorInput.type='color'; colorInput.value='#2F2E3E';
-                const sizeInput = document.createElement('input'); sizeInput.type='range'; sizeInput.min='1'; sizeInput.max='48'; sizeInput.value='6'; sizeInput.style.width='140px';
-                const clearBtn = document.createElement('button'); clearBtn.className='window-button'; clearBtn.textContent='Clear';
-                controlsWrap.appendChild(colorInput); controlsWrap.appendChild(sizeInput); controlsWrap.appendChild(clearBtn);
-                content.appendChild(controlsWrap);
+                const wrap = content.querySelector('.doodle-canvas-wrap');
+                const controlsWrap = document.createElement('div');
+                controlsWrap.className = 'doodle-toolbar';
+                const colorField = document.createElement('label');
+                colorField.className = 'doodle-field';
+                colorField.appendChild(document.createTextNode('Color'));
+                const colorInput = document.createElement('input'); colorInput.type='color'; colorInput.value='#2F2E3E'; colorInput.title='Brush color';
+                colorField.appendChild(colorInput);
+                const sizeField = document.createElement('label');
+                sizeField.className = 'doodle-field';
+                sizeField.appendChild(document.createTextNode('Size'));
+                const sizeInput = document.createElement('input'); sizeInput.type='range'; sizeInput.min='1'; sizeInput.max='48'; sizeInput.value='6';
+                sizeField.appendChild(sizeInput);
+                const clearBtn = document.createElement('button'); clearBtn.className='window-button doodle-clear'; clearBtn.textContent='Clear';
+                controlsWrap.appendChild(colorField); controlsWrap.appendChild(sizeField); controlsWrap.appendChild(clearBtn);
+                content.insertBefore(controlsWrap, wrap);
                 const ctx2 = canvasEl.getContext('2d'); ctx2.lineCap='round'; ctx2.lineJoin='round';
                 let drawing = false; let brushColor = colorInput.value; let brushSize = parseInt(sizeInput.value,10);
+                function doodlePoint(ev) {
+                    const r = canvasEl.getBoundingClientRect();
+                    const sx = r.width ? canvasEl.width / r.width : 1;
+                    const sy = r.height ? canvasEl.height / r.height : 1;
+                    return { x: (ev.clientX - r.left) * sx, y: (ev.clientY - r.top) * sy };
+                }
+                function fitDoodleCanvas() {
+                    const r = wrap.getBoundingClientRect();
+                    const nextW = Math.max(2, Math.floor(r.width));
+                    const nextH = Math.max(2, Math.floor(r.height));
+                    if (canvasEl.width !== nextW || canvasEl.height !== nextH) {
+                        canvasEl.width = nextW;
+                        canvasEl.height = nextH;
+                    }
+                }
+                requestAnimationFrame(fitDoodleCanvas);
                 colorInput.addEventListener('input', (e)=> brushColor = e.target.value);
-                sizeInput.addEventListener('input', (e)=> brushSize = parseInt(e.target.value,10));
-                canvasEl.addEventListener('pointerdown', (p) => { drawing = true; ctx2.beginPath(); ctx2.moveTo(p.offsetX, p.offsetY); ctx2.strokeStyle = brushColor; ctx2.lineWidth = brushSize; });
-                canvasEl.addEventListener('pointermove', (p) => { if(!drawing) return; ctx2.lineTo(p.offsetX, p.offsetY); ctx2.strokeStyle = brushColor; ctx2.lineWidth = brushSize; ctx2.stroke(); });
-                canvasEl.addEventListener('pointerup', () => drawing=false);
+                sizeInput.addEventListener('input', (e)=> brushSize = parseInt(e.target.value,10) || 6);
+                canvasEl.addEventListener('pointerdown', (p) => {
+                    drawing = true;
+                    try { canvasEl.setPointerCapture(p.pointerId); } catch (err) {}
+                    const pt = doodlePoint(p);
+                    ctx2.beginPath();
+                    ctx2.moveTo(pt.x, pt.y);
+                    ctx2.strokeStyle = brushColor;
+                    ctx2.lineWidth = brushSize;
+                });
+                canvasEl.addEventListener('pointermove', (p) => {
+                    if (!drawing) return;
+                    const pt = doodlePoint(p);
+                    ctx2.lineTo(pt.x, pt.y);
+                    ctx2.strokeStyle = brushColor;
+                    ctx2.lineWidth = brushSize;
+                    ctx2.stroke();
+                });
+                const stopDraw = () => { drawing = false; };
+                canvasEl.addEventListener('pointerup', stopDraw);
+                canvasEl.addEventListener('pointercancel', stopDraw);
                 clearBtn.addEventListener('click', () => ctx2.clearRect(0,0,canvasEl.width,canvasEl.height));
-
             }
         }
         
@@ -5760,6 +6420,81 @@
             return li;
         }
 
+        function shuffleArrayCopy(list) {
+            const arr = list.slice();
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const tmp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = tmp;
+            }
+            return arr;
+        }
+
+        function getActivePlayerList() {
+            return currentMainPlayerTab === 'mixes' ? currentMixlist : currentTracklist;
+        }
+
+        function rebuildShuffleQueue(fromName) {
+            const source = getActivePlayerList();
+            shuffleQueue = shuffleArrayCopy(source);
+            shufflePos = 0;
+            if (fromName) {
+                const idx = shuffleQueue.findIndex(t => t.name === fromName);
+                if (idx >= 0) shufflePos = idx;
+            }
+        }
+
+        function applyTrackSort(list, isMix) {
+            if (trackSortKey === 'random') return shuffleArrayCopy(list);
+            const dir = trackSortDir[trackSortKey] === 'asc' ? 1 : -1;
+            return list.slice().sort((a, b) => {
+                if (trackSortKey === 'name') return a.name.localeCompare(b.name) * dir;
+                if (trackSortKey === 'bpm') {
+                    if (isMix) return a.name.localeCompare(b.name) * dir;
+                    return ((a.bpm || 0) - (b.bpm || 0)) * dir;
+                }
+                return ((a.dateIndex || 0) - (b.dateIndex || 0)) * dir;
+            });
+        }
+
+        function refreshFinderSortBar() {
+            const bar = document.getElementById('finder-sort-bar');
+            if (!bar) return;
+            bar.querySelectorAll('.finder-sort-btn').forEach(btn => {
+                const key = btn.dataset.sort;
+                const arrow = btn.querySelector('.sort-arrow');
+                btn.classList.toggle('active', key === trackSortKey);
+                if (!arrow) return;
+                if (key === 'random') {
+                    arrow.textContent = trackSortKey === 'random' ? '•' : '';
+                } else if (key === trackSortKey) {
+                    arrow.textContent = trackSortDir[key] === 'asc' ? '▲' : '▼';
+                } else {
+                    arrow.textContent = '';
+                }
+            });
+        }
+
+        function applyCurrentSortAndRender() {
+            if (currentMainPlayerTab === 'mixes') {
+                currentMixlist = applyTrackSort(mixFileObjects, true);
+                populateMixList(currentMixlist);
+            } else {
+                currentTracklist = applyTrackSort(audioFileObjects, false);
+                populateFileList(currentTracklist);
+            }
+            refreshFinderSortBar();
+            if (shuffleEnabled) rebuildShuffleQueue();
+        }
+
+        function updateShuffleButton() {
+            const btn = document.getElementById('feeling-lucky-button');
+            if (!btn) return;
+            btn.classList.toggle('shuffle-on', shuffleEnabled);
+            btn.title = shuffleEnabled ? 'Shuffle on — click to turn off' : 'Shuffle — play in random order';
+        }
+
         // Populate "All Tracks" list
         function populateFileList(files) {
             fileListElement.innerHTML = ''; 
@@ -5768,7 +6503,6 @@
             });
             populateMobileTrackList(files);
         }
-        populateFileList(currentTracklist); // Initial population
 
         function populateMobileTrackList(files) {
             if (!mobileTrackListElement) return;
@@ -5898,12 +6632,12 @@
                 if (!Array.isArray(data)) return;
                 const files = data
                     .filter(item => item.type === 'file' && item.name.toLowerCase().endsWith('.mp3'))
-                    .map(item => ({
+                    .map((item, index) => ({
                         name: item.name,
                         url: item.download_url,
-                        bpm: bpmMap.get(item.name) || 120.00
-                    }))
-                    .sort((a, b) => a.name.localeCompare(b.name));
+                        bpm: bpmMap.get(item.name) || 120.00,
+                        dateIndex: index
+                    }));
                 if (files.length > 0) {
                     audioFileObjects = files.map((f, index) => ({ 
                         name: f.name, 
@@ -5913,7 +6647,7 @@
                     }));
                     currentTracklist = [...audioFileObjects];
                     currentDjTracklist = [...audioFileObjects];
-                    populateFileList(currentTracklist);
+                    applyCurrentSortAndRender();
                     populateDjLibrary(currentDjTracklist);
                     console.log('Loaded', files.length, 'audio files from GitHub audio/ folder.');
                 }
@@ -5943,12 +6677,11 @@
                         bpm: 0,
                         url: item.download_url,
                         dateIndex: index
-                    }))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-
+                    }));
                 if (files.length > 0) {
+                    mixFileObjects.splice(0, mixFileObjects.length, ...files);
                     currentMixlist = files;
-                    populateMixList(currentMixlist);
+                    applyCurrentSortAndRender();
                     console.log('Loaded', files.length, 'mix files from GitHub mixes/ folder.');
                 }
             } catch (e) {
@@ -5967,6 +6700,7 @@
             populateMobileMixList(files);
         }
         populateMixList(currentMixlist); // Initial population
+        applyCurrentSortAndRender();
 
         // --- Feeling Lucky (random track) ---
         function playRandomTrack() {
@@ -6016,124 +6750,88 @@
         }
 
         const feelingLuckyBtn = document.getElementById('feeling-lucky-button');
-        if (feelingLuckyBtn) feelingLuckyBtn.addEventListener('click', playRandomTrack);
+        if (feelingLuckyBtn) {
+            feelingLuckyBtn.addEventListener('click', () => {
+                shuffleEnabled = !shuffleEnabled;
+                updateShuffleButton();
+                if (shuffleEnabled) {
+                    const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+                    rebuildShuffleQueue(activeItem && activeItem.dataset.filename);
+                    if (!activeItem) playRandomTrack();
+                } else {
+                    shuffleQueue = [];
+                    shufflePos = 0;
+                }
+            });
+            updateShuffleButton();
+        }
+
+        function playNamedTrack(track) {
+            if (!track) return;
+            const isMix = currentMainPlayerTab === 'mixes';
+            const listEl = isMix ? mixListElement : fileListElement;
+            let li = listEl.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (!li) {
+                if (isMix) populateMixList(currentMixlist);
+                else populateFileList(currentTracklist);
+                li = listEl.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            }
+            if (li) {
+                li.click();
+                return;
+            }
+            const fileUrl = (track.url && track.url.length) ? track.url : ((isMix ? 'mixes/' : 'audio/') + track.name);
+            document.getElementById('deck-a-audio').pause();
+            document.getElementById('deck-b-audio').pause();
+            initPlayersOnGesture();
+            try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
+            if (!audioContext) setupAudioContext();
+            musicPlayer.src = fileUrl;
+            musicPlayer.play().catch(() => {});
+            tryStartSilentAudio();
+            updateNowPlayingText(track.name.replace('.mp3',''));
+            syncMobileActiveTrackByName(track.name);
+            document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
+            const match = listEl.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
+            if (match) match.classList.add('active');
+            updateMediaSession(track.name.replace('.mp3',''), isMix);
+        }
 
         // --- Skip to Next Track ---
         function skipToNextTrack() {
-            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            const tracks = getActivePlayerList();
             if (!tracks || tracks.length === 0) return;
-
-            // Find the currently playing track
             const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+            if (shuffleEnabled) {
+                if (!shuffleQueue.length) rebuildShuffleQueue(activeItem && activeItem.dataset.filename);
+                shufflePos = (shufflePos + 1) % shuffleQueue.length;
+                playNamedTrack(shuffleQueue[shufflePos]);
+                return;
+            }
             let currentIndex = -1;
-            
             if (activeItem && activeItem.dataset.filename) {
-                const filename = activeItem.dataset.filename;
-                currentIndex = tracks.findIndex(t => t.name === filename);
+                currentIndex = tracks.findIndex(t => t.name === activeItem.dataset.filename);
             }
-
-            // Get next track index
-            const nextIndex = (currentIndex + 1) % tracks.length;
-            const track = tracks[nextIndex];
-
-            // Ensure main tab is shown if playing from tracks
-            if (currentMainPlayerTab !== 'mixes' && !currentMainPlayerTab === 'tracks') {
-                currentMainPlayerTab = 'tracks';
-                playerTabs.forEach(t => t.classList.remove('active'));
-                const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
-                if (tracksTabBtn) tracksTabBtn.classList.add('active');
-                playerTabContents.forEach(content => {
-                    if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
-                    else { content.style.display = 'none'; content.classList.remove('active'); }
-                });
-            }
-
-            // Try to find the DOM list item and trigger its click
-            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            if (!li) {
-                populateFileList(currentTracklist);
-                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            }
-
-            if (li) {
-                li.click();
-            } else {
-                // Fallback: directly set audio src and update UI
-                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
-                document.getElementById('deck-a-audio').pause();
-                document.getElementById('deck-b-audio').pause();
-                initPlayersOnGesture();
-                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
-                if (!audioContext) setupAudioContext();
-                musicPlayer.src = fileUrl;
-                musicPlayer.play().catch(() => {});
-                tryStartSilentAudio();
-                updateNowPlayingText(track.name.replace('.mp3',''));
-                syncMobileActiveTrackByName(track.name);
-                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
-                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-                if (match) match.classList.add('active');
-                updateMediaSession(track.name.replace('.mp3',''), false);
-            }
+            const track = tracks[(currentIndex + 1) % tracks.length];
+            playNamedTrack(track);
         }
 
-        // --- Skip to Previous Track ---
         function skipToPreviousTrack() {
-            const tracks = currentTracklist && currentTracklist.length ? currentTracklist : audioFileObjects;
+            const tracks = getActivePlayerList();
             if (!tracks || tracks.length === 0) return;
-
-            // Find the currently playing track
             const activeItem = document.querySelector('#file-list li.active, #mix-list li.active');
+            if (shuffleEnabled) {
+                if (!shuffleQueue.length) rebuildShuffleQueue(activeItem && activeItem.dataset.filename);
+                shufflePos = (shufflePos - 1 + shuffleQueue.length) % shuffleQueue.length;
+                playNamedTrack(shuffleQueue[shufflePos]);
+                return;
+            }
             let currentIndex = 0;
-            
             if (activeItem && activeItem.dataset.filename) {
-                const filename = activeItem.dataset.filename;
-                currentIndex = tracks.findIndex(t => t.name === filename);
+                currentIndex = tracks.findIndex(t => t.name === activeItem.dataset.filename);
             }
-
-            // Get previous track index
-            const prevIndex = currentIndex === 0 ? tracks.length - 1 : currentIndex - 1;
-            const track = tracks[prevIndex];
-
-            // Ensure main tab is shown if playing from tracks
-            if (currentMainPlayerTab !== 'mixes' && !currentMainPlayerTab === 'tracks') {
-                currentMainPlayerTab = 'tracks';
-                playerTabs.forEach(t => t.classList.remove('active'));
-                const tracksTabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="tracks"]');
-                if (tracksTabBtn) tracksTabBtn.classList.add('active');
-                playerTabContents.forEach(content => {
-                    if (content.dataset.tabContent === 'tracks') { content.style.display = 'grid'; content.classList.add('active'); }
-                    else { content.style.display = 'none'; content.classList.remove('active'); }
-                });
-            }
-
-            // Try to find the DOM list item and trigger its click
-            let li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            if (!li) {
-                populateFileList(currentTracklist);
-                li = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-            }
-
-            if (li) {
-                li.click();
-            } else {
-                // Fallback: directly set audio src and update UI
-                const fileUrl = (track.url && track.url.length) ? track.url : ('audio/' + track.name);
-                document.getElementById('deck-a-audio').pause();
-                document.getElementById('deck-b-audio').pause();
-                initPlayersOnGesture();
-                try { document.getElementById('audio-player').src = fileUrl; } catch(e) {}
-                if (!audioContext) setupAudioContext();
-                musicPlayer.src = fileUrl;
-                musicPlayer.play().catch(() => {});
-                tryStartSilentAudio();
-                updateNowPlayingText(track.name.replace('.mp3',''));
-                syncMobileActiveTrackByName(track.name);
-                document.querySelectorAll('#file-list li, #mix-list li').forEach(el => el.classList.remove('active'));
-                const match = fileListElement.querySelector(`li[data-filename="${CSS.escape(track.name)}"]`);
-                if (match) match.classList.add('active');
-                updateMediaSession(track.name.replace('.mp3',''), false);
-            }
+            const prevIndex = currentIndex <= 0 ? tracks.length - 1 : currentIndex - 1;
+            playNamedTrack(tracks[prevIndex]);
         }
 
         // Add event listeners for skip next and skip prev buttons
@@ -6150,6 +6848,7 @@
                 tab.classList.add('active');
                 
                 currentMainPlayerTab = tab.dataset.tab;
+                applyCurrentSortAndRender();
                 
                 playerTabContents.forEach(content => {
                     if (content.dataset.tabContent === currentMainPlayerTab) {
@@ -6168,37 +6867,45 @@
         });
 
         // --- Main Player: Search & Sort ---
-        sortAzButton.addEventListener('click', () => {
-            if (currentMainPlayerTab === 'tracks') {
-                currentTracklist.sort((a, b) => a.name.localeCompare(b.name));
-                populateFileList(currentTracklist);
-            } else {
-                currentMixlist.sort((a, b) => a.name.localeCompare(b.name));
-                populateMixList(currentMixlist);
-            }
-        });
-
-        sortZaButton.addEventListener('click', () => {
-            if (currentMainPlayerTab === 'tracks') {
-                currentTracklist.sort((a, b) => b.name.localeCompare(a.name));
-                populateFileList(currentTracklist);
-            } else {
-                currentMixlist.sort((a, b) => b.name.localeCompare(a.name));
-                populateMixList(currentMixlist);
-            }
-        });
-        
-        // Sort by Date Added (newest/most recent first)
-        document.getElementById('sort-date').addEventListener('click', () => {
-            if (currentMainPlayerTab === 'tracks') {
-                // Sort by dateIndex in descending order (higher index = more recent)
-                currentTracklist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
-                populateFileList(currentTracklist);
-            } else {
-                currentMixlist.sort((a, b) => (b.dateIndex || 0) - (a.dateIndex || 0));
-                populateMixList(currentMixlist);
-            }
-        });
+        const finderSortBar = document.getElementById('finder-sort-bar');
+        if (finderSortBar) {
+            finderSortBar.addEventListener('click', (e) => {
+                const btn = e.target.closest('.finder-sort-btn');
+                if (!btn) return;
+                const key = btn.dataset.sort;
+                if (key === 'random') {
+                    trackSortKey = 'random';
+                } else if (trackSortKey === key) {
+                    trackSortDir[key] = trackSortDir[key] === 'asc' ? 'desc' : 'asc';
+                } else {
+                    trackSortKey = key;
+                    if (!trackSortDir[key]) trackSortDir[key] = key === 'date' ? 'desc' : 'asc';
+                }
+                applyCurrentSortAndRender();
+            });
+        }
+        if (sortAzButton) {
+            sortAzButton.addEventListener('click', () => {
+                trackSortKey = 'name';
+                trackSortDir.name = 'asc';
+                applyCurrentSortAndRender();
+            });
+        }
+        if (sortZaButton) {
+            sortZaButton.addEventListener('click', () => {
+                trackSortKey = 'name';
+                trackSortDir.name = 'desc';
+                applyCurrentSortAndRender();
+            });
+        }
+        const sortDateButton = document.getElementById('sort-date');
+        if (sortDateButton) {
+            sortDateButton.addEventListener('click', () => {
+                trackSortKey = 'date';
+                trackSortDir.date = 'desc';
+                applyCurrentSortAndRender();
+            });
+        }
         
         searchBar.addEventListener('input', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -7017,13 +7724,10 @@
         }
         
         function playNextTrack() {
-            const nextTrackLi = getTrackElement(1);
-            if (nextTrackLi) nextTrackLi.click(); // Simulate click
+            skipToNextTrack();
         }
-        
         function playPreviousTrack() {
-            const prevTrackLi = getTrackElement(-1);
-            if (prevTrackLi) prevTrackLi.click();
+            skipToPreviousTrack();
         }
 
         // Auto-play next track handled in wired musicPlayer events (see wireMusicPlayerEvents())
@@ -7078,27 +7782,22 @@
         
         // Info button
         infoButton.addEventListener('click', () => {
-            infoWindow.style.display = 'flex';
-            if (!isMobile) bringWindowToFront(infoWindow);
-            // Load and show the animated GIF only when the info window opens
+            if (!isMobile) {
+                showDesktopWindow(infoWindow, document.getElementById('start-button'), 600, 700);
+            } else {
+                infoWindow.style.display = 'flex';
+            }
             const _infoGif = document.getElementById('info-gif');
             if (_infoGif) {
-                // Use the data-src attribute so the GIF doesn't load until requested
-                // Prepend ./ to ensure relative path and encode spaces
                 const raw = _infoGif.dataset.src || '';
                 _infoGif.src = raw ? './' + encodeURI(raw) : '';
                 _infoGif.style.display = 'block';
                 _infoGif.style.width = '100%';
                 _infoGif.style.maxWidth = '720px';
             }
-            // Make sure the info window is large enough and centered so GIF is visible
             try {
-                const winW = 600;
-                const winH = 700;
-                infoWindow.style.width = winW + 'px';
-                infoWindow.style.height = winH + 'px';
-                infoWindow.style.left = Math.max(12, (window.innerWidth - winW) / 2) + 'px';
-                infoWindow.style.top = Math.max(12, (window.innerHeight - winH) / 2) + 'px';
+                infoWindow.style.width = '600px';
+                infoWindow.style.height = '700px';
             } catch (e) {}
         });
         
@@ -7148,35 +7847,40 @@
                 const targetWindowId = e.target.dataset.target;
                 const windowToClose = document.getElementById(targetWindowId);
                 if (windowToClose) {
-                    windowToClose.style.display = 'none';
                     windowToClose.classList.remove('mobile-fullscreen');
                     hideMobileClose();
+                    const iconMap = {
+                        'player-container': document.getElementById('app-music'),
+                        'dj-app-window': document.getElementById('app-dj'),
+                        'solitaire-window': document.getElementById('app-cards'),
+                        'tr808-window': document.getElementById('app-beats'),
+                        'info-window': document.getElementById('start-button'),
+                        'recycle-window': document.getElementById('app-recycle')
+                    };
+                    if (!isMobile) hideDesktopWindow(windowToClose, iconMap[targetWindowId]);
+                    else windowToClose.style.display = 'none';
                     if (targetWindowId === 'player-container') {
-                        minimizedPlayerIcon.style.display = 'flex';
+                        minimizedPlayerIcon.style.display = isMobile ? 'flex' : 'none';
                     } else if (targetWindowId === 'dj-app-window') {
-                        minimizedDjIcon.style.display = 'none'; // Hide minimized icon
-                        openDjAppIcon.style.display = 'flex'; // Show open icon
+                        minimizedDjIcon.style.display = 'none';
+                        openDjAppIcon.style.display = 'flex';
                     } else if (targetWindowId === 'visualizer-window') {
                         stopVisualizer();
                     } else if (targetWindowId === 'info-window') {
-                        // When info window is closed, hide and clear the GIF so it stops
                         const _infoGif = document.getElementById('info-gif');
                         if (_infoGif) {
                             _infoGif.src = '';
                             _infoGif.style.display = 'none';
                         }
-                        // Reset size if it was expanded
                         try {
                             infoWindow.style.width = '';
                             infoWindow.style.height = '';
-                        } catch (e) {}
-                    } else if (targetWindowId === 'solitaire-window') { // NEW
+                        } catch (err) {}
+                    } else if (targetWindowId === 'solitaire-window') {
                         minimizedSolitaireIcon.style.display = 'none';
                         openSolitaireIcon.style.display = 'flex';
-                        // Clear cooldown interval if closing while active
                         if (bjCooldownInterval) clearInterval(bjCooldownInterval);
                     } else if (targetWindowId === 'tr808-window') {
-                        // When the TR-808 window is closed, minimize it to the bottom bar
                         minimizedTr808Icon.style.display = 'flex';
                         openTr808Icon.style.display = 'none';
                     }
@@ -7186,13 +7890,14 @@
 
         // Player Minimize/Restore
         minimizePlayerButton.addEventListener('click', () => {
-            // If on mobile, remove fullscreen class before hiding
             if (isMobile) {
                 playerContainer.classList.remove('mobile-fullscreen');
                 hideMobileClose();
+                playerContainer.style.display = 'none';
+            } else {
+                hideDesktopWindow(playerContainer, document.getElementById('app-music'));
             }
-            playerContainer.style.display = 'none';
-            minimizedPlayerIcon.style.display = 'flex';
+            minimizedPlayerIcon.style.display = isMobile ? 'flex' : 'none';
         });
 
         minimizedPlayerIcon.addEventListener('click', () => {
@@ -7203,12 +7908,13 @@
                 playerContainer.style.width = '100%';
                 playerContainer.style.height = '100%';
                 showMobileCloseFor('player-container');
+                playerContainer.style.display = 'flex';
+            } else {
+                showDesktopWindow(playerContainer, document.getElementById('app-music'));
             }
-            playerContainer.style.display = 'flex';
             minimizedPlayerIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(playerContainer);
         });
-        
+
         // DJ App Minimize/Restore
         openDjAppIcon.addEventListener('click', () => {
             if (isMobile) {
@@ -7218,21 +7924,24 @@
                 djAppWindow.style.width = '100%';
                 djAppWindow.style.height = '100%';
                 showMobileCloseFor('dj-app-window');
+                djAppWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(djAppWindow, document.getElementById('app-dj'));
             }
-            djAppWindow.style.display = 'flex';
-            openDjAppIcon.style.display = 'none'; 
-            minimizedDjIcon.style.display = 'none'; 
-            if (!isMobile) bringWindowToFront(djAppWindow);
+            openDjAppIcon.style.display = 'none';
+            minimizedDjIcon.style.display = 'none';
         });
-        
+
         minimizeDjButton.addEventListener('click', () => {
             if (isMobile) {
                 djAppWindow.classList.remove('mobile-fullscreen');
                 hideMobileClose();
+                djAppWindow.style.display = 'none';
+            } else {
+                hideDesktopWindow(djAppWindow, document.getElementById('app-dj'));
             }
-            djAppWindow.style.display = 'none';
-            minimizedDjIcon.style.display = 'flex'; 
-            openDjAppIcon.style.display = 'none'; 
+            minimizedDjIcon.style.display = 'flex';
+            openDjAppIcon.style.display = 'none';
         });
 
         // TR-808 Minimize/Restore (open centers window and sizes to fit)
@@ -7248,21 +7957,17 @@
                 tr808Window.style.minHeight = '0';
                 showMobileCloseFor('tr808-window');
             } else {
-                // Size to a comfortable landscape default that fits most screens (bigger than before)
                 const targetWidth = Math.min(980, Math.floor(window.innerWidth * 0.94));
                 const targetHeight = Math.min(620, Math.floor(window.innerHeight * 0.78));
                 tr808Window.style.width = targetWidth + 'px';
                 tr808Window.style.height = targetHeight + 'px';
                 tr808Window.style.maxHeight = '90vh';
                 tr808Window.style.minHeight = '220px';
-                // Center on screen with small margin
-                tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - targetWidth) / 2)) + 'px';
-                tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - targetHeight) / 2)) + 'px';
+                showDesktopWindow(tr808Window, document.getElementById('app-beats'), targetWidth, targetHeight);
             }
-            tr808Window.style.display = 'flex';
             openTr808Icon.style.display = 'none';
             minimizedTr808Icon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(tr808Window);
+            if (isMobile) tr808Window.style.display = 'flex';
         });
 
         if (minimizeTr808Button) minimizeTr808Button.addEventListener('click', () => {
@@ -7270,18 +7975,16 @@
                 tr808Window.classList.remove('mobile-fullscreen');
                 hideMobileClose();
             }
-            tr808Window.style.display = 'none';
+            if (!isMobile) hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
+            else tr808Window.style.display = 'none';
             minimizedTr808Icon.style.display = 'flex';
             openTr808Icon.style.display = 'none';
             // Keep mobile-fullscreen class but hide window when minimized on mobile
         });
 
         if (minimizedTr808Icon) minimizedTr808Icon.addEventListener('click', () => {
-            // Restore previous size if present, otherwise center
-            tr808Window.style.display = 'flex';
             minimizedTr808Icon.style.display = 'none';
             openTr808Icon.style.display = 'none';
-            // If we're on mobile, ensure fullscreen class is applied
             if (isMobile) {
                 tr808Window.classList.add('mobile-fullscreen');
                 tr808Window.style.left = '0px';
@@ -7289,18 +7992,10 @@
                 tr808Window.style.width = '100%';
                 tr808Window.style.height = '100%';
                 showMobileCloseFor('tr808-window');
+                tr808Window.style.display = 'flex';
             } else {
-                // If window had no explicit position, center it
-                if (!tr808Window.style.left) {
-                    const w = Math.min(760, Math.floor(window.innerWidth * 0.92));
-                    const h = Math.min(520, Math.floor(window.innerHeight * 0.72));
-                    tr808Window.style.width = w + 'px';
-                    tr808Window.style.height = h + 'px';
-                    tr808Window.style.left = Math.max(8, Math.floor((window.innerWidth - w) / 2)) + 'px';
-                    tr808Window.style.top = Math.max(8, Math.floor((window.innerHeight - h) / 2)) + 'px';
-                }
+                showDesktopWindow(tr808Window, document.getElementById('app-beats'));
             }
-            if (!isMobile) bringWindowToFront(tr808Window);
         });
         
         minimizedDjIcon.addEventListener('click', () => {
@@ -7310,15 +8005,15 @@
                 djAppWindow.style.top = '0px';
                 djAppWindow.style.width = '100%';
                 djAppWindow.style.height = '100%';
-                showMobileCloseFor('dj-app-window');
+                djAppWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(djAppWindow, document.getElementById('app-dj'));
             }
-            djAppWindow.style.display = 'flex';
-            minimizedDjIcon.style.display = 'none'; 
-            openDjAppIcon.style.display = 'none'; 
-            if (!isMobile) bringWindowToFront(djAppWindow);
+            minimizedDjIcon.style.display = 'none';
+            openDjAppIcon.style.display = 'none';
         });
         
-        // Solitaire Minimize/Restore (NEW)
+        // Solitaire Minimize/Restore
         openSolitaireIcon.addEventListener('click', () => {
             if (isMobile) {
                 solitaireWindow.classList.add('mobile-fullscreen');
@@ -7326,20 +8021,22 @@
                 solitaireWindow.style.top = '0px';
                 solitaireWindow.style.width = '100%';
                 solitaireWindow.style.height = '100%';
-                showMobileCloseFor('solitaire-window');
+                solitaireWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
             }
-            solitaireWindow.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(solitaireWindow);
         });
 
         minimizeSolitaireButton.addEventListener('click', () => {
             if (isMobile) {
                 solitaireWindow.classList.remove('mobile-fullscreen');
                 hideMobileClose();
+                solitaireWindow.style.display = 'none';
+            } else {
+                hideDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
             }
-            solitaireWindow.style.display = 'none';
             minimizedSolitaireIcon.style.display = 'flex';
             openSolitaireIcon.style.display = 'none';
         });
@@ -7351,11 +8048,12 @@
                 solitaireWindow.style.top = '0px';
                 solitaireWindow.style.width = '100%';
                 solitaireWindow.style.height = '100%';
+                solitaireWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(solitaireWindow, document.getElementById('app-cards'));
             }
-            solitaireWindow.style.display = 'flex';
             minimizedSolitaireIcon.style.display = 'none';
             openSolitaireIcon.style.display = 'none';
-            if (!isMobile) bringWindowToFront(solitaireWindow);
         });
 
         // Games tab switching (Solitaire/Blackjack)
@@ -7500,6 +8198,7 @@
             if (mobileBgColorPicker && mobileBgColorPicker.value !== newColor) {
                 mobileBgColorPicker.value = newColor;
             }
+            try { if (window.__desktopThreeBg) window.__desktopThreeBg.setBackground(newColor); } catch (e) {}
         });
 
         // Visualizer background picker: changes only the visualizer canvas background
@@ -8460,6 +9159,511 @@
             }
         } catch (e) {}
 
+        // --- Desktop-only physics spheres (vanilla recreation of the SSGI/rapier demo) ---
+        (function initDesktopThreeBackground() {
+            const canvas = document.getElementById('three-bg');
+            const toggle = document.getElementById('three-spheres-toggle');
+            if (!canvas) return;
+
+            const PREF_KEY = 'desktopThreeSpheres';
+            let userEnabled = true;
+            try {
+                const saved = localStorage.getItem(PREF_KEY);
+                if (saved === '0') userEnabled = false;
+                if (saved === '1') userEnabled = true;
+            } catch (e) {}
+
+            if (toggle) {
+                toggle.checked = userEnabled && !isMobile;
+                toggle.addEventListener('change', (ev) => {
+                    userEnabled = !!ev.target.checked;
+                    try { localStorage.setItem(PREF_KEY, userEnabled ? '1' : '0'); } catch (err) {}
+                    syncDesktopThree();
+                });
+            }
+
+            const ACCENTS = ['#ff4060', '#ffcc00', '#20ffa0', '#2060ff'];
+            let THREE = null;
+            let renderer = null;
+            let scene = null;
+            let camera = null;
+            let bodies = [];
+            let rafId = 0;
+            let running = false;
+            let loadPromise = null;
+            let lastT = 0;
+            let accent = 0;
+            let bgHex = '#008080';
+            let hueShift = 0;
+            const pointer = {
+                x: 0, y: 0, z: 0,
+                px: 0, py: 0, pz: 0,
+                has: false, ready: false, r: 1
+            };
+
+            function shuffleConnectors(accentIndex) {
+                const a = ACCENTS[((accentIndex % ACCENTS.length) + ACCENTS.length) % ACCENTS.length];
+                return [
+                    { color: '#444' }, { color: '#444' }, { color: '#444' },
+                    { color: 'white' }, { color: 'white' }, { color: 'white' },
+                    { color: a }, { color: a }, { color: a },
+                    { color: '#444' }, { color: '#444' }, { color: '#444' },
+                    { color: 'white' }, { color: 'white' }, { color: 'white' },
+                    { color: a }, { color: a }, { color: a }
+                ];
+            }
+
+            function desiredOn() {
+                return userEnabled && !isMobile && !document.hidden;
+            }
+
+            function makeEnvMap() {
+                const c = document.createElement('canvas');
+                c.width = 256;
+                c.height = 128;
+                const g = c.getContext('2d');
+                const grd = g.createLinearGradient(0, 0, 0, 128);
+                grd.addColorStop(0, '#ffffff');
+                grd.addColorStop(0.42, '#f4f4f4');
+                grd.addColorStop(1, '#c8c8c8');
+                g.fillStyle = grd;
+                g.fillRect(0, 0, 256, 128);
+                // Lightformer circle (intensity 100 analogue)
+                g.fillStyle = 'rgba(255,255,255,0.98)';
+                g.beginPath();
+                g.arc(128, 16, 24, 0, Math.PI * 2);
+                g.fill();
+                // Lightformer ring (red, intensity 80 analogue)
+                g.strokeStyle = 'rgba(255,64,80,0.85)';
+                g.lineWidth = 10;
+                g.beginPath();
+                g.arc(210, 28, 22, 0, Math.PI * 2);
+                g.stroke();
+                g.fillStyle = 'rgba(255,255,255,0.4)';
+                g.beginPath();
+                g.arc(48, 70, 16, 0, Math.PI * 2);
+                g.fill();
+                const tex = new THREE.CanvasTexture(c);
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+                tex.colorSpace = THREE.SRGBColorSpace;
+                tex.needsUpdate = true;
+                return tex;
+            }
+
+            async function ensureThree() {
+                if (THREE) return THREE;
+                if (!loadPromise) {
+                    loadPromise = import('https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js')
+                        .then((mod) => { THREE = mod; return THREE; })
+                        .catch((err) => {
+                            loadPromise = null;
+                            throw err;
+                        });
+                }
+                return loadPromise;
+            }
+
+            function resizeRenderer() {
+                if (!renderer || !camera) return;
+                const w = Math.max(1, window.innerWidth);
+                const h = Math.max(1, window.innerHeight);
+                renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+
+            function setBackground(hex) {
+                bgHex = hex || bgHex;
+                if (!scene || !THREE) return;
+                scene.background = new THREE.Color(bgHex);
+                if (scene.userData.bgTintLight) {
+                    scene.userData.bgTintLight.color.set(bgHex);
+                }
+                refreshSphereTints();
+            }
+
+            function refreshSphereTints() {
+                if (!THREE || !bodies.length) return;
+                const tint = new THREE.Color(bgHex);
+                const hsl = { h: 0, s: 0, l: 0 };
+                for (let i = 0; i < bodies.length; i++) {
+                    const b = bodies[i];
+                    if (!b.baseColor) continue;
+                    b.baseColor.getHSL(hsl);
+                    const rotated = b.baseColor.clone();
+                    rotated.setHSL((hsl.h + hueShift) % 1, hsl.s, hsl.l);
+                    b.targetColor.copy(rotated).lerp(tint, 0.14);
+                }
+            }
+
+            function viewportSize() {
+                const dist = camera.position.z;
+                const vHeight = 2 * Math.tan((camera.fov * Math.PI / 180) / 2) * dist;
+                return { width: vHeight * camera.aspect, height: vHeight };
+            }
+
+            function clientToWorld(clientX, clientY) {
+                const ndcX = (clientX / window.innerWidth) * 2 - 1;
+                const ndcY = -(clientY / window.innerHeight) * 2 + 1;
+                const vs = viewportSize();
+                return {
+                    x: (ndcX * vs.width) / 2,
+                    y: (ndcY * vs.height) / 2,
+                    z: 0
+                };
+            }
+
+            function applyAccent(next) {
+                accent = ((next % ACCENTS.length) + ACCENTS.length) % ACCENTS.length;
+                const connectors = shuffleConnectors(accent);
+                for (let i = 0; i < bodies.length && i < connectors.length; i++) {
+                    if (!bodies[i].baseColor) bodies[i].baseColor = new THREE.Color();
+                    bodies[i].baseColor.set(connectors[i].color);
+                }
+                refreshSphereTints();
+            }
+
+            function uiBlocksPointer(target) {
+                if (!target || target === canvas) return false;
+                return !!(target.closest && target.closest('.window, #desktop-icons, #background1, #color-picker-container, #start-menu, #start-button, #digital-clock, button, input, a, canvas:not(#three-bg)'));
+            }
+
+            function onPointerMove(e) {
+                if (!running || !camera) return;
+                const p = clientToWorld(e.clientX, e.clientY);
+                if (!pointer.ready) {
+                    pointer.x = pointer.px = p.x;
+                    pointer.y = pointer.py = p.y;
+                    pointer.z = pointer.pz = p.z;
+                    pointer.ready = true;
+                } else {
+                    pointer.px = pointer.x;
+                    pointer.py = pointer.y;
+                    pointer.pz = pointer.z;
+                    pointer.x = p.x;
+                    pointer.y = p.y;
+                    pointer.z = p.z;
+                }
+                pointer.has = true;
+            }
+
+            function onWindowLeave() {
+                pointer.has = false;
+                pointer.ready = false;
+            }
+
+            let clickStartX = 0;
+            let clickStartY = 0;
+            let clickCandidate = false;
+
+            function onPointerDown(e) {
+                if (!running || isMobile) return;
+                if (e.button != null && e.button !== 0) return;
+                clickStartX = e.clientX;
+                clickStartY = e.clientY;
+                clickCandidate = !uiBlocksPointer(e.target);
+            }
+
+            function onPointerUp(e) {
+                if (!clickCandidate) return;
+                clickCandidate = false;
+                if (Math.hypot(e.clientX - clickStartX, e.clientY - clickStartY) > 6) return;
+                applyAccent(accent + 1);
+            }
+
+            function collideBalls(a, b) {
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const dz = b.z - a.z;
+                const minD = a.r + b.r;
+                const d2 = dx * dx + dy * dy + dz * dz;
+                if (d2 >= minD * minD || d2 === 0) return;
+                const d = Math.sqrt(d2);
+                const nx = dx / d;
+                const ny = dy / d;
+                const nz = dz / d;
+                const overlap = (minD - d) * 0.5;
+                a.x -= nx * overlap;
+                a.y -= ny * overlap;
+                a.z -= nz * overlap;
+                b.x += nx * overlap;
+                b.y += ny * overlap;
+                b.z += nz * overlap;
+                const rvx = b.vx - a.vx;
+                const rvy = b.vy - a.vy;
+                const rvz = b.vz - a.vz;
+                const vn = rvx * nx + rvy * ny + rvz * nz;
+                if (vn >= 0) return;
+                const invA = 1 / a.mass;
+                const invB = 1 / b.mass;
+                const jImp = -(1 + 0.1) * vn / (invA + invB);
+                a.vx -= jImp * invA * nx;
+                a.vy -= jImp * invA * ny;
+                a.vz -= jImp * invA * nz;
+                b.vx += jImp * invB * nx;
+                b.vy += jImp * invB * ny;
+                b.vz += jImp * invB * nz;
+            }
+
+            function collidePointer(b) {
+                if (!pointer.has) return;
+                const dx = b.x - pointer.x;
+                const dy = b.y - pointer.y;
+                const dz = b.z - pointer.z;
+                const minD = b.r + pointer.r;
+                const d2 = dx * dx + dy * dy + dz * dz;
+                if (d2 >= minD * minD || d2 === 0) return;
+                const d = Math.sqrt(d2);
+                const nx = dx / d;
+                const ny = dy / d;
+                const nz = dz / d;
+                const overlap = minD - d;
+                b.x += nx * overlap;
+                b.y += ny * overlap;
+                b.z += nz * overlap;
+                const pvx = pointer.x - pointer.px;
+                const pvy = pointer.y - pointer.py;
+                const pvz = pointer.z - pointer.pz;
+                const rvx = b.vx - pvx;
+                const rvy = b.vy - pvy;
+                const rvz = b.vz - pvz;
+                const vn = rvx * nx + rvy * ny + rvz * nz;
+                if (vn < 0) {
+                    const inv = 1 / b.mass;
+                    const jImp = -(1 + 0.2) * vn / inv;
+                    b.vx += jImp * inv * nx;
+                    b.vy += jImp * inv * ny;
+                    b.vz += jImp * inv * nz;
+                }
+                b.vx += pvx * 0.85;
+                b.vy += pvy * 0.85;
+                b.vz += pvz * 0.85;
+            }
+
+            function stepPhysics(dt) {
+                dt = Math.min(0.1, dt);
+                const n = bodies.length;
+                const damp = 1 / (1 + 4 * dt);
+                const impulse = 0.25;
+
+                for (let i = 0; i < n; i++) {
+                    const b = bodies[i];
+                    // Rapier: applyImpulse(-translation * 0.25) each frame
+                    b.vx += (-b.x) * impulse / b.mass;
+                    b.vy += (-b.y) * impulse / b.mass;
+                    b.vz += (-b.z) * impulse / b.mass;
+                    b.vx *= damp;
+                    b.vy *= damp;
+                    b.vz *= damp;
+                    b.x += b.vx * dt;
+                    b.y += b.vy * dt;
+                    b.z += b.vz * dt;
+                    collidePointer(b);
+                }
+
+                for (let iter = 0; iter < 4; iter++) {
+                    for (let i = 0; i < n; i++) {
+                        for (let j = i + 1; j < n; j++) collideBalls(bodies[i], bodies[j]);
+                    }
+                }
+
+                const t = 1 - Math.exp(-dt / 0.2);
+                for (let i = 0; i < n; i++) {
+                    const b = bodies[i];
+                    b.mesh.position.set(b.x, b.y, b.z);
+                    b.mesh.material.color.lerp(b.targetColor, t);
+                }
+            }
+
+            function tick(now) {
+                if (!running) return;
+                const dt = Math.min(0.1, (now - lastT) / 1000 || 0.016);
+                lastT = now;
+                hueShift = (hueShift + dt * 0.035) % 1;
+                refreshSphereTints();
+                stepPhysics(dt);
+                renderer.render(scene, camera);
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function buildScene() {
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(17.5, window.innerWidth / Math.max(1, window.innerHeight), 0.1, 80);
+                camera.position.set(0, 0, 30);
+
+                scene.add(new THREE.AmbientLight(0xffffff, 2));
+                const key = new THREE.PointLight(0xffffff, 80, 90);
+                key.position.set(0, 5, -9);
+                scene.add(key);
+                const fill = new THREE.PointLight(0xffffff, 8, 70);
+                fill.position.set(10, 1, 0);
+                scene.add(fill);
+                const rim = new THREE.PointLight(0xff4060, 40, 80);
+                rim.position.set(10, 10, 0);
+                scene.add(rim);
+                scene.add(new THREE.HemisphereLight(0xffffff, 0x888888, 0.55));
+                const bgTintLight = new THREE.PointLight(0x008080, 6, 70);
+                bgTintLight.position.set(-8, 4, 8);
+                scene.add(bgTintLight);
+                scene.userData.bgTintLight = bgTintLight;
+
+                if (scene.userData.envMap) scene.userData.envMap.dispose();
+                const env = makeEnvMap();
+                scene.userData.envMap = env;
+                scene.environment = env;
+
+                const geo = new THREE.SphereGeometry(1, 64, 64);
+                const connectors = shuffleConnectors(accent);
+                bodies = [];
+                for (let i = 0; i < connectors.length; i++) {
+                    const spec = connectors[i];
+                    const mat = new THREE.MeshPhysicalMaterial({
+                        color: spec.color,
+                        metalness: 0.5,
+                        roughness: 0.2,
+                        envMapIntensity: 1.25,
+                        clearcoat: 0.3,
+                        clearcoatRoughness: 0.25
+                    });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    const edge = i % 4;
+                    let x = 0, y = 0, z = (Math.random() - 0.5) * 4;
+                    if (edge === 0) { x = -18 - Math.random() * 6; y = (Math.random() - 0.5) * 12; }
+                    else if (edge === 1) { x = 18 + Math.random() * 6; y = (Math.random() - 0.5) * 12; }
+                    else if (edge === 2) { x = (Math.random() - 0.5) * 14; y = 12 + Math.random() * 5; }
+                    else { x = (Math.random() - 0.5) * 14; y = -12 - Math.random() * 5; }
+                    const body = {
+                        mesh,
+                        r: 1,
+                        mass: (4 / 3) * Math.PI,
+                        x, y, z,
+                        vx: -x * 0.08,
+                        vy: -y * 0.08,
+                        vz: -z * 0.04,
+                        baseColor: new THREE.Color(spec.color),
+                        targetColor: new THREE.Color(spec.color)
+                    };
+                    mesh.position.set(body.x, body.y, body.z);
+                    scene.add(mesh);
+                    bodies.push(body);
+                }
+
+                try {
+                    const picker = document.getElementById('bg-color-picker');
+                    bgHex = (picker && picker.value) || getComputedStyle(document.body).backgroundColor || '#008080';
+                    if (bgHex.startsWith('rgb')) {
+                        const nums = bgHex.match(/\d+/g);
+                        if (nums && nums.length >= 3) {
+                            bgHex = '#' + nums.slice(0, 3).map((n) => parseInt(n, 10).toString(16).padStart(2, '0')).join('');
+                        }
+                    }
+                } catch (err) {}
+                refreshSphereTints();
+                setBackground(bgHex);
+            }
+
+            function bindEvents() {
+                window.addEventListener('resize', resizeRenderer);
+                window.addEventListener('pointermove', onPointerMove, { passive: true });
+                window.addEventListener('pointerdown', onPointerDown, { passive: true });
+                window.addEventListener('pointerup', onPointerUp, { passive: true });
+                window.addEventListener('pointerleave', onWindowLeave);
+            }
+
+            function unbindEvents() {
+                window.removeEventListener('resize', resizeRenderer);
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerdown', onPointerDown);
+                window.removeEventListener('pointerup', onPointerUp);
+                window.removeEventListener('pointerleave', onWindowLeave);
+            }
+
+            async function start() {
+                if (running || isMobile) return;
+                try {
+                    await ensureThree();
+                } catch (err) {
+                    console.warn('Three.js background failed to load', err);
+                    canvas.style.display = 'none';
+                    if (toggle) toggle.checked = false;
+                    return;
+                }
+                if (isMobile) return;
+                if (!renderer) {
+                    renderer = new THREE.WebGLRenderer({
+                        canvas,
+                        antialias: true,
+                        alpha: false,
+                        powerPreference: 'high-performance'
+                    });
+                    renderer.outputColorSpace = THREE.SRGBColorSpace;
+                    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    renderer.toneMappingExposure = 1.15;
+                    buildScene();
+                    bindEvents();
+                }
+                canvas.style.display = 'block';
+                resizeRenderer();
+                running = true;
+                lastT = performance.now();
+                rafId = requestAnimationFrame(tick);
+            }
+
+            function stop() {
+                running = false;
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = 0;
+                }
+                if (isMobile) canvas.style.display = 'none';
+            }
+
+            function dispose() {
+                stop();
+                unbindEvents();
+                if (scene) {
+                    scene.traverse((obj) => {
+                        if (obj.geometry) obj.geometry.dispose();
+                        if (obj.material) {
+                            if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
+                            else obj.material.dispose();
+                        }
+                    });
+                    if (scene.userData.envMap) scene.userData.envMap.dispose();
+                }
+                if (renderer) {
+                    renderer.dispose();
+                    renderer = null;
+                }
+                scene = null;
+                camera = null;
+                bodies = [];
+            }
+
+            function syncDesktopThree() {
+                if (desiredOn()) start();
+                else stop();
+                canvas.style.pointerEvents = 'none';
+                if (isMobile) {
+                    canvas.style.display = 'none';
+                } else if (!userEnabled) {
+                    canvas.style.display = 'none';
+                }
+            }
+
+            window.__desktopThreeBg = {
+                setBackground,
+                start,
+                stop,
+                sync: syncDesktopThree
+            };
+
+            document.addEventListener('interface-mode-changed', syncDesktopThree);
+            document.addEventListener('visibilitychange', syncDesktopThree);
+            syncDesktopThree();
+        })();
+
         // Preload cover image for lock screen
         const lockScreenImage = new Image();
         lockScreenImage.src = "cover.png"; 
@@ -8476,7 +9680,7 @@
                     bgImage.src = expected;
                 }
                 bgImage.style.display = bgImage.style.display || 'block';
-                bgImage.style.zIndex = (bgImage.style.zIndex || 0);
+                if (!bgImage.style.zIndex) bgImage.style.zIndex = '2';
                 // Log load errors for easier debugging in browser console
                 bgImage.addEventListener('error', () => console.warn('background1.png failed to load — check path/case.'));
             } catch (e) {}
@@ -8566,6 +9770,7 @@
 
             function onPointerUp() {
                 if (!dragging) return;
+                const moved = Math.hypot((parseFloat(bgImage.style.left) || 0) - startLeft, (parseFloat(bgImage.style.top) || 0) - startTop) > 6;
                 dragging = false;
                 bgImage.style.cursor = 'grab';
                 document.removeEventListener('mousemove', onPointerMove);
@@ -8573,7 +9778,12 @@
                 document.removeEventListener('mouseup', onPointerUp);
                 document.removeEventListener('touchend', onPointerUp);
 
-                // Persist position
+                if (!moved && !isMobile && bgColorPicker) {
+                    const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    bgColorPicker.value = randomColor;
+                    bgColorPicker.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+
                 try {
                     const left = parseFloat(bgImage.style.left || 0);
                     const top = parseFloat(bgImage.style.top || 0);
@@ -8985,4 +10195,4 @@
     <div id="digital-clock"></div>
 
 </body>
-</html>
+</html> 
