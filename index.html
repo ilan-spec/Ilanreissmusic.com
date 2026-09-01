@@ -2638,14 +2638,105 @@
                 left: 92px;
                 top: 28px;
             }
+            #desktop-os #player-container .content {
+                padding: 8px;
+                gap: 8px;
+            }
+            #desktop-os #player-container .content-inner {
+                gap: 6px;
+            }
+            #desktop-os #player-container .player-controls > div {
+                margin-bottom: 6px !important;
+                gap: 8px !important;
+            }
+            #desktop-os #player-container #now-playing {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                font-weight: 700;
+                background: #fff;
+                border: 2px inset #808080;
+                padding: 4px 8px;
+                margin: 0 !important;
+            }
+            #desktop-os #player-container #custom-player-controls {
+                margin-bottom: 0 !important;
+                padding: 5px 6px !important;
+                gap: 6px !important;
+            }
+            #desktop-os #player-container #play-pause-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 13px !important;
+            }
+            #desktop-os #player-container #time-display {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px !important;
+                min-width: 78px !important;
+            }
+            #desktop-os #player-container .search-sort-container {
+                gap: 6px;
+            }
+            #desktop-os #player-container #search-bar {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                padding: 4px 8px;
+                height: 24px;
+            }
+            #desktop-os #player-container .sort-button {
+                width: 28px;
+                height: 24px;
+                min-width: 28px;
+                font-size: 11px;
+            }
+            #desktop-os #player-container #bitcrush-toggle {
+                width: auto;
+                min-width: 52px;
+                padding: 0 8px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            }
+            #desktop-os #player-container .finder-sort-bar {
+                height: 24px;
+                margin: 0;
+            }
+            #desktop-os #player-container .finder-sort-btn {
+                font-size: 11px;
+                padding: 0 10px;
+            }
+            #desktop-os #player-container #file-browser-main {
+                padding: 6px;
+            }
+            #desktop-os #player-container #player-tabs {
+                margin-bottom: 6px !important;
+                padding-bottom: 4px !important;
+                gap: 4px;
+            }
+            #desktop-os #player-container #player-tabs .visualizer-tab {
+                min-width: 78px;
+                height: 22px;
+                min-height: 22px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px;
+                line-height: 18px;
+            }
+            #desktop-os #player-container .player-bottom-buttons {
+                margin-top: 4px;
+                gap: 6px;
+            }
+            #desktop-os #player-container .player-bottom-buttons .window-button {
+                width: 28px;
+                height: 24px;
+                min-width: 28px;
+                min-height: 24px;
+                line-height: 20px;
+            }
 
             #desktop-os .title-bar-buttons .window-button:not(.visualizer-tab) {
-                width: 16px;
-                height: 14px;
-                min-width: 16px;
-                min-height: 14px;
-                line-height: 12px;
-                font-size: 10px;
+                width: 22px;
+                height: 20px;
+                min-width: 22px;
+                min-height: 20px;
+                line-height: 16px;
+                font-size: 12px;
                 font-family: Tahoma, 'MS Sans Serif', sans-serif;
             }
 
@@ -3691,10 +3782,9 @@
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
                 </div>
                 <div class="finder-sort-bar" id="finder-sort-bar" role="toolbar" aria-label="Sort tracks">
-                    <button type="button" class="finder-sort-btn active" data-sort="date" title="Sort by date">Date <span class="sort-arrow">▼</span></button>
                     <button type="button" class="finder-sort-btn" data-sort="name" title="Sort by name">Name <span class="sort-arrow"></span></button>
                     <button type="button" class="finder-sort-btn" data-sort="bpm" title="Sort by BPM">BPM <span class="sort-arrow"></span></button>
-                    <button type="button" class="finder-sort-btn" data-sort="random" title="Random order">Shuffle</button>
+                    <button type="button" class="finder-sort-btn active" data-sort="random" title="Random order">Shuffle</button>
                 </div>
 
                 <div class="file-browser" id="file-browser-main">
@@ -4781,8 +4871,8 @@
         let selectedDjTrack = null; 
         let djSortAscending = true; 
         let currentMainPlayerTab = 'tracks'; // State for main player tabs
-        let trackSortKey = 'date';
-        let trackSortDir = { date: 'desc', name: 'asc', bpm: 'asc' };
+        let trackSortKey = 'random';
+        let trackSortDir = { name: 'asc', bpm: 'asc' };
         let shuffleEnabled = false;
         let shuffleQueue = [];
         let shufflePos = 0;
@@ -5200,6 +5290,8 @@
             el.style.top = Math.max(12, Math.floor((window.innerHeight - h - taskbar) / 2)) + 'px';
         }
 
+        let doodleWindowEl = null;
+
         function playOpenWindowAnim(el, iconEl) {
             if (isMobile || !el) return;
             el.classList.add('win-anim');
@@ -5254,8 +5346,38 @@
             }, 160);
         }
 
+        function closeOtherDesktopWindows(keepEl) {
+            if (isMobile) return;
+            const iconMap = {
+                'player-container': document.getElementById('app-music'),
+                'dj-app-window': document.getElementById('app-dj'),
+                'tr808-window': document.getElementById('app-beats'),
+                'solitaire-window': document.getElementById('app-cards'),
+                'recycle-window': document.getElementById('app-recycle'),
+                'info-window': document.getElementById('start-button'),
+                'playlist-window': document.getElementById('app-music')
+            };
+            const windows = [playerContainer, djAppWindow, tr808Window, solitaireWindow, recycleWindow, infoWindow, playlistWindow, doodleWindowEl];
+            windows.forEach(win => {
+                if (!win || win === keepEl) return;
+                if (win.id === 'visualizer-window') return;
+                if (win.style.display !== 'flex') return;
+                hideDesktopWindow(win, iconMap[win.id] || null);
+                if (win === playerContainer) minimizedPlayerIcon.style.display = 'none';
+                if (win === djAppWindow) minimizedDjIcon.style.display = 'none';
+                if (win === tr808Window) minimizedTr808Icon.style.display = 'none';
+                if (win === solitaireWindow) minimizedSolitaireIcon.style.display = 'none';
+                if (win === doodleWindowEl) {
+                    const closing = win;
+                    doodleWindowEl = null;
+                    setTimeout(() => { try { closing.remove(); } catch (err) {} }, 170);
+                }
+            });
+        }
+
         function showDesktopWindow(el, iconEl, width, height) {
             if (!el) return;
+            if (!isMobile && el.id !== 'visualizer-window') closeOtherDesktopWindows(el);
             el.style.display = 'flex';
             if (!isMobile) {
                 centerDesktopWindow(el, width, height);
@@ -5271,8 +5393,6 @@
             const tabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="' + tab + '"]');
             if (tabBtn) tabBtn.click();
         }
-
-        let doodleWindowEl = null;
 
         function launchDesktopApp(app) {
             if (app === 'demo-reel') {
@@ -6723,13 +6843,10 @@
         }
 
         function applyCurrentSortAndRender() {
-            if (currentMainPlayerTab === 'mixes') {
-                currentMixlist = applyTrackSort(mixFileObjects, true);
-                populateMixList(currentMixlist);
-            } else {
-                currentTracklist = applyTrackSort(audioFileObjects, false);
-                populateFileList(currentTracklist);
-            }
+            currentTracklist = applyTrackSort(audioFileObjects, false);
+            currentMixlist = applyTrackSort(mixFileObjects, true);
+            populateFileList(currentTracklist);
+            populateMixList(currentMixlist);
             refreshFinderSortBar();
             if (shuffleEnabled) rebuildShuffleQueue();
         }
@@ -8631,9 +8748,10 @@
                 playlistWindow.style.width = '100%';
                 playlistWindow.style.height = '100%';
                 showMobileCloseFor('playlist-window');
+                playlistWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(playlistWindow, document.getElementById('app-music'));
             }
-            playlistWindow.style.display = 'flex';
-            if (!isMobile) bringWindowToFront(playlistWindow);
         });
         
         // New playlist
