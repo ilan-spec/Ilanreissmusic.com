@@ -2684,21 +2684,9 @@
                 gap: 6px !important;
             }
             #desktop-os #player-container #play-pause-btn {
-                width: auto !important;
-                min-width: 92px !important;
-                height: 40px !important;
+                width: 28px !important;
+                height: 28px !important;
                 font-size: 13px !important;
-                font-weight: 800 !important;
-                gap: 6px !important;
-                padding: 0 12px !important;
-            }
-            #play-pause-btn {
-                background: #2ecc71 !important;
-                color: #fff !important;
-            }
-            #play-pause-btn.is-playing {
-                background: #e74c3c !important;
-                color: #fff !important;
             }
             #desktop-os #player-container #time-display {
                 font-family: Tahoma, 'MS Sans Serif', sans-serif;
@@ -3791,9 +3779,8 @@
                 <!-- Custom Audio Player Controls -->
                 <div id="custom-player-controls" style="background: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #404040; border-bottom: 2px solid #404040; padding: 4px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-radius: 2px;">
                     <!-- Play/Pause Button -->
-                    <button id="play-pause-btn" style="width: auto; min-width: 92px; height: 40px; background: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #404040; border-bottom: 2px solid #404040; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 800; letter-spacing: 0.04em; flex-shrink: 0; padding: 0 12px;" title="Play/Pause">
+                    <button id="play-pause-btn" style="width: 32px; height: 32px; background: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-right: 2px solid #404040; border-bottom: 2px solid #404040; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;" title="Play/Pause">
                         <i class="fas fa-play"></i>
-                        <span class="play-pause-label">PLAY</span>
                     </button>
                     
                     <!-- Scrubber Bar -->
@@ -4709,10 +4696,7 @@
                 const updatePlayPauseButton = () => {
                     const isPlaying = musicPlayer && !musicPlayer.paused;
                     if (playPauseBtn) {
-                        playPauseBtn.innerHTML = isPlaying
-                            ? '<i class="fas fa-stop"></i><span class="play-pause-label">STOP</span>'
-                            : '<i class="fas fa-play"></i><span class="play-pause-label">PLAY</span>';
-                        playPauseBtn.classList.toggle('is-playing', isPlaying);
+                        playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
                     }
                     if (mobilePlayPauseBtn) {
                         mobilePlayPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
@@ -5782,8 +5766,8 @@
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
         let vizBgColor = '#000000';
-        let activeVisualizer = isMobile ? 'vuMeter' : 'rain'; // Mobile keeps permanent VU meter
-        let lastDesktopVisualizer = activeVisualizer === 'vuMeter' ? 'rain' : activeVisualizer;
+        let activeVisualizer = isMobile ? 'vuMeter' : 'retroWaveform'; // Mobile keeps permanent VU meter
+        let lastDesktopVisualizer = activeVisualizer === 'vuMeter' ? 'retroWaveform' : activeVisualizer;
         let playlists = [];
         let selectedPlaylistId = null;
         let contextMenuTrack = null;
