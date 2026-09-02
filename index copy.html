@@ -531,6 +531,13 @@
             top: 20px;
             left: 20px;
             display: none; /* Hidden by default */
+            opacity: 0;
+        }
+        body:not(.mobile-mode) #visualizer-window {
+            transition: opacity 180ms ease;
+        }
+        #visualizer-window.viz-visible {
+            opacity: 1;
         }
         
         #visualizer-canvas {
@@ -550,6 +557,7 @@
             max-height: 100% !important;
             border-radius: 0 !important;
             z-index: 99999 !important;
+            opacity: 1 !important;
         }
 
         #visualizer-tabs {
@@ -2375,8 +2383,24 @@
                 line-height: 18px;
                 color: var(--tr-dark);
             }
-            /* Ensure PLAY/STOP/CLEAR labels fit on small screens */
-            #tr808-play, #tr808-stop, #tr808-clear { min-width: 48px; padding: 3px 6px; font-size: 11px; }
+            /* Ensure PLAY/STOP labels are obvious */
+            #tr808-play, #tr808-stop, #tr808-clear {
+                min-width: 88px;
+                height: 36px;
+                padding: 6px 14px;
+                font-size: 14px;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                line-height: 22px;
+            }
+            #tr808-window .tr808-controls #tr808-play {
+                background: #2ecc71;
+                color: #fff;
+            }
+            #tr808-window .tr808-controls #tr808-stop {
+                background: #e74c3c;
+                color: #fff;
+            }
 
             #tr808-sequencer {
                 display: flex;
@@ -2518,6 +2542,23 @@
                 box-shadow: 0 2px 6px rgba(47,46,62,0.08);
                 color: var(--tr-dark);
             }
+            #tr808-window .tr808-controls #tr808-play,
+            #tr808-window .tr808-controls #tr808-stop {
+                min-width: 88px;
+                height: 36px;
+                padding: 6px 14px;
+                font-size: 14px;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                line-height: 22px;
+                color: #fff;
+            }
+            #tr808-window .tr808-controls #tr808-play {
+                background: #2ecc71;
+            }
+            #tr808-window .tr808-controls #tr808-stop {
+                background: #e74c3c;
+            }
 
             /* --- Desktop icons & selection rectangle --- */
             #desktop-icons {
@@ -2536,7 +2577,7 @@
 
             .desktop-icon {
                 position: absolute;
-                width: 96px;
+                width: 120px;
                 height: auto;
                 background: transparent;
                 border: none;
@@ -2544,13 +2585,13 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: flex-start;
-                gap: 6px;
+                gap: 8px;
                 font-size: 18px;
                 color: #fff;
                 border-radius: 0;
                 cursor: pointer;
                 user-select: none;
-                padding: 4px 2px;
+                padding: 6px 4px;
                 pointer-events: auto;
                 touch-action: none;
             }
@@ -2586,14 +2627,14 @@
 
             .desktop-icon .icon-label {
                 font-family: Tahoma, 'MS Sans Serif', sans-serif;
-                font-size: 11px;
+                font-size: 13px;
                 font-weight: 400;
                 color: #fff;
                 text-shadow: 1px 1px 0 #000;
                 text-align: center;
                 line-height: 1.15;
-                padding: 1px 3px;
-                max-width: 92px;
+                padding: 1px 4px;
+                max-width: 116px;
             }
 
             .desktop-icon.selected {
@@ -2612,12 +2653,12 @@
             }
 
             .win-icon {
-                width: 48px;
-                height: 48px;
+                width: 64px;
+                height: 64px;
                 display: block;
                 image-rendering: pixelated;
                 background-repeat: no-repeat;
-                background-size: 48px 48px;
+                background-size: 64px 64px;
                 flex-shrink: 0;
             }
             .win-icon-music {
@@ -2638,14 +2679,105 @@
                 left: 92px;
                 top: 28px;
             }
+            #desktop-os #player-container .content {
+                padding: 8px;
+                gap: 8px;
+            }
+            #desktop-os #player-container .content-inner {
+                gap: 6px;
+            }
+            #desktop-os #player-container .player-controls > div {
+                margin-bottom: 6px !important;
+                gap: 8px !important;
+            }
+            #desktop-os #player-container #now-playing {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                font-weight: 700;
+                background: #fff;
+                border: 2px inset #808080;
+                padding: 4px 8px;
+                margin: 0 !important;
+            }
+            #desktop-os #player-container #custom-player-controls {
+                margin-bottom: 0 !important;
+                padding: 5px 6px !important;
+                gap: 6px !important;
+            }
+            #desktop-os #player-container #play-pause-btn {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 13px !important;
+            }
+            #desktop-os #player-container #time-display {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px !important;
+                min-width: 78px !important;
+            }
+            #desktop-os #player-container .search-sort-container {
+                gap: 6px;
+            }
+            #desktop-os #player-container #search-bar {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 12px;
+                padding: 4px 8px;
+                height: 24px;
+            }
+            #desktop-os #player-container .sort-button {
+                width: 28px;
+                height: 24px;
+                min-width: 28px;
+                font-size: 11px;
+            }
+            #desktop-os #player-container #bitcrush-toggle {
+                width: auto;
+                min-width: 52px;
+                padding: 0 8px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+            }
+            #desktop-os #player-container .finder-sort-bar {
+                height: 24px;
+                margin: 0;
+            }
+            #desktop-os #player-container .finder-sort-btn {
+                font-size: 11px;
+                padding: 0 10px;
+            }
+            #desktop-os #player-container #file-browser-main {
+                padding: 6px;
+            }
+            #desktop-os #player-container #player-tabs {
+                margin-bottom: 6px !important;
+                padding-bottom: 4px !important;
+                gap: 4px;
+            }
+            #desktop-os #player-container #player-tabs .visualizer-tab {
+                min-width: 78px;
+                height: 22px;
+                min-height: 22px;
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
+                font-size: 11px;
+                line-height: 18px;
+            }
+            #desktop-os #player-container .player-bottom-buttons {
+                margin-top: 4px;
+                gap: 6px;
+            }
+            #desktop-os #player-container .player-bottom-buttons .window-button {
+                width: 28px;
+                height: 24px;
+                min-width: 28px;
+                min-height: 24px;
+                line-height: 20px;
+            }
 
             #desktop-os .title-bar-buttons .window-button:not(.visualizer-tab) {
-                width: 16px;
-                height: 14px;
-                min-width: 16px;
-                min-height: 14px;
-                line-height: 12px;
-                font-size: 10px;
+                width: 22px;
+                height: 20px;
+                min-width: 22px;
+                min-height: 20px;
+                line-height: 16px;
+                font-size: 12px;
                 font-family: Tahoma, 'MS Sans Serif', sans-serif;
             }
 
@@ -2664,7 +2796,8 @@
 
             #desktop-os #open-dj-app-icon,
             #desktop-os #open-solitaire-icon,
-            #desktop-os #open-tr808-icon {
+            #desktop-os #open-tr808-icon,
+            #desktop-os #minimized-tr808-icon {
                 display: none !important;
             }
 
@@ -2673,8 +2806,7 @@
             }
 
             #desktop-os #minimized-dj-icon,
-            #desktop-os #minimized-solitaire-icon,
-            #desktop-os #minimized-tr808-icon {
+            #desktop-os #minimized-solitaire-icon {
                 width: 22px;
                 height: 22px;
                 margin-left: 2px;
@@ -2862,6 +2994,14 @@
             }
             .doodle-clear {
                 margin-left: auto;
+                width: auto;
+                min-width: 84px;
+                height: 32px;
+                min-height: 32px;
+                padding: 4px 16px;
+                font-size: 13px;
+                font-weight: 700;
+                line-height: 22px;
             }
             .doodle-canvas-wrap {
                 position: relative;
@@ -3691,10 +3831,9 @@
                     <button id="bitcrush-toggle" class="window-button sort-button" title="Toggle 12-Bit Audio">12-Bit</button>
                 </div>
                 <div class="finder-sort-bar" id="finder-sort-bar" role="toolbar" aria-label="Sort tracks">
-                    <button type="button" class="finder-sort-btn active" data-sort="date" title="Sort by date">Date <span class="sort-arrow">▼</span></button>
                     <button type="button" class="finder-sort-btn" data-sort="name" title="Sort by name">Name <span class="sort-arrow"></span></button>
                     <button type="button" class="finder-sort-btn" data-sort="bpm" title="Sort by BPM">BPM <span class="sort-arrow"></span></button>
-                    <button type="button" class="finder-sort-btn" data-sort="random" title="Random order">Shuffle</button>
+                    <button type="button" class="finder-sort-btn active" data-sort="random" title="Random order">Shuffle</button>
                 </div>
 
                 <div class="file-browser" id="file-browser-main">
@@ -3717,10 +3856,6 @@
                 
                  <div class="player-bottom-buttons">
                      <button id="info-button" class="window-button" title="About">i</button>
-                     <button id="open-playlists-button" class="window-button" title="Open Playlists">
-                         <i class="fas fa-folder"></i>
-                     </button>
-                     <button id="add-track-now-playing" class="window-button" title="Add Current Track to Playlist">+</button>
                      <button id="feeling-lucky-button" class="window-button" title="Shuffle — play in random order">
                          <i class="fas fa-random"></i>
                      </button>
@@ -3737,7 +3872,7 @@
             <div id="visualizer-tabs">
                 <button class="visualizer-tab window-button" data-visualizer="rain">Rain</button>
                 <button class="visualizer-tab window-button" data-visualizer="starfield">Starfield</button>
-                <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
+                <button class="visualizer-tab window-button active" data-visualizer="retroWaveform">Retro Waveform</button>
                 <button class="visualizer-tab window-button" data-visualizer="vuMeter">VU Meter</button>
             </div>
             <div class="title-bar-buttons">
@@ -4009,8 +4144,8 @@
         </div>
         <div class="content">
             <div class="tr808-controls">
-                <button id="tr808-play" class="window-button">PLAY</button>
-                <button id="tr808-stop" class="window-button">STOP</button>
+                <button id="tr808-play" class="window-button" title="Play the beat">▶ PLAY</button>
+                <button id="tr808-stop" class="window-button" title="Stop the beat">■ STOP</button>
                 <label style="margin-left:6px;">Tempo</label>
                 <input type="range" id="tr808-tempo" min="60" max="200" value="120">
                 <span id="tr808-tempo-display">120</span>
@@ -4781,8 +4916,8 @@
         let selectedDjTrack = null; 
         let djSortAscending = true; 
         let currentMainPlayerTab = 'tracks'; // State for main player tabs
-        let trackSortKey = 'date';
-        let trackSortDir = { date: 'desc', name: 'asc', bpm: 'asc' };
+        let trackSortKey = 'random';
+        let trackSortDir = { name: 'asc', bpm: 'asc' };
         let shuffleEnabled = false;
         let shuffleQueue = [];
         let shufflePos = 0;
@@ -5200,6 +5335,8 @@
             el.style.top = Math.max(12, Math.floor((window.innerHeight - h - taskbar) / 2)) + 'px';
         }
 
+        let doodleWindowEl = null;
+
         function playOpenWindowAnim(el, iconEl) {
             if (isMobile || !el) return;
             el.classList.add('win-anim');
@@ -5254,8 +5391,39 @@
             }, 160);
         }
 
+        function closeOtherDesktopWindows(keepEl) {
+            if (isMobile) return;
+            const iconMap = {
+                'player-container': document.getElementById('app-music'),
+                'dj-app-window': document.getElementById('app-dj'),
+                'tr808-window': document.getElementById('app-beats'),
+                'solitaire-window': document.getElementById('app-cards'),
+                'recycle-window': document.getElementById('app-recycle'),
+                'info-window': document.getElementById('start-button'),
+                'playlist-window': document.getElementById('app-music')
+            };
+            const windows = [playerContainer, djAppWindow, tr808Window, solitaireWindow, recycleWindow, infoWindow, playlistWindow, doodleWindowEl];
+            windows.forEach(win => {
+                if (!win || win === keepEl) return;
+                if (win.id === 'visualizer-window') return;
+                if (win.style.display !== 'flex') return;
+                if (win === tr808Window) stopTr808Playback();
+                hideDesktopWindow(win, iconMap[win.id] || null);
+                if (win === playerContainer) minimizedPlayerIcon.style.display = 'none';
+                if (win === djAppWindow) minimizedDjIcon.style.display = 'none';
+                if (win === tr808Window) minimizedTr808Icon.style.display = 'none';
+                if (win === solitaireWindow) minimizedSolitaireIcon.style.display = 'none';
+                if (win === doodleWindowEl) {
+                    const closing = win;
+                    doodleWindowEl = null;
+                    setTimeout(() => { try { closing.remove(); } catch (err) {} }, 170);
+                }
+            });
+        }
+
         function showDesktopWindow(el, iconEl, width, height) {
             if (!el) return;
+            if (!isMobile && el.id !== 'visualizer-window') closeOtherDesktopWindows(el);
             el.style.display = 'flex';
             if (!isMobile) {
                 centerDesktopWindow(el, width, height);
@@ -5271,8 +5439,6 @@
             const tabBtn = document.querySelector('#player-tabs .visualizer-tab[data-tab="' + tab + '"]');
             if (tabBtn) tabBtn.click();
         }
-
-        let doodleWindowEl = null;
 
         function launchDesktopApp(app) {
             if (app === 'demo-reel') {
@@ -5299,6 +5465,7 @@
             }
             if (app === 'beats') {
                 if (isDesktopWindowOpen(tr808Window)) {
+                    stopTr808Playback();
                     hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
                     minimizedTr808Icon.style.display = 'none';
                 } else if (openTr808Icon) {
@@ -5353,8 +5520,8 @@
         });
 
         const ICON_POS_KEY = 'desktopIconPos';
-        const DESKTOP_ICON_W = 96;
-        const DESKTOP_ICON_H = 86;
+        const DESKTOP_ICON_W = 120;
+        const DESKTOP_ICON_H = 108;
         const DESKTOP_TASKBAR_H = 36;
 
         function defaultIconLayout() {
@@ -5618,8 +5785,8 @@
         let visualizerColor = '#00FFFF';
         let secondaryColor = '#FF00FF';
         let vizBgColor = '#000000';
-        let activeVisualizer = isMobile ? 'vuMeter' : 'rain'; // Mobile keeps permanent VU meter
-        let lastDesktopVisualizer = activeVisualizer === 'vuMeter' ? 'rain' : activeVisualizer;
+        let activeVisualizer = isMobile ? 'vuMeter' : 'retroWaveform'; // Mobile keeps permanent VU meter
+        let lastDesktopVisualizer = activeVisualizer === 'vuMeter' ? 'retroWaveform' : activeVisualizer;
         let playlists = [];
         let selectedPlaylistId = null;
         let contextMenuTrack = null;
@@ -5968,7 +6135,7 @@
             if (document.fullscreenElement === visualizerWindow) return;
             const w = visualizerWindow.offsetWidth || 550;
             const h = visualizerWindow.offsetHeight || 420;
-            const iconCol = 118;
+            const iconCol = 140;
             const taskbar = 40;
             const gap = 16;
             let left;
@@ -5982,6 +6149,47 @@
             visualizerWindow.style.top = top + 'px';
         }
 
+        let visualizerHideTimer = null;
+
+        function anyAudioPlaying() {
+            const deckA = document.getElementById('deck-a-audio');
+            const deckB = document.getElementById('deck-b-audio');
+            return (musicPlayer && !musicPlayer.paused) ||
+                   (deckA && !deckA.paused) ||
+                   (deckB && !deckB.paused) ||
+                   !!tr808IsPlaying;
+        }
+
+        function showVisualizerWindow() {
+            if (isMobile || !visualizerWindow) return;
+            if (visualizerHideTimer) {
+                clearTimeout(visualizerHideTimer);
+                visualizerHideTimer = null;
+            }
+            const wasHidden = visualizerWindow.style.display !== 'flex';
+            visualizerWindow.style.display = 'flex';
+            if (wasHidden) {
+                visualizerWindow.classList.remove('viz-visible');
+                placeVisualizerWindow();
+                bringWindowToFront(visualizerWindow);
+                requestAnimationFrame(() => {
+                    visualizerWindow.classList.add('viz-visible');
+                });
+            } else {
+                visualizerWindow.classList.add('viz-visible');
+            }
+        }
+
+        function hideVisualizerWindow() {
+            if (isMobile || !visualizerWindow) return;
+            visualizerWindow.classList.remove('viz-visible');
+            if (visualizerHideTimer) clearTimeout(visualizerHideTimer);
+            visualizerHideTimer = setTimeout(() => {
+                visualizerWindow.style.display = 'none';
+                visualizerHideTimer = null;
+            }, 180);
+        }
+
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
                 cancelAnimationFrame(animationFrameId); 
@@ -5989,12 +6197,7 @@
             // Do not resume Web Audio on iPhone; that session change stops lock-screen audio.
             if (audioContext && !isMobile) audioContext.resume();
             visualizerActive = true;
-            const wasHidden = !visualizerWindow || visualizerWindow.style.display !== 'flex';
-            visualizerWindow.style.display = 'flex';
-            if (!isMobile && wasHidden) {
-                placeVisualizerWindow();
-                bringWindowToFront(visualizerWindow);
-            }
+            showVisualizerWindow();
             drawVisualizer();
         }
 
@@ -6003,6 +6206,7 @@
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
+            hideVisualizerWindow();
         }
 
         async function ensureMobileMeterBuffer(src) {
@@ -6125,10 +6329,7 @@
                 }
                 stopMobileAnalyzerSyncLoop();
             } else {
-                const anyAudioPlaying = (musicPlayer && !musicPlayer.paused) ||
-                                      (document.getElementById('deck-a-audio') && !document.getElementById('deck-a-audio').paused) ||
-                                      (document.getElementById('deck-b-audio') && !document.getElementById('deck-b-audio').paused);
-                if (anyAudioPlaying) {
+                if (anyAudioPlaying()) {
                     startVisualizer();
                     syncMobileAnalyzerPlayback();
                     startMobileAnalyzerSyncLoop();
@@ -6723,13 +6924,10 @@
         }
 
         function applyCurrentSortAndRender() {
-            if (currentMainPlayerTab === 'mixes') {
-                currentMixlist = applyTrackSort(mixFileObjects, true);
-                populateMixList(currentMixlist);
-            } else {
-                currentTracklist = applyTrackSort(audioFileObjects, false);
-                populateFileList(currentTracklist);
-            }
+            currentTracklist = applyTrackSort(audioFileObjects, false);
+            currentMixlist = applyTrackSort(mixFileObjects, true);
+            populateFileList(currentTracklist);
+            populateMixList(currentMixlist);
             refreshFinderSortBar();
             if (shuffleEnabled) rebuildShuffleQueue();
         }
@@ -7268,9 +7466,13 @@
             });
         }
 
+        function getTr808DefaultVolume() {
+            return isMobile ? 1.0 : 0.7;
+        }
+
         function createTr808Row(name) {
             const steps = new Array(16).fill(false);
-            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: 1.0, gainNode: null });
+            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: getTr808DefaultVolume(), gainNode: null });
         }
 
         // Map raw sample filenames to friendly instrument names
@@ -7490,11 +7692,13 @@
             startVisualizer();
         });
 
-        tr808StopBtn && tr808StopBtn.addEventListener('click', () => {
+        function stopTr808Playback() {
             tr808IsPlaying = false;
             if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
-            stopVisualizer();
-        });
+            if (!anyAudioPlaying()) stopVisualizer();
+        }
+
+        tr808StopBtn && tr808StopBtn.addEventListener('click', stopTr808Playback);
 
         tr808ClearBtn && tr808ClearBtn.addEventListener('click', () => {
             tr808Rows.forEach(r => r.steps.fill(false));
@@ -7522,6 +7726,7 @@
         const tr808CompAttack = document.getElementById('tr808-comp-attack');
         const tr808CompRelease = document.getElementById('tr808-comp-release');
         const tr808SatDrive = document.getElementById('tr808-sat-drive');
+        if (!isMobile && tr808SatDrive) tr808SatDrive.value = '8';
 
         function updateTr808FxParams() {
             if (!tr808Compressor || !tr808PreGain || !tr808WaveShaper) return;
@@ -7734,6 +7939,7 @@
             pauseBtn.addEventListener('click', () => {
                 audio.pause();
                 platter.style.animationPlayState = 'paused'; // Stop platter
+                if (!anyAudioPlaying()) stopVisualizer();
             });
             
             // CUE button (reset to 0 and pause)
@@ -7762,6 +7968,7 @@
                     deckNodes.gain.gain.value = 1;
                     volumeSlider.value = 1;
                 }
+                if (!anyAudioPlaying()) stopVisualizer();
             });
 
             // Volume slider
@@ -7914,6 +8121,7 @@
                 try { if (visibleAudioEl && !visibleAudioEl.paused) visibleAudioEl.pause(); } catch(e){}
                 stopMobileAnalyzerSyncLoop();
                 setDemoReelFx(false);
+                if (!anyAudioPlaying()) stopVisualizer();
             });
             musicPlayer.addEventListener('play', () => {
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
@@ -8085,8 +8293,9 @@
                 minimizedSolitaireIcon.style.display = 'none';
                 openSolitaireIcon.style.display = 'flex';
             } else if (targetId === 'tr808-window') {
-                minimizedTr808Icon.style.display = 'flex';
-                openTr808Icon.style.display = 'none';
+                stopTr808Playback();
+                minimizedTr808Icon.style.display = 'none';
+                openTr808Icon.style.display = isMobile ? 'flex' : 'none';
             }
             hideMobileClose();
         });
@@ -8130,8 +8339,9 @@
                         openSolitaireIcon.style.display = 'flex';
                         if (bjCooldownInterval) clearInterval(bjCooldownInterval);
                     } else if (targetWindowId === 'tr808-window') {
-                        minimizedTr808Icon.style.display = 'flex';
-                        openTr808Icon.style.display = 'none';
+                        stopTr808Playback();
+                        minimizedTr808Icon.style.display = 'none';
+                        openTr808Icon.style.display = isMobile ? 'flex' : 'none';
                     }
                 }
             });
@@ -8226,7 +8436,7 @@
             }
             if (!isMobile) hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
             else tr808Window.style.display = 'none';
-            minimizedTr808Icon.style.display = 'flex';
+            minimizedTr808Icon.style.display = isMobile ? 'flex' : 'none';
             openTr808Icon.style.display = 'none';
             // Keep mobile-fullscreen class but hide window when minimized on mobile
         });
@@ -8623,7 +8833,7 @@
         }
         
         // Open playlist window
-        openPlaylistsButton.addEventListener('click', () => {
+        openPlaylistsButton && openPlaylistsButton.addEventListener('click', () => {
             if (isMobile) {
                 playlistWindow.classList.add('mobile-fullscreen');
                 playlistWindow.style.left = '0px';
@@ -8631,9 +8841,10 @@
                 playlistWindow.style.width = '100%';
                 playlistWindow.style.height = '100%';
                 showMobileCloseFor('playlist-window');
+                playlistWindow.style.display = 'flex';
+            } else {
+                showDesktopWindow(playlistWindow, document.getElementById('app-music'));
             }
-            playlistWindow.style.display = 'flex';
-            if (!isMobile) bringWindowToFront(playlistWindow);
         });
         
         // New playlist
@@ -8692,7 +8903,7 @@
         });
         
         // '+' button (add currently playing)
-        addTrackNowPlayingButton.addEventListener('click', (e) => {
+        addTrackNowPlayingButton && addTrackNowPlayingButton.addEventListener('click', (e) => {
             if (currentMainPlayerTab !== 'tracks') {
                 customAlert("You can only add tracks to a playlist, not mixes.");
                 return;
