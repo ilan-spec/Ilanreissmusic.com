@@ -2383,7 +2383,7 @@
                 line-height: 18px;
                 color: var(--tr-dark);
             }
-            /* Ensure PLAY/STOP/CLEAR labels fit and are obvious */
+            /* Ensure PLAY/STOP labels are obvious */
             #tr808-play, #tr808-stop, #tr808-clear {
                 min-width: 88px;
                 height: 36px;
@@ -2542,6 +2542,23 @@
                 box-shadow: 0 2px 6px rgba(47,46,62,0.08);
                 color: var(--tr-dark);
             }
+            #tr808-window .tr808-controls #tr808-play,
+            #tr808-window .tr808-controls #tr808-stop {
+                min-width: 88px;
+                height: 36px;
+                padding: 6px 14px;
+                font-size: 14px;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                line-height: 22px;
+                color: #fff;
+            }
+            #tr808-window .tr808-controls #tr808-play {
+                background: #2ecc71;
+            }
+            #tr808-window .tr808-controls #tr808-stop {
+                background: #e74c3c;
+            }
 
             /* --- Desktop icons & selection rectangle --- */
             #desktop-icons {
@@ -2672,13 +2689,9 @@
             #desktop-os #player-container .player-controls > div {
                 margin-bottom: 6px !important;
                 gap: 8px !important;
-            }auto !important;
-                min-width: 92px !important;
-                height: 40px !important;
-                font-size: 13px !important;
-                font-weight: 800 !important;
-                gap: 6px !important;
-                padding: 0 12Tahoma, 'MS Sans Serif', sans-serif;
+            }
+            #desktop-os #player-container #now-playing {
+                font-family: Tahoma, 'MS Sans Serif', sans-serif;
                 font-size: 12px;
                 font-weight: 700;
                 background: #fff;
@@ -3859,7 +3872,7 @@
             <div id="visualizer-tabs">
                 <button class="visualizer-tab window-button" data-visualizer="rain">Rain</button>
                 <button class="visualizer-tab window-button" data-visualizer="starfield">Starfield</button>
-                <button class="visualizer-tab window-button" data-visualizer="retroWaveform">Retro Waveform</button>
+                <button class="visualizer-tab window-button active" data-visualizer="retroWaveform">Retro Waveform</button>
                 <button class="visualizer-tab window-button" data-visualizer="vuMeter">VU Meter</button>
             </div>
             <div class="title-bar-buttons">
@@ -5394,14 +5407,12 @@
                 if (!win || win === keepEl) return;
                 if (win.id === 'visualizer-window') return;
                 if (win.style.display !== 'flex') return;
+                if (win === tr808Window) stopTr808Playback();
                 hideDesktopWindow(win, iconMap[win.id] || null);
                 if (win === playerContainer) minimizedPlayerIcon.style.display = 'none';
                 if (win === djAppWindow) minimizedDjIcon.style.display = 'none';
                 if (win === tr808Window) minimizedTr808Icon.style.display = 'none';
                 if (win === solitaireWindow) minimizedSolitaireIcon.style.display = 'none';
-                if (win === tr808Window) {
-                    stopTr808Playback();
-                }
                 if (win === doodleWindowEl) {
                     const closing = win;
                     doodleWindowEl = null;
@@ -6137,7 +6148,17 @@
             visualizerWindow.style.left = left + 'px';
             visualizerWindow.style.top = top + 'px';
         }
-let visualizerHideTimer = null;
+
+        let visualizerHideTimer = null;
+
+        function anyAudioPlaying() {
+            const deckA = document.getElementById('deck-a-audio');
+            const deckB = document.getElementById('deck-b-audio');
+            return (musicPlayer && !musicPlayer.paused) ||
+                   (deckA && !deckA.paused) ||
+                   (deckB && !deckB.paused) ||
+                   !!tr808IsPlaying;
+        }
 
         function showVisualizerWindow() {
             if (isMobile || !visualizerWindow) return;
@@ -6145,17 +6166,28 @@ let visualizerHideTimer = null;
                 clearTimeout(visualizerHideTimer);
                 visualizerHideTimer = null;
             }
-            const wasHidden = visualizerWindow.style.display !== 'flex' || !visualizerWindow.classList.contains('viz-visible');
+            const wasHidden = visualizerWindow.style.display !== 'flex';
             visualizerWindow.style.display = 'flex';
             if (wasHidden) {
                 visualizerWindow.classList.remove('viz-visible');
                 placeVisualizerWindow();
                 bringWindowToFront(visualizerWindow);
-                void visualizerWindow.offsetWidth;
+                requestAnimationFrame(() => {
+                    visualizerWindow.classList.add('viz-visible');
+                });
+            } else {
+                visualizerWindow.classList.add('viz-visible');
             }
-            requestAnimationFrame(() => {
-                if (visualizerWindow) visualizerWindow.classList.add('viz-visible');
-            });
+        }
+
+        function hideVisualizerWindow() {
+            if (isMobile || !visualizerWindow) return;
+            visualizerWindow.classList.remove('viz-visible');
+            if (visualizerHideTimer) clearTimeout(visualizerHideTimer);
+            visualizerHideTimer = setTimeout(() => {
+                visualizerWindow.style.display = 'none';
+                visualizerHideTimer = null;
+            }, 180);
         }
 
         function startVisualizer() {
@@ -6169,39 +6201,12 @@ let visualizerHideTimer = null;
             drawVisualizer();
         }
 
-        function hideVisualizerWindow() {
-            if (isMobile || !visualizerWindow) return;
-            visualizerWindow.classList.remove('viz-visible');
-            if (visualizerHideTimer) clearTimeout(visualizerHideTimer);
-            visualizerHideTimer = setTimeout(() => {
-                if (visualizerWindow && !visualizerWindow.classList.contains('viz-visible')) {
-                    visualizerWindow.style.display = 'none';
-                }
-                visualizerHideTimer = null;
-            }, 180)rn;
-            visualizerWindow.style.display = 'none';
-        }
-
-        function anyAudioPlaying() {
-            const deckA = document.getElementById('deck-a-audio');
-            const deckB = document.getElementById('deck-b-audio');
-            return !!(
-                (musicPlayer && !musicPlayer.paused) ||
-                (deckA && !deckA.paused) ||
-                (deckB && !deckB.paused) ||
-                tr808IsPlaying
-            );
-        }
-
         function stopVisualizer() {
-            hideVisualizerWindow();
-            // Keep the always-on mobile VU meters drawing unless the page is hidden.
-            if (isMobile && !document.hidden) return;
             visualizerActive = false;
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
             }
+            hideVisualizerWindow();
         }
 
         async function ensureMobileMeterBuffer(src) {
@@ -7437,13 +7442,9 @@ let visualizerHideTimer = null;
                 });
             } catch (e) {
                 console.warn('TR-808 FX init failed:', e.message);
-            }getTr808DefaultVolume() {
-            return isMobile ? 1.0 : 0.7;
+            }
         }
 
-        function createTr808Row(name) {
-            const steps = new Array(16).fill(false);
-            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: getTr808DefaultVolume()
         tr808Tempo.addEventListener('input', (e) => {
             tr808TempoValue = parseInt(e.target.value, 10);
             tr808TempoDisplay.textContent = tr808TempoValue;
@@ -7465,9 +7466,13 @@ let visualizerHideTimer = null;
             });
         }
 
+        function getTr808DefaultVolume() {
+            return isMobile ? 1.0 : 0.7;
+        }
+
         function createTr808Row(name) {
             const steps = new Array(16).fill(false);
-            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: 1.0, gainNode: null });
+            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: getTr808DefaultVolume(), gainNode: null });
         }
 
         // Map raw sample filenames to friendly instrument names
@@ -7672,12 +7677,6 @@ let visualizerHideTimer = null;
             tr808TimerId = setTimeout(tr808Tick, Math.max(10, Math.round(nextInterval)));
         }
 
-        function stopTr808Playback() {
-            tr808IsPlaying = false;
-            if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
-            if (!anyAudioPlaying()) stopVisualizer();
-        }
-
         tr808PlayBtn && tr808PlayBtn.addEventListener('click', () => {
             if (tr808IsPlaying) return;
             if (musicPlayer && !musicPlayer.paused && isDemoReelSource(musicPlayer.src)) {
@@ -7693,7 +7692,12 @@ let visualizerHideTimer = null;
             startVisualizer();
         });
 
-        if (!isMobile && tr808SatDrive) tr808SatDrive.value = '8';
+        function stopTr808Playback() {
+            tr808IsPlaying = false;
+            if (tr808TimerId) { clearTimeout(tr808TimerId); tr808TimerId = null; }
+            if (!anyAudioPlaying()) stopVisualizer();
+        }
+
         tr808StopBtn && tr808StopBtn.addEventListener('click', stopTr808Playback);
 
         tr808ClearBtn && tr808ClearBtn.addEventListener('click', () => {
@@ -7722,6 +7726,7 @@ let visualizerHideTimer = null;
         const tr808CompAttack = document.getElementById('tr808-comp-attack');
         const tr808CompRelease = document.getElementById('tr808-comp-release');
         const tr808SatDrive = document.getElementById('tr808-sat-drive');
+        if (!isMobile && tr808SatDrive) tr808SatDrive.value = '8';
 
         function updateTr808FxParams() {
             if (!tr808Compressor || !tr808PreGain || !tr808WaveShaper) return;
@@ -7943,7 +7948,6 @@ let visualizerHideTimer = null;
                 audio.pause();
                 platter.style.transform = 'rotate(0deg)';
                 platter.style.animationPlayState = 'paused';
-                if (!anyAudioPlaying()) stopVisualizer();
                 bpmSlider.value = 1;
                 bpmDisplay.textContent = '100%'; 
                 audio.playbackRate = 1;
@@ -7964,6 +7968,7 @@ let visualizerHideTimer = null;
                     deckNodes.gain.gain.value = 1;
                     volumeSlider.value = 1;
                 }
+                if (!anyAudioPlaying()) stopVisualizer();
             });
 
             // Volume slider
@@ -8025,7 +8030,6 @@ let visualizerHideTimer = null;
             audio.addEventListener('ended', () => {
                 platter.style.animationPlayState = 'paused';
                 platter.style.transform = 'rotate(0deg)';
-                if (!anyAudioPlaying()) stopVisualizer();
             });
             
             // --- Scrub Bar Logic ---
@@ -8289,8 +8293,8 @@ let visualizerHideTimer = null;
                 minimizedSolitaireIcon.style.display = 'none';
                 openSolitaireIcon.style.display = 'flex';
             } else if (targetId === 'tr808-window') {
-                minimizedTr808Icon.style.display = 'flex';
                 stopTr808Playback();
+                minimizedTr808Icon.style.display = 'flex';
                 openTr808Icon.style.display = 'none';
             }
             hideMobileClose();
@@ -8828,7 +8832,8 @@ let visualizerHideTimer = null;
             }
         }
         
-        if (openPlaylistsButton) openPlaylistsButton.addEventListener('click', () => {
+        // Open playlist window
+        openPlaylistsButton && openPlaylistsButton.addEventListener('click', () => {
             if (isMobile) {
                 playlistWindow.classList.add('mobile-fullscreen');
                 playlistWindow.style.left = '0px';
@@ -8897,7 +8902,8 @@ let visualizerHideTimer = null;
             }
         });
         
-        if (addTrackNowPlayingButton) addTrackNowPlayingButton.addEventListener('click', (e) => {
+        // '+' button (add currently playing)
+        addTrackNowPlayingButton && addTrackNowPlayingButton.addEventListener('click', (e) => {
             if (currentMainPlayerTab !== 'tracks') {
                 customAlert("You can only add tracks to a playlist, not mixes.");
                 return;
