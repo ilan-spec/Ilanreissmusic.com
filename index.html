@@ -531,6 +531,13 @@
             top: 20px;
             left: 20px;
             display: none; /* Hidden by default */
+            opacity: 0;
+        }
+        body:not(.mobile-mode) #visualizer-window {
+            transition: opacity 180ms ease;
+        }
+        #visualizer-window.viz-visible {
+            opacity: 1;
         }
         
         #visualizer-canvas {
@@ -550,6 +557,7 @@
             max-height: 100% !important;
             border-radius: 0 !important;
             z-index: 99999 !important;
+            opacity: 1 !important;
         }
 
         #visualizer-tabs {
@@ -6129,6 +6137,26 @@
             visualizerWindow.style.left = left + 'px';
             visualizerWindow.style.top = top + 'px';
         }
+let visualizerHideTimer = null;
+
+        function showVisualizerWindow() {
+            if (isMobile || !visualizerWindow) return;
+            if (visualizerHideTimer) {
+                clearTimeout(visualizerHideTimer);
+                visualizerHideTimer = null;
+            }
+            const wasHidden = visualizerWindow.style.display !== 'flex' || !visualizerWindow.classList.contains('viz-visible');
+            visualizerWindow.style.display = 'flex';
+            if (wasHidden) {
+                visualizerWindow.classList.remove('viz-visible');
+                placeVisualizerWindow();
+                bringWindowToFront(visualizerWindow);
+                void visualizerWindow.offsetWidth;
+            }
+            requestAnimationFrame(() => {
+                if (visualizerWindow) visualizerWindow.classList.add('viz-visible');
+            });
+        }
 
         function startVisualizer() {
             if (visualizerActive && animationFrameId) {
@@ -6137,17 +6165,20 @@
             // Do not resume Web Audio on iPhone; that session change stops lock-screen audio.
             if (audioContext && !isMobile) audioContext.resume();
             visualizerActive = true;
-            const wasHidden = !visualizerWindow || visualizerWindow.style.display !== 'flex';
-            visualizerWindow.style.display = 'flex';
-            if (!isMobile && wasHidden) {
-                placeVisualizerWindow();
-                bringWindowToFront(visualizerWindow);
-            }
+            showVisualizerWindow();
             drawVisualizer();
         }
 
         function hideVisualizerWindow() {
             if (isMobile || !visualizerWindow) return;
+            visualizerWindow.classList.remove('viz-visible');
+            if (visualizerHideTimer) clearTimeout(visualizerHideTimer);
+            visualizerHideTimer = setTimeout(() => {
+                if (visualizerWindow && !visualizerWindow.classList.contains('viz-visible')) {
+                    visualizerWindow.style.display = 'none';
+                }
+                visualizerHideTimer = null;
+            }, 180)rn;
             visualizerWindow.style.display = 'none';
         }
 
@@ -7406,9 +7437,13 @@
                 });
             } catch (e) {
                 console.warn('TR-808 FX init failed:', e.message);
-            }
+            }getTr808DefaultVolume() {
+            return isMobile ? 1.0 : 0.7;
         }
 
+        function createTr808Row(name) {
+            const steps = new Array(16).fill(false);
+            tr808Rows.push({ name, buffer: null, steps, muted: false, volume: getTr808DefaultVolume()
         tr808Tempo.addEventListener('input', (e) => {
             tr808TempoValue = parseInt(e.target.value, 10);
             tr808TempoDisplay.textContent = tr808TempoValue;
@@ -7658,6 +7693,7 @@
             startVisualizer();
         });
 
+        if (!isMobile && tr808SatDrive) tr808SatDrive.value = '8';
         tr808StopBtn && tr808StopBtn.addEventListener('click', stopTr808Playback);
 
         tr808ClearBtn && tr808ClearBtn.addEventListener('click', () => {
