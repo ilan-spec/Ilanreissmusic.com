@@ -2796,7 +2796,8 @@
 
             #desktop-os #open-dj-app-icon,
             #desktop-os #open-solitaire-icon,
-            #desktop-os #open-tr808-icon {
+            #desktop-os #open-tr808-icon,
+            #desktop-os #minimized-tr808-icon {
                 display: none !important;
             }
 
@@ -2805,8 +2806,7 @@
             }
 
             #desktop-os #minimized-dj-icon,
-            #desktop-os #minimized-solitaire-icon,
-            #desktop-os #minimized-tr808-icon {
+            #desktop-os #minimized-solitaire-icon {
                 width: 22px;
                 height: 22px;
                 margin-left: 2px;
@@ -8294,8 +8294,8 @@
                 openSolitaireIcon.style.display = 'flex';
             } else if (targetId === 'tr808-window') {
                 stopTr808Playback();
-                minimizedTr808Icon.style.display = 'flex';
-                openTr808Icon.style.display = 'none';
+                minimizedTr808Icon.style.display = 'none';
+                openTr808Icon.style.display = isMobile ? 'flex' : 'none';
             }
             hideMobileClose();
         });
@@ -8340,8 +8340,8 @@
                         if (bjCooldownInterval) clearInterval(bjCooldownInterval);
                     } else if (targetWindowId === 'tr808-window') {
                         stopTr808Playback();
-                        minimizedTr808Icon.style.display = 'flex';
-                        openTr808Icon.style.display = 'none';
+                        minimizedTr808Icon.style.display = 'none';
+                        openTr808Icon.style.display = isMobile ? 'flex' : 'none';
                     }
                 }
             });
@@ -8436,7 +8436,7 @@
             }
             if (!isMobile) hideDesktopWindow(tr808Window, document.getElementById('app-beats'));
             else tr808Window.style.display = 'none';
-            minimizedTr808Icon.style.display = 'flex';
+            minimizedTr808Icon.style.display = isMobile ? 'flex' : 'none';
             openTr808Icon.style.display = 'none';
             // Keep mobile-fullscreen class but hide window when minimized on mobile
         });
