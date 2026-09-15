@@ -3399,10 +3399,13 @@
                 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
                 cursor: pointer;
                 flex: 0 0 auto;
+                touch-action: manipulation;
             }
 
             #mobile-interface .mobile-search-input {
                 width: 0;
+                min-width: 0;
+                flex: 0 0 0;
                 opacity: 0;
                 margin-left: 0;
                 padding: 0;
@@ -3410,15 +3413,20 @@
                 border-radius: 24px;
                 background: var(--glass-bg);
                 color: var(--mobile-contrast-text);
-                font-size: 0.92rem;
+                font-size: 16px;
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
-                transition: width 400ms ease, opacity 250ms ease, margin-left 400ms ease, padding 400ms ease, border-color 250ms ease;
+                transition: width 400ms ease, opacity 250ms ease, margin-left 400ms ease, padding 400ms ease, border-color 250ms ease, flex-basis 400ms ease;
                 pointer-events: none;
+                user-select: text !important;
+                -webkit-user-select: text !important;
+                touch-action: manipulation;
             }
 
             #mobile-interface .mobile-search-clear {
                 width: 0;
+                min-width: 0;
+                flex: 0 0 0;
                 height: 40px;
                 opacity: 0;
                 margin-left: 0;
@@ -3432,12 +3440,15 @@
                 box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
                 pointer-events: none;
                 cursor: pointer;
-                transition: width 400ms ease, opacity 250ms ease, margin-left 400ms ease, border-color 250ms ease;
+                transition: width 400ms ease, opacity 250ms ease, margin-left 400ms ease, border-color 250ms ease, flex-basis 400ms ease;
                 overflow: hidden;
+                touch-action: manipulation;
             }
 
             #mobile-interface .mobile-search-container.expanded .mobile-search-input {
-                width: calc(100% - 96px);
+                flex: 1 1 auto;
+                width: auto;
+                min-width: 0;
                 opacity: 1;
                 margin-left: 8px;
                 padding: 10px 12px;
@@ -3446,7 +3457,9 @@
             }
 
             #mobile-interface .mobile-search-container.expanded .mobile-search-clear {
+                flex: 0 0 40px;
                 width: 40px;
+                min-width: 40px;
                 opacity: 1;
                 margin-left: 8px;
                 border-color: var(--glass-border);
@@ -4456,7 +4469,7 @@
                     <div id="mobile-now-playing" class="mobile-now-playing-inline">Select a track to play</div>
                     <div class="mobile-controls-row mobile-controls-row-top">
                         <button id="mobile-prev" class="mobile-control-btn" aria-label="Previous track"><i class="fas fa-step-backward"></i></button>
-                        <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play or pause"><i class="fas fa-play"></i></button>
+                        <button id="mobile-play-pause" class="mobile-control-btn" aria-label="Play a random track or pause"><i class="fas fa-play"></i></button>
                         <button id="mobile-next" class="mobile-control-btn" aria-label="Next track"><i class="fas fa-step-forward"></i></button>
                         <button id="mobile-shuffle" class="mobile-control-btn" aria-label="Play a random track"><i class="fas fa-dice"></i></button>
                     </div>
@@ -4474,7 +4487,7 @@
                         <button id="mobile-search-toggle" class="mobile-search-toggle" type="button" aria-label="Open search">
                             <i class="fas fa-magnifying-glass"></i>
                         </button>
-                        <input id="mobile-search-input" class="mobile-search-input" type="text" placeholder="Search tracks" autocomplete="off" aria-label="Search library">
+                        <input id="mobile-search-input" class="mobile-search-input" type="text" placeholder="Search tracks" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search" inputmode="search" aria-label="Search library" tabindex="-1">
                         <button id="mobile-search-clear" class="mobile-search-clear" type="button" aria-label="Clear search">x</button>
                     </div>
                 </div>
@@ -5001,6 +5014,14 @@
             }
         }
 
+        function getMobileSearchTerm() {
+            return mobileSearchInput ? String(mobileSearchInput.value || '').toLowerCase().trim() : '';
+        }
+
+        function isMobileSearchOpen() {
+            return !!(mobileSearchContainer && mobileSearchContainer.classList.contains('expanded'));
+        }
+
         function applyMobileSearchFilter(searchTerm = '') {
             const normalizedSearch = String(searchTerm || '').toLowerCase().trim();
             const filteredTracks = normalizedSearch
@@ -5017,6 +5038,43 @@
             if (activeFilename) {
                 syncMobileActiveTrackByName(activeFilename, { preserveCurrentTab: true });
             }
+        }
+
+        let isRefreshingMobileSearch = false;
+        function refreshMobileSearchResults() {
+            if (!isMobile || isRefreshingMobileSearch) return;
+            isRefreshingMobileSearch = true;
+            try {
+                applyMobileSearchFilter(isMobileSearchOpen() ? getMobileSearchTerm() : '');
+            } finally {
+                isRefreshingMobileSearch = false;
+            }
+        }
+
+        function setMobileSearchExpanded(expanded) {
+            if (!mobileSearchContainer || !mobileSearchInput || !mobileSearchToggle) return;
+            const shouldExpand = !!expanded;
+            mobileSearchContainer.classList.toggle('expanded', shouldExpand);
+            mobileSearchToggle.setAttribute('aria-expanded', shouldExpand ? 'true' : 'false');
+            mobileSearchToggle.setAttribute('aria-label', shouldExpand ? 'Close search' : 'Open search');
+            mobileSearchInput.tabIndex = shouldExpand ? 0 : -1;
+
+            if (shouldExpand) {
+                window.setTimeout(() => {
+                    if (!isMobileSearchOpen()) return;
+                    try { mobileSearchInput.focus({ preventScroll: true }); } catch (e) { mobileSearchInput.focus(); }
+                }, 250);
+                return;
+            }
+
+            try { mobileSearchInput.blur(); } catch (e) {}
+            if (document.activeElement === mobileSearchInput) {
+                try { document.activeElement.blur(); } catch (e) {}
+            }
+            if (mobileSearchInput.value) {
+                mobileSearchInput.value = '';
+            }
+            applyMobileSearchFilter('');
         }
 
         function syncMobileActiveTrackByName(trackName, options = {}) {
@@ -5050,33 +5108,36 @@
         if (mobileTabTracksBtn) {
             mobileTabTracksBtn.addEventListener('click', () => {
                 setMobileLibraryTab('tracks');
-                applyMobileSearchFilter(mobileSearchInput ? mobileSearchInput.value : '');
+                applyMobileSearchFilter(isMobileSearchOpen() ? getMobileSearchTerm() : '');
             });
         }
 
         if (mobileTabMixesBtn) {
             mobileTabMixesBtn.addEventListener('click', () => {
                 setMobileLibraryTab('mixes');
-                applyMobileSearchFilter(mobileSearchInput ? mobileSearchInput.value : '');
+                applyMobileSearchFilter(isMobileSearchOpen() ? getMobileSearchTerm() : '');
             });
         }
 
         if (mobileSearchToggle && mobileSearchContainer && mobileSearchInput) {
-            mobileSearchToggle.addEventListener('click', () => {
-                const isExpanded = mobileSearchContainer.classList.toggle('expanded');
-                if (isExpanded) {
-                    mobileSearchInput.focus();
-                    return;
-                }
-                mobileSearchInput.value = '';
-                applyMobileSearchFilter('');
+            mobileSearchToggle.setAttribute('aria-expanded', 'false');
+            mobileSearchInput.tabIndex = -1;
+            mobileSearchToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMobileSearchExpanded(!isMobileSearchOpen());
             });
 
             if (mobileSearchClear) {
-                mobileSearchClear.addEventListener('click', () => {
+                mobileSearchClear.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     mobileSearchInput.value = '';
                     applyMobileSearchFilter('');
-                    mobileSearchInput.focus();
+                    window.setTimeout(() => {
+                        if (!isMobileSearchOpen()) return;
+                        try { mobileSearchInput.focus({ preventScroll: true }); } catch (err) { mobileSearchInput.focus(); }
+                    }, 0);
                 });
             }
 
@@ -5086,9 +5147,11 @@
 
             mobileSearchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    mobileSearchContainer.classList.remove('expanded');
-                    mobileSearchInput.value = '';
-                    applyMobileSearchFilter('');
+                    e.preventDefault();
+                    setMobileSearchExpanded(false);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    try { mobileSearchInput.blur(); } catch (err) {}
                 }
             });
         }
@@ -6946,6 +7009,7 @@
                 fileListElement.appendChild(createPlayerListItem(fileObj, false));
             });
             populateMobileTrackList(files);
+            refreshMobileSearchResults();
         }
 
         function populateMobileTrackList(files) {
@@ -7016,9 +7080,19 @@
             });
         }
 
+        function hasMobileTrackLoaded() {
+            if (!musicPlayer) return false;
+            const src = musicPlayer.currentSrc || musicPlayer.src || '';
+            return !!src && src !== window.location.href;
+        }
+
         if (mobilePlayPauseBtn) {
             mobilePlayPauseBtn.addEventListener('click', () => {
                 initPlayersOnGesture();
+                if (!hasMobileTrackLoaded()) {
+                    playRandomTrack();
+                    return;
+                }
                 togglePlay();
             });
         }
@@ -7142,6 +7216,7 @@
                 mixListElement.appendChild(createPlayerListItem(fileObj, true));
             });
             populateMobileMixList(files);
+            refreshMobileSearchResults();
         }
         populateMixList(currentMixlist); // Initial population
         applyCurrentSortAndRender();
